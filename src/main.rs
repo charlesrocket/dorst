@@ -23,7 +23,7 @@ fn main() {
     #[derive(Parser, Debug)]
     #[command(author, version, about, long_about = None)]
     struct Args {
-        #[arg(short, long, default_value_t = get_dir())]
+        #[arg(short, long, default_value_t = get_dir(), hide_default_value = true)]
         path: String,
         #[arg()]
         targets: String,
