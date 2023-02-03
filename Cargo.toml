@@ -2,6 +2,13 @@
 name = "dorst"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/charlesrocket/dorst"
+authors = ["charlesrocket"]
+description = "Codebase backup utility"
+categories = ["command-line-utilities"]
+license = "MIT"
+readme = "README.md"
+exclude = [".github"]
 
 [dependencies]
 clap = { version = "4.1", features = ["string", "derive"] }
