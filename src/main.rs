@@ -25,10 +25,13 @@ fn main() {
     struct Args {
         #[arg(short, long, default_value_t = get_dir())]
         path: String,
+        #[arg(short, long)]
+        targets: String,
+
     }
 
     let args = Args::parse();
-    let config = std::fs::File::open("config.yml").expect("Could not open config file.");
+    let config = std::fs::File::open(args.targets).expect("Could not open config file.");
     let scrape_config: Config =
         serde_yaml::from_reader(config).expect("Could not read config values.");
 
