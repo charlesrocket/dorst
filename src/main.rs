@@ -25,9 +25,8 @@ fn main() {
     struct Args {
         #[arg(short, long, default_value_t = get_dir())]
         path: String,
-        #[arg(short, long)]
+        #[arg()]
         targets: String,
-
     }
 
     let args = Args::parse();
