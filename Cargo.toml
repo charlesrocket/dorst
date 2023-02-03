@@ -8,7 +8,7 @@ description = "Codebase backup utility"
 categories = ["command-line-utilities"]
 license = "MIT"
 readme = "README.md"
-exclude = [".github"]
+exclude = [".github", "example.yml"]
 
 [dependencies]
 clap = { version = "4.1", features = ["string", "derive"] }
