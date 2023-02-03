@@ -33,7 +33,7 @@ fn main() {
         serde_yaml::from_reader(config).expect("Could not read config values.");
 
     for target in scrape_config.targets.iter() {
-        let dest = format!["{0}/{1}", &args.path, get_name(&target)];
+        let dest = format!["{0}/{1}", &args.path, get_name(target)];
         if Path::new(&dest).exists() {
             fs::remove_dir_all(&dest).unwrap();
         }
@@ -47,6 +47,6 @@ fn main() {
 
         options.remote_callbacks(callbacks);
         builder.fetch_options(options);
-        builder.clone(&target, Path::new(&dest)).unwrap();
+        builder.clone(target, Path::new(&dest)).unwrap();
     }
 }
