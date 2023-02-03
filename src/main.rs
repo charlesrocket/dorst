@@ -5,6 +5,11 @@ use serde_yaml::{self};
 
 use std::{env, fs, path::Path};
 
+const BANNER: &str = "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄\n\
+                      █ ▄▀█▀▄▄▀█ ▄▄▀█ ▄▄█▄ ▄█\n\
+                      █ █ █ ▀▄ █ ▀▀▄█▄▄▀██ ██\n\
+                      █▄▄███▄▄██▄█▄▄█▄▄▄██▄██";
+
 #[derive(Debug, Serialize, Deserialize)]
 struct Config {
     targets: Vec<String>,
@@ -21,7 +26,7 @@ fn get_dir() -> String {
 
 fn main() {
     #[derive(Parser, Debug)]
-    #[command(author, version, about, long_about = None)]
+    #[command(author, version, about = BANNER, long_about = None)]
     struct Args {
         #[arg(short, long, default_value_t = get_dir(), hide_default_value = true)]
         path: String,
