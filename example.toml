@@ -1,0 +1,4 @@
+targets:
+  - https://github.com/charlesrocket/dotfiles
+  - https://github.com/charlesrocket/freebsd-station
+  - https://github.com/charlesrocket/freebsd-server
