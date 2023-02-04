@@ -1,10 +1,13 @@
-use clap::Parser;
+use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use git2::{AutotagOption, Cred, RemoteCallbacks};
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
 use serde_yaml::{self};
 
-use std::{env, fs, path::Path};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 const BANNER: &str = "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄\n\
                       █ ▄▀█▀▄▄▀█ ▄▄▀█ ▄▄█▄ ▄█\n\
@@ -27,19 +30,36 @@ fn get_dir() -> String {
     current_dir.to_str().unwrap().to_string()
 }
 
-fn main() {
-    #[derive(Parser, Debug)]
-    #[command(author, version, about = BANNER, long_about = None)]
-    struct Args {
-        #[arg(short, long, default_value_t = get_dir(), hide_default_value = true)]
-        path: String,
-        #[arg()]
-        targets: String,
-    }
+fn args() -> ArgMatches {
+    let matches = Command::new(env!("CARGO_PKG_NAME"))
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .about(BANNER)
+        .version(env!("CARGO_PKG_VERSION"))
+        .help_template("{about-with-newline}Codebase backup utility\n\n{usage-heading} {usage}\n\n{all-args}{after-help}")
+        .arg(Arg::new("path")
+            .short('p')
+            .long("path")
+            .action(ArgAction::Set)
+            .value_name("PATH")
+            .help("Backup destination")
+            .value_parser(value_parser!(PathBuf))
+            .hide_default_value(true)
+            .default_value(get_dir()))
+        .arg(Arg::new("config")
+            .value_name("TARGETS")
+            .help("Backup targets")
+            .value_parser(value_parser!(PathBuf))
+            .required(true));
 
+    matches.get_matches()
+}
+
+fn main() {
+    let matches = args();
+    let config = matches.get_one::<PathBuf>("config").unwrap();
+    let targets = matches.get_one::<PathBuf>("path").unwrap();
     let spinner = ProgressBar::new_spinner();
-    let args = Args::parse();
-    let config = std::fs::File::open(args.targets).expect("Could not open config file.");
+    let config = std::fs::File::open(config).expect("Could not open config file.");
     let scrape_config: Config =
         serde_yaml::from_reader(config).expect("Could not read config values.");
 
@@ -47,7 +67,7 @@ fn main() {
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
     for target in scrape_config.targets.iter() {
-        let dest = format!("{0}/{1}", &args.path, get_name(target));
+        let dest = format!("{0}/{1}", &targets.display(), get_name(target));
         if Path::new(&dest).exists() {
             fs::remove_dir_all(&dest).unwrap();
         }

@@ -16,7 +16,7 @@ strip = true
 lto = true
 
 [dependencies]
-clap = { version = "4.1", features = ["string", "derive"] }
+clap = { version = "4.1", features = ["string"] }
 git2 = "0.16"
 indicatif = "0.17.3"
 serde = { version = "1.0", features = ["derive"] }
