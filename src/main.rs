@@ -1,5 +1,5 @@
 use clap::Parser;
-use git2::{AutotagOption, Cred, RemoteCallbacks, RemoteRedirect};
+use git2::{AutotagOption, Cred, RemoteCallbacks};
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
 use serde_yaml::{self};
