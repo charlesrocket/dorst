@@ -47,13 +47,12 @@ fn main() {
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
     for target in scrape_config.targets.iter() {
-        let dest = format!["{0}/{1}", &args.path, get_name(target)];
+        let dest = format!("{0}/{1}", &args.path, get_name(target));
         if Path::new(&dest).exists() {
             fs::remove_dir_all(&dest).unwrap();
         }
 
-        let message = format!["\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m", get_name(target)];
-
+        let message = format!("\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m", get_name(target));
         let callbacks = RemoteCallbacks::new();
         let mut options = git2::FetchOptions::new();
         let mut repo = git2::build::RepoBuilder::new();
