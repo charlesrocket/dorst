@@ -6,7 +6,7 @@ use assert_cmd::prelude::*;
 fn main() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
 
-    cmd.arg("example.yml").assert().success();
+    cmd.arg("tests/test.yml").assert().success();
 
     Ok(())
 }
