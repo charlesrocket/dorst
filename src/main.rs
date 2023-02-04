@@ -52,10 +52,7 @@ fn main() {
             fs::remove_dir_all(&dest).unwrap();
         }
 
-        let message = format![
-            "\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m",
-            get_name(&target)
-        ];
+        let message = format!["\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m", get_name(target)];
 
         let callbacks = RemoteCallbacks::new();
         let mut options = git2::FetchOptions::new();
