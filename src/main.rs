@@ -45,7 +45,7 @@ fn args() -> ArgMatches {
             .value_parser(value_parser!(PathBuf))
             .hide_default_value(true)
             .default_value(get_dir()))
-        .arg(Arg::new("config")
+        .arg(Arg::new("targets")
             .value_name("TARGETS")
             .help("Backup targets")
             .value_parser(value_parser!(PathBuf))
@@ -56,10 +56,10 @@ fn args() -> ArgMatches {
 
 fn main() {
     let matches = args();
-    let config = matches.get_one::<PathBuf>("config").unwrap();
-    let targets = matches.get_one::<PathBuf>("path").unwrap();
+    let targets = matches.get_one::<PathBuf>("targets").unwrap();
+    let path = matches.get_one::<PathBuf>("path").unwrap();
     let spinner = ProgressBar::new_spinner();
-    let config = std::fs::File::open(config).expect("Could not open config file.");
+    let config = std::fs::File::open(targets).expect("Could not open config file.");
     let scrape_config: Config =
         serde_yaml::from_reader(config).expect("Could not read config values.");
 
@@ -67,7 +67,7 @@ fn main() {
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
     for target in scrape_config.targets.iter() {
-        let dest = format!("{0}/{1}", &targets.display(), get_name(target));
+        let dest = format!("{0}/{1}", &path.display(), get_name(target));
         if Path::new(&dest).exists() {
             fs::remove_dir_all(&dest).unwrap();
         }
