@@ -1,4 +1,4 @@
-use std::{error::Error, process::Command};
+use std::{error::Error, fs, process::Command};
 
 use assert_cmd::prelude::*;
 
@@ -6,6 +6,7 @@ use assert_cmd::prelude::*;
 fn main() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
 
+    fs::create_dir_all("punk")?;
     cmd.arg("tests/test.yml").assert().success();
 
     Ok(())
