@@ -1,5 +1,5 @@
 use clap::Parser;
-use git2::{Cred, RemoteCallbacks};
+use git2::{AutotagOption, Cred, RemoteCallbacks, RemoteRedirect};
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
 use serde_yaml::{self};
@@ -71,6 +71,7 @@ fn main() {
 
         spinner.set_message(message);
         options.remote_callbacks(callbacks);
+        options.download_tags(AutotagOption::All);
         builder.fetch_options(options);
         builder.clone(target, Path::new(&dest)).unwrap();
     }
