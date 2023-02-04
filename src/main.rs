@@ -1,5 +1,5 @@
 use clap::Parser;
-use git2::RemoteCallbacks;
+use git2::{Cred, RemoteCallbacks};
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
 use serde_yaml::{self};
@@ -53,7 +53,16 @@ fn main() {
         }
 
         let message = format!("\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m", get_name(target));
-        let callbacks = RemoteCallbacks::new();
+        let mut callbacks = RemoteCallbacks::new();
+        callbacks.credentials(|_url, username_from_url, _allowed_types| {
+            Cred::ssh_key(
+                username_from_url.unwrap(),
+                None,
+                Path::new(&format!("{}/.ssh/id_rsa", env::var("HOME").unwrap())),
+                None,
+            )
+        });
+
         let mut options = git2::FetchOptions::new();
         let mut repo = git2::build::RepoBuilder::new();
         let builder = repo
