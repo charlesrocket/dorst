@@ -67,7 +67,7 @@ fn main() {
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
     for target in scrape_config.targets.iter() {
-        let dest = format!("{0}/{1}", &path.display(), get_name(target));
+        let dest = format!("{0}/{1}.dorst", &path.display(), get_name(target));
         if Path::new(&dest).exists() {
             fs::remove_dir_all(&dest).unwrap();
         }
