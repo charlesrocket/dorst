@@ -17,7 +17,7 @@ const BANNER: &str = "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄�
 const SPINNER: [&str; 7] = ["░", "▒", "▓", "░", "▒", "▓", "░"];
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Config {
+struct TargetList {
     targets: Vec<String>,
 }
 
@@ -59,9 +59,9 @@ fn main() {
     let targets = matches.get_one::<PathBuf>("targets").unwrap();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let spinner = ProgressBar::new_spinner();
-    let config = std::fs::File::open(targets).expect("Could not open config file.");
-    let scrape_config: Config =
-        serde_yaml::from_reader(config).expect("Could not read config values.");
+    let target_list = std::fs::File::open(targets).expect("Could not open target list.");
+    let scrape_config: TargetList =
+        serde_yaml::from_reader(target_list).expect("Could not read target values.");
 
     spinner.enable_steady_tick(std::time::Duration::from_millis(90));
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
