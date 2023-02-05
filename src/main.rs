@@ -59,14 +59,14 @@ fn main() {
     let targets = matches.get_one::<PathBuf>("targets").unwrap();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let spinner = ProgressBar::new_spinner();
-    let target_list = std::fs::File::open(targets).expect("Could not open target list.");
-    let scrape_config: TargetList =
-        serde_yaml::from_reader(target_list).expect("Could not read target values.");
+    let target_file = std::fs::File::open(targets).expect("Could not open target list.");
+    let target_list: TargetList =
+        serde_yaml::from_reader(target_file).expect("Could not read target values.");
 
     spinner.enable_steady_tick(std::time::Duration::from_millis(90));
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
-    for target in scrape_config.targets.iter() {
+    for target in target_list.targets.iter() {
         let dest = format!("{0}/{1}.dorst", &path.display(), get_name(target));
         if Path::new(&dest).exists() {
             fs::remove_dir_all(&dest).unwrap();
@@ -81,10 +81,14 @@ fn main() {
             .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
 
         spinner.set_message(message);
-        options.remote_callbacks(callbacks);
-        options.download_tags(AutotagOption::All);
-        builder.fetch_options(options);
-        builder.clone(target, Path::new(&dest)).unwrap();
+        options
+            .remote_callbacks(callbacks)
+            .download_tags(AutotagOption::All);
+
+        builder
+            .fetch_options(options)
+            .clone(target, Path::new(&dest))
+            .unwrap();
     }
 
     spinner.finish_with_message("\x1b[1;32mDONE\x1b[0m");
