@@ -6,6 +6,7 @@ use serde_yaml::{self};
 
 use std::{
     env, fs,
+    io::Write,
     path::{Path, PathBuf},
 };
 
@@ -52,6 +53,22 @@ fn args() -> ArgMatches {
             .required(true));
 
     matches.get_matches()
+}
+
+fn text_prompt(message: &str) -> String {
+    let mut line = String::new();
+    print!("{message}");
+
+    std::io::stdout().flush().unwrap();
+    std::io::stdin()
+        .read_line(&mut line)
+        .expect("Error: Could not read a line");
+
+    line.trim().to_string()
+}
+
+fn pass_prompt(message: &str) -> String {
+    rpassword::prompt_password(format!("{message}")).unwrap()
 }
 
 fn main() {
