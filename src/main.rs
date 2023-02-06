@@ -33,7 +33,7 @@ impl Config {
     pub fn new() -> Self {
         let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
             .unwrap_or(format!("{}/.config", std::env::var("HOME").unwrap()));
-        let file_path = format!("{}/dorst/config.yaml", xdg_config_home);
+        let file_path = format!("{xdg_config_home}/dorst/config.yaml");
 
         let mut file = fs::File::open(file_path).unwrap();
         let mut contents = String::new();
