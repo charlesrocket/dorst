@@ -8,8 +8,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
         .unwrap_or(format!("{}/.config", std::env::var("HOME").unwrap()));
     let file_path = format!("{}/dorst/config.yaml", xdg_config_home);
+    let conf_path = format!("{}/dorst", xdg_config_home);
 
     if !Path::new(&file_path).exists() {
+        fs::create_dir(conf_path)?;
         fs::copy("tests/test.yml", file_path)?;
     }
 
