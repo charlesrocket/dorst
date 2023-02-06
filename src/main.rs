@@ -67,6 +67,25 @@ fn text_prompt(message: &str) -> String {
     line.trim().to_string()
 }
 
+fn bool_prompt(message: &str) -> bool {
+    let mut line = String::new();
+    print!("{message}");
+
+    std::io::stdout().flush().unwrap();
+    std::io::stdin()
+        .read_line(&mut line)
+        .expect("Error: Could not read a line");
+
+    match line.trim().to_lowercase().as_str() {
+        "true" | "yes" | "y" => true,
+        "false" | "no" | "n" => false,
+        _ => {
+            println!("Error: Invalid input, expected 'true' or 'false'");
+            bool_prompt(message)
+        }
+    }
+}
+
 fn pass_prompt(message: &str) -> String {
     rpassword::prompt_password(format!("{message}")).unwrap()
 }
