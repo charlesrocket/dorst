@@ -6,7 +6,7 @@
 
 Run `dorst` to create a configuration file in `$HOME/.config/dorst` and set the first backup target.
 
-`dorst -p /tmp/src-backups`
+`dorst /tmp/src-backups`
 
 Example without authentication:
 
@@ -27,3 +27,5 @@ targets:
   - https://github.com/charlesrocket/freebsd-station
   - git@github.com:charlesrocket/openbsd-station
 ```
+
+The `-c`/`--config` flag allows the usage of an alterantive configuration file.
