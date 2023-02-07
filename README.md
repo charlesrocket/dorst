@@ -4,16 +4,26 @@
 [![codecov](https://codecov.io/gh/charlesrocket/dorst/branch/trunk/graph/badge.svg)](https://codecov.io/gh/charlesrocket/dorst)
 ### Usage
 
-It takes a YAML file with targets and an optional backup destination.
+Run `dorst` to create a configuration file in `$HOME/.config/dorst` and set the first backup target.
 
-`dorst example.yml -p /tmp/src-backups`
+`dorst -p /tmp/src-backups`
 
-`example.yml`:
+Example without authentication:
+
 ```yaml
 ---
-# Example list
 targets:
   - https://github.com/charlesrocket/dotfiles
-  - https://github.com/charlesrocket/freebsd-station
   - https://github.com/charlesrocket/freebsd-server
+```
+
+Add `ssh_key` path and `ssh_pass_protected` boolean to authenticate with SSH key:
+
+```yaml
+---
+ssh_key: ~/private-ssh-key
+ssh_pass_protected: true
+targets:
+  - https://github.com/charlesrocket/freebsd-station
+  - git@github.com:charlesrocket/openbsd-station
 ```
