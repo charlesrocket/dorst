@@ -138,14 +138,16 @@ fn callbacks(
     callbacks.credentials(move |_url, username_from_url, allowed_types| {
         if allowed_types.is_ssh_key() {
             if let Some(ssh_key) = &ssh_key {
+                let key = shellexpand::tilde(ssh_key.to_str().unwrap()).into_owned();
+                let key_path = PathBuf::from(&key);
                 if needs_password {
                     if let Some(pwd) = &password {
-                        Cred::ssh_key(username_from_url.unwrap(), None, ssh_key, Some(pwd))
+                        Cred::ssh_key(username_from_url.unwrap(), None, &key_path, Some(pwd))
                     } else {
                         Cred::default()
                     }
                 } else {
-                    Cred::ssh_key(username_from_url.unwrap(), None, ssh_key, None)
+                    Cred::ssh_key(username_from_url.unwrap(), None, &key_path, None)
                 }
             } else {
                 Cred::default()
