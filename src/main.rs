@@ -22,7 +22,7 @@ struct Credentials {
     ssh_password: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 struct Config {
     #[serde(skip_serializing)]
     ssh_key: Option<PathBuf>,
@@ -32,14 +32,29 @@ struct Config {
 }
 
 impl Config {
-    fn new() -> Self {
+    fn read(path: &PathBuf) -> Self {
+        let mut file = fs::File::open(path).unwrap();
+        let mut config_data = String::new();
+
+        file.read_to_string(&mut config_data).unwrap();
+
+        let config: Self = serde_yaml::from_str(&config_data).unwrap();
+
+        Self {
+            ssh_key: config.ssh_key,
+            ssh_pass_protected: config.ssh_pass_protected,
+            targets: config.targets,
+        }
+    }
+
+    fn open(&mut self) {
         let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
             .unwrap_or(format!("{}/.config/dorst", std::env::var("HOME").unwrap()));
 
         let file_path = format!("{xdg_config_home}/config.yaml");
         if Path::new(&file_path).exists() {
             let path: PathBuf = file_path.into();
-            Self::read(&path)
+            self.load_config(&path);
         } else {
             let prompt = text_prompt("Enter backup target: ");
             let target: Vec<String> = prompt.split(',').map(|x| x.to_string()).collect();
@@ -56,24 +71,15 @@ impl Config {
 
             let mut file = fs::File::create(&file_path).unwrap();
             file.write_all(new_config.as_bytes()).unwrap();
-
-            config
         }
     }
 
-    fn read(path: &PathBuf) -> Self {
-        let mut file = fs::File::open(path).unwrap();
-        let mut config_data = String::new();
+    fn load_config(&mut self, path: &PathBuf) {
+        let config = Self::read(path);
 
-        file.read_to_string(&mut config_data).unwrap();
-
-        let config: Self = serde_yaml::from_str(&config_data).unwrap();
-
-        Self {
-            ssh_key: config.ssh_key,
-            ssh_pass_protected: config.ssh_pass_protected,
-            targets: config.targets,
-        }
+        self.ssh_key = config.ssh_key;
+        self.ssh_pass_protected = config.ssh_pass_protected;
+        self.targets = config.targets;
     }
 }
 
@@ -198,16 +204,16 @@ fn main() {
     println!("{BANNER}");
 
     let matches = args();
-    let config: Config;
+    let mut config = Config::default();
     let mut needs_pwd = false;
     let mut creds = Credentials::default();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let spinner = ProgressBar::new_spinner();
 
     if let Some(config_path) = matches.get_one::<PathBuf>("config") {
-        config = Config::read(config_path)
+        config.load_config(config_path);
     } else {
-        config = Config::new()
+        config.open();
     }
 
     if let Some(pwd) = config.ssh_pass_protected {
