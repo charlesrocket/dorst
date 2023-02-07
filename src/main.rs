@@ -6,7 +6,7 @@ use serde_yaml::{self};
 
 use std::{
     env, fs,
-    io::Read,
+    io::{Read, Write},
     path::{Path, PathBuf},
 };
 
@@ -22,9 +22,11 @@ struct Credentials {
     ssh_password: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Config {
+    #[serde(skip_serializing)]
     ssh_key: Option<PathBuf>,
+    #[serde(skip_serializing)]
     ssh_pass_protected: Option<bool>,
     targets: Vec<String>,
 }
@@ -32,20 +34,38 @@ struct Config {
 impl Config {
     pub fn new() -> Self {
         let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
-            .unwrap_or(format!("{}/.config", std::env::var("HOME").unwrap()));
-        let file_path = format!("{xdg_config_home}/dorst/config.yaml");
+            .unwrap_or(format!("{}/.config/dorst", std::env::var("HOME").unwrap()));
 
-        let mut file = fs::File::open(file_path).unwrap();
-        let mut contents = String::new();
+        let file_path = format!("{xdg_config_home}/config.yaml");
+        if Path::new(&file_path).exists() {
+            let mut file = fs::File::open(file_path).unwrap();
+            let mut config_data = String::new();
 
-        file.read_to_string(&mut contents).unwrap();
+            file.read_to_string(&mut config_data).unwrap();
 
-        let config: Self = serde_yaml::from_str(&contents).unwrap();
+            let config: Self = serde_yaml::from_str(&config_data).unwrap();
 
-        Self {
-            ssh_key: config.ssh_key,
-            ssh_pass_protected: config.ssh_pass_protected,
-            targets: config.targets,
+            Self {
+                ssh_key: config.ssh_key,
+                ssh_pass_protected: config.ssh_pass_protected,
+                targets: config.targets,
+            }
+        } else {
+            let prompt = text_prompt("Enter backup target: ");
+            let target: Vec<String> = prompt.split(',').map(|x| x.to_string()).collect();
+            let config = Self {
+                ssh_key: None,
+                ssh_pass_protected: None,
+                targets: target,
+            };
+
+            let new_config = serde_yaml::to_string(&config).unwrap();
+            fs::create_dir(xdg_config_home).unwrap();
+
+            let mut file = fs::File::create(&file_path).unwrap();
+            file.write_all(new_config.as_bytes()).unwrap();
+
+            config
         }
     }
 }
@@ -74,6 +94,18 @@ fn args() -> ArgMatches {
             .default_value(get_dir()));
 
     matches.get_matches()
+}
+
+fn text_prompt(message: &str) -> String {
+    let mut line = String::new();
+    print!("{message}");
+
+    std::io::stdout().flush().unwrap();
+    std::io::stdin()
+        .read_line(&mut line)
+        .expect("Error: Could not read a line");
+
+    line.trim().to_string()
 }
 
 fn pass_prompt(message: &str) -> Option<String> {
@@ -148,14 +180,14 @@ fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) {
 }
 
 fn main() {
+    println!("{BANNER}");
+
     let matches = args();
     let config = Config::new();
     let mut needs_pwd = false;
     let mut creds = Credentials::default();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let spinner = ProgressBar::new_spinner();
-
-    println!("{BANNER}");
 
     if let Some(pwd) = config.ssh_pass_protected {
         creds.ssh_password = pass_prompt("Enter \x1b[1mSSH\x1b[0m key password:");
