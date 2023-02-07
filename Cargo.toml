@@ -6,6 +6,7 @@ repository = "https://github.com/charlesrocket/dorst"
 authors = ["charlesrocket"]
 description = "Codebase backup utility"
 categories = ["command-line-utilities"]
+keywords = ["backup", "git"]
 license = "MIT"
 readme = "README.md"
 exclude = [".github", "example.yml"]
