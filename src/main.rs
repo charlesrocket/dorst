@@ -60,7 +60,9 @@ impl Config {
             };
 
             let new_config = serde_yaml::to_string(&config).unwrap();
-            fs::create_dir(xdg_config_home).unwrap();
+            if !Path::new(&xdg_config_home).exists() {
+                fs::create_dir(xdg_config_home).unwrap();
+            }
 
             let mut file = fs::File::create(&file_path).unwrap();
             file.write_all(new_config.as_bytes()).unwrap();
