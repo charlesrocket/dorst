@@ -1,18 +1,17 @@
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use git2::{AutotagOption, Cred, RemoteCallbacks};
 use indicatif::{ProgressBar, ProgressStyle};
-use serde::{Deserialize, Serialize};
-use serde_yaml::{self};
 
 use std::{
     env, fs,
-    io::{Read, Write},
+    io::Write,
     path::{Path, PathBuf},
 };
 
+mod config;
 mod error;
 
-use crate::error::Error;
+use crate::{config::Config, error::Error};
 
 const BANNER: &str = "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄\n\
                       █ ▄▀█▀▄▄▀█ ▄▄▀█ ▄▄█▄ ▄█\n\
@@ -24,85 +23,6 @@ const SPINNER: [&str; 7] = ["░", "▒", "▓", "░", "▒", "▓", "░"];
 #[derive(Default)]
 struct Credentials {
     ssh_password: Option<String>,
-}
-
-#[derive(Default, Serialize, Deserialize)]
-struct Config {
-    #[serde(skip_serializing)]
-    ssh_key: Option<PathBuf>,
-    #[serde(skip_serializing)]
-    ssh_pass_protected: Option<bool>,
-    targets: Vec<String>,
-}
-
-impl Config {
-    fn read(path: &PathBuf) -> Result<Self, Error> {
-        let mut file = fs::File::open(path)?;
-        let mut config_data = String::new();
-
-        file.read_to_string(&mut config_data)?;
-
-        let config: Self = serde_yaml::from_str(&config_data)?;
-
-        Ok(Self {
-            ssh_key: config.ssh_key,
-            ssh_pass_protected: config.ssh_pass_protected,
-            targets: config.targets,
-        })
-    }
-
-    fn open(&mut self) -> Result<(), Error> {
-        let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
-            .unwrap_or(format!("{}/.config/dorst", std::env::var("HOME")?));
-
-        let file_path = format!("{xdg_config_home}/config.yaml");
-        if Path::new(&file_path).exists() {
-            let path: PathBuf = file_path.into();
-            self.load_config(&path)?;
-        } else {
-            let prompt = text_prompt("Enter backup target: ");
-            let target: Vec<String> = prompt?.split(',').map(|x| x.to_string()).collect();
-            let config = Self {
-                ssh_key: None,
-                ssh_pass_protected: None,
-                targets: target,
-            };
-
-            let new_config = serde_yaml::to_string(&config)?;
-            if !Path::new(&xdg_config_home).exists() {
-                fs::create_dir(xdg_config_home)?;
-            }
-
-            let mut file = fs::File::create(&file_path)?;
-            file.write_all(new_config.as_bytes())?;
-        }
-
-        Ok(())
-    }
-
-    fn load_config(&mut self, path: &PathBuf) -> Result<(), Error> {
-        let config = Self::read(path)?;
-
-        self.ssh_key = config.ssh_key;
-        self.ssh_pass_protected = config.ssh_pass_protected;
-        self.targets = config.targets;
-
-        Ok(())
-    }
-
-    fn check(&self) -> Result<(), Error> {
-        if self.ssh_key.is_some() && self.ssh_pass_protected.is_none() {
-            Err(Error::Config(
-                "Invalid configuration: Password status is missing".to_string(),
-            ))
-        } else if self.ssh_key.is_none() && self.ssh_pass_protected.is_some() {
-            Err(Error::Config(
-                "Invalid configuration: SSH key is missing".to_string(),
-            ))
-        } else {
-            Ok(())
-        }
-    }
 }
 
 fn get_name(target: &str) -> &str {
