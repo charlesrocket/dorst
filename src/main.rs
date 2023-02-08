@@ -10,6 +10,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+mod error;
+
+use crate::error::Error;
+
 const BANNER: &str = "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄\n\
                       █ ▄▀█▀▄▄▀█ ▄▄▀█ ▄▄█▄ ▄█\n\
                       █ █ █ ▀▄ █ ▀▀▄█▄▄▀██ ██\n\
@@ -32,54 +36,72 @@ struct Config {
 }
 
 impl Config {
-    fn read(path: &PathBuf) -> Self {
-        let mut file = fs::File::open(path).unwrap();
+    fn read(path: &PathBuf) -> Result<Self, Error> {
+        let mut file = fs::File::open(path)?;
         let mut config_data = String::new();
 
-        file.read_to_string(&mut config_data).unwrap();
+        file.read_to_string(&mut config_data)?;
 
-        let config: Self = serde_yaml::from_str(&config_data).unwrap();
+        let config: Self = serde_yaml::from_str(&config_data)?;
 
-        Self {
+        Ok(Self {
             ssh_key: config.ssh_key,
             ssh_pass_protected: config.ssh_pass_protected,
             targets: config.targets,
-        }
+        })
     }
 
-    fn open(&mut self) {
+    fn open(&mut self) -> Result<(), Error> {
         let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
-            .unwrap_or(format!("{}/.config/dorst", std::env::var("HOME").unwrap()));
+            .unwrap_or(format!("{}/.config/dorst", std::env::var("HOME")?));
 
         let file_path = format!("{xdg_config_home}/config.yaml");
         if Path::new(&file_path).exists() {
             let path: PathBuf = file_path.into();
-            self.load_config(&path);
+            self.load_config(&path)?;
         } else {
             let prompt = text_prompt("Enter backup target: ");
-            let target: Vec<String> = prompt.split(',').map(|x| x.to_string()).collect();
+            let target: Vec<String> = prompt?.split(',').map(|x| x.to_string()).collect();
             let config = Self {
                 ssh_key: None,
                 ssh_pass_protected: None,
                 targets: target,
             };
 
-            let new_config = serde_yaml::to_string(&config).unwrap();
+            let new_config = serde_yaml::to_string(&config)?;
             if !Path::new(&xdg_config_home).exists() {
-                fs::create_dir(xdg_config_home).unwrap();
+                fs::create_dir(xdg_config_home)?;
             }
 
-            let mut file = fs::File::create(&file_path).unwrap();
-            file.write_all(new_config.as_bytes()).unwrap();
+            let mut file = fs::File::create(&file_path)?;
+            file.write_all(new_config.as_bytes())?;
         }
+
+        Ok(())
     }
 
-    fn load_config(&mut self, path: &PathBuf) {
-        let config = Self::read(path);
+    fn load_config(&mut self, path: &PathBuf) -> Result<(), Error> {
+        let config = Self::read(path)?;
 
         self.ssh_key = config.ssh_key;
         self.ssh_pass_protected = config.ssh_pass_protected;
         self.targets = config.targets;
+
+        Ok(())
+    }
+
+    fn check(&self) -> Result<(), Error> {
+        if self.ssh_key.is_some() && self.ssh_pass_protected.is_none() {
+            Err(Error::Config(
+                "Invalid configuration: Password status is missing".to_string(),
+            ))
+        } else if self.ssh_key.is_none() && self.ssh_pass_protected.is_some() {
+            Err(Error::Config(
+                "Invalid configuration: SSH key is missing".to_string(),
+            ))
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -115,16 +137,14 @@ fn args() -> ArgMatches {
     matches.get_matches()
 }
 
-fn text_prompt(message: &str) -> String {
+fn text_prompt(message: &str) -> Result<String, Error> {
     let mut line = String::new();
     print!("{message}");
 
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Error: Could not read a line");
+    std::io::stdout().flush()?;
+    std::io::stdin().read_line(&mut line)?;
 
-    line.trim().to_string()
+    Ok(line.trim().to_string())
 }
 
 fn pass_prompt(message: &str) -> Option<String> {
@@ -172,18 +192,22 @@ fn clone_with_key(
     target: &str,
     needs_password: bool,
     password: Option<String>,
-) {
+) -> Result<(), Error> {
     let ssh_key = Path::new(&key);
     let callbacks = callbacks(Some(ssh_key.into()), needs_password, password);
-    clone(destination, target, callbacks);
+    clone(destination, target, callbacks)?;
+
+    Ok(())
 }
 
-fn clone_with_defaults(destination: &str, target: &str) {
+fn clone_with_defaults(destination: &str, target: &str) -> Result<(), Error> {
     let callbacks = callbacks(None, false, None);
-    clone(destination, target, callbacks);
+    clone(destination, target, callbacks)?;
+
+    Ok(())
 }
 
-fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) {
+fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) -> Result<(), Error> {
     let mut options = git2::FetchOptions::new();
     let mut repo = git2::build::RepoBuilder::new();
     let builder = repo
@@ -196,11 +220,12 @@ fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) {
 
     builder
         .fetch_options(options)
-        .clone(target, Path::new(&destination))
-        .unwrap();
+        .clone(target, Path::new(&destination))?;
+
+    Ok(())
 }
 
-fn main() {
+fn main() -> Result<(), Error> {
     println!("{BANNER}");
 
     let matches = args();
@@ -211,9 +236,17 @@ fn main() {
     let spinner = ProgressBar::new_spinner();
 
     if let Some(config_path) = matches.get_one::<PathBuf>("config") {
-        config.load_config(config_path);
+        config.load_config(config_path)?;
     } else {
-        config.open();
+        config.open()?;
+    }
+
+    match config.check() {
+        Ok(()) => {}
+        Err(error) => {
+            eprintln!("\x1b[1;31mError:\x1b[0m {error}");
+            std::process::exit(1)
+        }
     }
 
     if let Some(pwd) = config.ssh_pass_protected {
@@ -227,7 +260,7 @@ fn main() {
     for target in config.targets.iter() {
         let dest = format!("{0}/{1}.dorst", &path.display(), get_name(target));
         if Path::new(&dest).exists() {
-            fs::remove_dir_all(&dest).unwrap();
+            fs::remove_dir_all(&dest)?;
         }
 
         let message = format!("\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m", get_name(target));
@@ -240,11 +273,13 @@ fn main() {
                 target,
                 needs_pwd,
                 creds.ssh_password.clone(),
-            );
+            )?;
         } else {
-            clone_with_defaults(&dest, target);
+            clone_with_defaults(&dest, target)?;
         }
     }
 
     spinner.finish_with_message("\x1b[1;32mDONE\x1b[0m");
+
+    Ok(())
 }
