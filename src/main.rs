@@ -51,7 +51,7 @@ fn args() -> ArgMatches {
             .short('c')
             .long("config")
             .value_name("CONFIG")
-            .help("Custom config path")
+            .help("Config path")
             .value_parser(value_parser!(PathBuf)));
 
     matches.get_matches()
