@@ -89,6 +89,20 @@ impl Config {
 
         Ok(())
     }
+
+    fn check(&self) -> Result<(), Error> {
+        if self.ssh_key.is_some() && self.ssh_pass_protected.is_none() {
+            Err(Error::Config(
+                "Invalid configuration: Password status is missing".to_string(),
+            ))
+        } else if self.ssh_key.is_none() && self.ssh_pass_protected.is_some() {
+            Err(Error::Config(
+                "Invalid configuration: SSH key is missing".to_string(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 fn get_name(target: &str) -> &str {
@@ -225,6 +239,14 @@ fn main() -> Result<(), Error> {
         config.load_config(config_path)?;
     } else {
         config.open()?;
+    }
+
+    match config.check() {
+        Ok(()) => {}
+        Err(error) => {
+            eprintln!("\x1b[1;31mError:\x1b[0m {error}");
+            std::process::exit(1)
+        }
     }
 
     if let Some(pwd) = config.ssh_pass_protected {
