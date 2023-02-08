@@ -170,8 +170,10 @@ fn main() -> Result<(), Error> {
     }
 
     if let Some(pwd) = config.ssh_pass_protected {
-        creds.ssh_password = pass_prompt("Enter \x1b[1mSSH\x1b[0m key password:");
-        needs_pwd = pwd;
+        if config.ssh_pass_protected == Some(true) {
+            creds.ssh_password = pass_prompt("Enter \x1b[1mSSH\x1b[0m key password:");
+            needs_pwd = pwd;
+        }
     }
 
     spinner.enable_steady_tick(std::time::Duration::from_millis(90));
