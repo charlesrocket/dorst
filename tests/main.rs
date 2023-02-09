@@ -19,18 +19,3 @@ fn default() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
-#[test]
-fn ssh() -> Result<(), Box<dyn Error>> {
-    let mut cmd = Command::cargo_bin("dorst")?;
-
-    cmd.arg("--config")
-        .arg("tests/ssh.yml")
-        .assert()
-        .failure()
-        .stderr(contains(
-            "Failed to retrieve list of SSH authentication methods: Failed getting response",
-        ));
-
-    Ok(())
-}

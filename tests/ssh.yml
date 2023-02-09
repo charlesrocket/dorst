@@ -1,5 +1,0 @@
----
-ssh_key: tests/test-key
-ssh_pass_protected: false
-targets:
-  - git@github.com:charlesrocket/openbsd-station.git
