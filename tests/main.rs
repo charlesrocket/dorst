@@ -56,6 +56,21 @@ fn config_ssh_pwd() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
+fn config_empty() -> Result<(), Box<dyn Error>> {
+    let mut cmd = Command::cargo_bin("dorst")?;
+    let mut config = NamedTempFile::new()?;
+    config.write_all(files::EMPTY)?;
+
+    cmd.arg("--config")
+        .arg(config.path())
+        .assert()
+        .failure()
+        .stderr(contains("Error: Config"));
+
+    Ok(())
+}
+
+#[test]
 fn no_conf() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
 
