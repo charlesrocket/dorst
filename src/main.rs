@@ -149,8 +149,8 @@ fn main() -> Result<(), Error> {
 
     let matches = args();
     let mut config = Config::default();
-    let mut needs_pwd = false;
-    let mut creds = Credentials::default();
+    let mut needs_password = false;
+    let mut credentials = Credentials::default();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let spinner = ProgressBar::new_spinner();
 
@@ -170,8 +170,8 @@ fn main() -> Result<(), Error> {
 
     if let Some(pwd) = config.ssh_pass_protected {
         if config.ssh_pass_protected == Some(true) {
-            creds.ssh_password = pass_prompt("Enter \x1b[1mSSH\x1b[0m key password:");
-            needs_pwd = pwd;
+            credentials.ssh_password = pass_prompt("Enter \x1b[1mSSH\x1b[0m key password:");
+            needs_password = pwd;
         }
     }
 
@@ -179,9 +179,9 @@ fn main() -> Result<(), Error> {
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
     for target in config.targets.iter() {
-        let dest = format!("{0}/{1}.dorst", &path.display(), get_name(target));
-        if Path::new(&dest).exists() {
-            fs::remove_dir_all(&dest)?;
+        let destination = format!("{0}/{1}.dorst", &path.display(), get_name(target));
+        if Path::new(&destination).exists() {
+            fs::remove_dir_all(&destination)?;
         }
 
         let message = format!("\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m", get_name(target));
@@ -190,13 +190,13 @@ fn main() -> Result<(), Error> {
         if let Some(ref ssh_key) = config.ssh_key {
             clone_with_key(
                 ssh_key,
-                &dest,
+                &destination,
                 target,
-                needs_pwd,
-                creds.ssh_password.clone(),
+                needs_password,
+                credentials.ssh_password.clone(),
             )?;
         } else {
-            clone_with_defaults(&dest, target)?;
+            clone_with_defaults(&destination, target)?;
         }
     }
 
