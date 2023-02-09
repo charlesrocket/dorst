@@ -22,6 +22,8 @@ const SPINNER: [&str; 7] = [
     "\u{2591}", "\u{2592}", "\u{2593}", "\u{2591}", "\u{2592}", "\u{2593}", "\u{2591}",
 ];
 
+// TODO
+// Secure password storage!
 #[derive(Default)]
 struct Credentials {
     ssh_password: Option<String>,
@@ -76,6 +78,8 @@ fn pass_prompt(message: &str) -> Option<String> {
     }
 }
 
+// TODO
+// `is_user_pass_plaintext`?
 fn callbacks(
     ssh_key: Option<PathBuf>,
     needs_password: bool,
