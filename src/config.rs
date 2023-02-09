@@ -58,6 +58,9 @@ impl Config {
 
             let mut file = fs::File::create(&file_path)?;
             file.write_all(new_config.as_bytes())?;
+
+            let path: PathBuf = file_path.into();
+            self.load_config(&path)?;
         }
 
         Ok(())
