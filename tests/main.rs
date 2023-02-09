@@ -82,3 +82,18 @@ fn no_conf() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+#[test]
+fn bad_url() -> Result<(), Box<dyn Error>> {
+    let mut cmd = Command::cargo_bin("dorst")?;
+    let mut config = NamedTempFile::new()?;
+    config.write_all(files::BAD_URL)?;
+
+    cmd.arg("--config")
+        .arg(config.path())
+        .assert()
+        .failure()
+        .stderr(contains("unsupported URL protocol"));
+
+    Ok(())
+}
