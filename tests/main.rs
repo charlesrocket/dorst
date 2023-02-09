@@ -7,12 +7,15 @@ use predicates::str::contains;
 // Simulate responses
 
 #[test]
-fn main() -> Result<(), Box<dyn Error>> {
+fn default() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
 
     fs::create_dir_all("punk.dorst")?;
 
-    cmd.arg("--config").arg("tests/test.yml").assert().success();
+    cmd.arg("--config")
+        .arg("tests/default.yml")
+        .assert()
+        .success();
 
     Ok(())
 }
@@ -23,8 +26,11 @@ fn ssh() -> Result<(), Box<dyn Error>> {
 
     cmd.arg("--config")
         .arg("tests/ssh.yml")
-        .assert().failure()
-        .stderr(contains("Failed to retrieve list of SSH authentication methods: Failed getting response"));
+        .assert()
+        .failure()
+        .stderr(contains(
+            "Failed to retrieve list of SSH authentication methods: Failed getting response",
+        ));
 
     Ok(())
 }
