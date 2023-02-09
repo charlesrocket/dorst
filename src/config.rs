@@ -39,10 +39,7 @@ impl Config {
             .unwrap_or(format!("{}/.config/dorst", std::env::var("HOME")?));
 
         let file_path = format!("{xdg_config_home}/config.yaml");
-        if Path::new(&file_path).exists() {
-            let path: PathBuf = file_path.into();
-            self.load_config(&path)?;
-        } else {
+        if !Path::new(&file_path).exists() {
             let prompt = text_prompt("Enter backup target: ");
             let target: Vec<String> = prompt?.split(',').map(|x| x.to_string()).collect();
             let config = Self {
@@ -58,10 +55,10 @@ impl Config {
 
             let mut file = fs::File::create(&file_path)?;
             file.write_all(new_config.as_bytes())?;
-
-            let path: PathBuf = file_path.into();
-            self.load_config(&path)?;
         }
+
+        let path: PathBuf = file_path.into();
+        self.load_config(&path)?;
 
         Ok(())
     }
