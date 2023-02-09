@@ -54,3 +54,16 @@ fn config_ssh_pwd() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+#[test]
+fn no_conf() -> Result<(), Box<dyn Error>> {
+    let mut cmd = Command::cargo_bin("dorst")?;
+
+    cmd.arg("--config")
+        .arg("no-conf")
+        .assert()
+        .failure()
+        .stderr(contains("No such file or directory"));
+
+    Ok(())
+}
