@@ -182,25 +182,28 @@ fn main() -> Result<(), Error> {
     spinner.enable_steady_tick(std::time::Duration::from_millis(90));
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
-    for target in config.targets.iter() {
-        let destination = format!("{0}/{1}.dorst", &path.display(), get_name(target));
+    for target in config.targets {
+        let destination = format!("{0}/{1}.dorst", &path.display(), get_name(&target));
         if Path::new(&destination).exists() {
             fs::remove_dir_all(&destination)?;
         }
 
-        let message = format!("\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m", get_name(target));
+        let message = format!(
+            "\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m",
+            get_name(&target)
+        );
 
         spinner.set_message(message);
         if let Some(ref ssh_key) = config.ssh_key {
             clone_with_key(
                 ssh_key,
                 &destination,
-                target,
+                &target,
                 needs_password,
                 credentials.ssh_password.clone(),
             )?;
         } else {
-            clone_with_defaults(&destination, target)?;
+            clone_with_defaults(&destination, &target)?;
         }
     }
 
