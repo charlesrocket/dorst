@@ -54,7 +54,15 @@ fn args() -> ArgMatches {
             .long("config")
             .value_name("CONFIG")
             .help("Use alternative config file")
-            .value_parser(value_parser!(PathBuf)));
+            .value_parser(value_parser!(PathBuf)))
+        .arg(Arg::new("threads")
+            .short('t')
+            .long("threads")
+            .value_name("THREADS")
+            .help("Concurrency limit")
+            .value_parser(value_parser!(u8))
+            .hide_default_value(true)
+            .default_value("0"));
 
     matches.get_matches()
 }
@@ -95,6 +103,13 @@ fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) -> Result<
     Ok(())
 }
 
+fn set_threads(threads: u8) {
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(threads.into())
+        .build_global()
+        .unwrap();
+}
+
 fn main() -> Result<(), Error> {
     println!("{BANNER}");
 
@@ -103,7 +118,10 @@ fn main() -> Result<(), Error> {
     let mut needs_password = false;
     let mut credentials = Credentials::default();
     let path = matches.get_one::<PathBuf>("path").unwrap();
+    let threads = *matches.get_one::<u8>("threads").unwrap();
     let spinner = ProgressBar::new_spinner();
+
+    set_threads(threads);
 
     if let Some(config_path) = matches.get_one::<PathBuf>("config") {
         config.load_config(config_path)?;
