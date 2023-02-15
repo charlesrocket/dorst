@@ -184,7 +184,7 @@ fn main() -> Result<(), Error> {
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
     config.targets.par_iter().for_each(|target| {
-        let destination = format!("{}/{}.dorst", &path.display(), get_name(&target));
+        let destination = format!("{}/{}.dorst", &path.display(), get_name(target));
         if Path::new(&destination).exists() {
             match fs::remove_dir_all(&destination) {
                 Ok(_) => {}
@@ -195,17 +195,14 @@ fn main() -> Result<(), Error> {
             }
         }
 
-        let message = format!(
-            "\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m",
-            get_name(&target)
-        );
+        let message = format!("\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m", get_name(target));
 
         spinner.set_message(message);
         if let Some(ref ssh_key) = config.ssh_key {
             match clone_with_key(
                 ssh_key,
                 &destination,
-                &target,
+                target,
                 needs_password,
                 credentials.ssh_password.clone(),
             ) {
@@ -216,7 +213,7 @@ fn main() -> Result<(), Error> {
                 }
             };
         } else {
-            match clone_with_defaults(&destination, &target) {
+            match clone_with_defaults(&destination, target) {
                 Ok(_) => {}
                 Err(error) => {
                     eprintln!("\x1b[1;31mError:\x1b[0m {error}");
