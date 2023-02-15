@@ -195,9 +195,11 @@ fn main() -> Result<(), Error> {
             }
         }
 
-        let message = format!("\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m", get_name(target));
+        spinner.set_message(format!(
+            "\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m",
+            get_name(target)
+        ));
 
-        spinner.set_message(message);
         if let Some(ref ssh_key) = config.ssh_key {
             match clone_with_key(
                 ssh_key,
