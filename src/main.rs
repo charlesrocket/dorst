@@ -37,6 +37,13 @@ fn get_dir() -> String {
     current_dir.to_str().unwrap().to_string()
 }
 
+fn set_threads(threads: u8) {
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(threads.into())
+        .build_global()
+        .unwrap();
+}
+
 fn args() -> ArgMatches {
     let matches = Command::new(env!("CARGO_PKG_NAME"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -101,13 +108,6 @@ fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) -> Result<
         .clone(target, Path::new(&destination))?;
 
     Ok(())
-}
-
-fn set_threads(threads: u8) {
-    rayon::ThreadPoolBuilder::new()
-        .num_threads(threads.into())
-        .build_global()
-        .unwrap();
 }
 
 fn main() -> Result<(), Error> {
