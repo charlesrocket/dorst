@@ -41,7 +41,7 @@ impl Config {
         let file_path = format!("{xdg_config_home}/config.yaml");
         if !Path::new(&file_path).exists() {
             let prompt = text_prompt("Enter backup target: ");
-            let target: Vec<String> = prompt?.split(',').map(|x| x.to_string()).collect();
+            let target: Vec<String> = prompt?.split(',').map(ToString::to_string).collect();
             let config = Self {
                 ssh_key: None,
                 ssh_pass_protected: None,
