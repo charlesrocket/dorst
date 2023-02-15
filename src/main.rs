@@ -1,6 +1,7 @@
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use git2::{AutotagOption, Cred, RemoteCallbacks};
 use indicatif::{ProgressBar, ProgressStyle};
+use rayon::prelude::*;
 
 use std::{
     env, fs,
@@ -182,10 +183,16 @@ fn main() -> Result<(), Error> {
     spinner.enable_steady_tick(std::time::Duration::from_millis(90));
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
-    for target in config.targets {
+    config.targets.par_iter().for_each(|target| {
         let destination = format!("{}/{}.dorst", &path.display(), get_name(&target));
         if Path::new(&destination).exists() {
-            fs::remove_dir_all(&destination)?;
+            match fs::remove_dir_all(&destination) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("\x1b[1;31mError:\x1b[0m {error}");
+                    std::process::exit(1)
+                }
+            }
         }
 
         let message = format!(
@@ -195,17 +202,29 @@ fn main() -> Result<(), Error> {
 
         spinner.set_message(message);
         if let Some(ref ssh_key) = config.ssh_key {
-            clone_with_key(
+            match clone_with_key(
                 ssh_key,
                 &destination,
                 &target,
                 needs_password,
                 credentials.ssh_password.clone(),
-            )?;
+            ) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("\x1b[1;31mError:\x1b[0m {error}");
+                    std::process::exit(1)
+                }
+            };
         } else {
-            clone_with_defaults(&destination, &target)?;
+            match clone_with_defaults(&destination, &target) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("\x1b[1;31mError:\x1b[0m {error}");
+                    std::process::exit(1)
+                }
+            };
         }
-    }
+    });
 
     spinner.finish_with_message("\x1b[1;32mDONE\x1b[0m");
 
