@@ -183,7 +183,7 @@ fn main() -> Result<(), Error> {
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
     for target in config.targets {
-        let destination = format!("{0}/{1}.dorst", &path.display(), get_name(&target));
+        let destination = format!("{}/{}.dorst", &path.display(), get_name(&target));
         if Path::new(&destination).exists() {
             fs::remove_dir_all(&destination)?;
         }
