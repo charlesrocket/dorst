@@ -1,7 +1,7 @@
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use git2::{AutotagOption, Cred, RemoteCallbacks};
 use indicatif::{ProgressBar, ProgressStyle};
-use rayon::iter::{{IntoParallelRefIterator, ParallelIterator}};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use std::{
     env, fs,
