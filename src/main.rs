@@ -111,17 +111,13 @@ fn set_threads(threads: u8) {
 }
 
 fn main() -> Result<(), Error> {
-    println!("{BANNER}");
-
     let matches = args();
-    let mut config = Config::default();
-    let mut needs_password = false;
-    let mut credentials = Credentials::default();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let threads = *matches.get_one::<u8>("threads").unwrap();
     let spinner = ProgressBar::new_spinner();
-
-    set_threads(threads);
+    let mut config = Config::default();
+    let mut credentials = Credentials::default();
+    let mut needs_password = false;
 
     if let Some(config_path) = matches.get_one::<PathBuf>("config") {
         config.load_config(config_path)?;
@@ -129,13 +125,9 @@ fn main() -> Result<(), Error> {
         config.open()?;
     }
 
-    match config.check() {
-        Ok(()) => {}
-        Err(error) => {
-            eprintln!("\x1b[1;31mError:\x1b[0m {error}");
-            std::process::exit(1)
-        }
-    }
+    println!("{BANNER}");
+    set_threads(threads);
+    config.check()?;
 
     if let Some(pwd) = config.ssh_pass_protected {
         if config.ssh_pass_protected == Some(true) {
