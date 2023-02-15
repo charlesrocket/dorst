@@ -77,60 +77,6 @@ fn pass_prompt(message: &str) -> Option<String> {
     }
 }
 
-// TODO
-// `is_user_pass_plaintext`?
-fn callbacks(
-    ssh_key: Option<PathBuf>,
-    needs_password: bool,
-    password: Option<String>,
-) -> RemoteCallbacks<'static> {
-    let mut callbacks = RemoteCallbacks::new();
-    callbacks.credentials(move |_url, username_from_url, allowed_types| {
-        if allowed_types.is_ssh_key() {
-            if let Some(ssh_key) = &ssh_key {
-                let key = shellexpand::tilde(ssh_key.to_str().unwrap()).into_owned();
-                let key_path = PathBuf::from(&key);
-                if needs_password {
-                    if let Some(pwd) = &password {
-                        Cred::ssh_key(username_from_url.unwrap(), None, &key_path, Some(pwd))
-                    } else {
-                        Cred::default()
-                    }
-                } else {
-                    Cred::ssh_key(username_from_url.unwrap(), None, &key_path, None)
-                }
-            } else {
-                Cred::default()
-            }
-        } else {
-            Cred::default()
-        }
-    });
-
-    callbacks
-}
-
-fn clone_with_key(
-    key: &Path,
-    destination: &str,
-    target: &str,
-    needs_password: bool,
-    password: Option<String>,
-) -> Result<(), Error> {
-    let ssh_key = Path::new(&key);
-    let callbacks = callbacks(Some(ssh_key.into()), needs_password, password);
-    clone(destination, target, callbacks)?;
-
-    Ok(())
-}
-
-fn clone_with_defaults(destination: &str, target: &str) -> Result<(), Error> {
-    let callbacks = callbacks(None, false, None);
-    clone(destination, target, callbacks)?;
-
-    Ok(())
-}
-
 fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) -> Result<(), Error> {
     let mut options = git2::FetchOptions::new();
     let mut repo = git2::build::RepoBuilder::new();
@@ -184,7 +130,9 @@ fn main() -> Result<(), Error> {
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
     config.targets.par_iter().for_each(|target| {
+        let mut callbacks = RemoteCallbacks::new();
         let destination = format!("{}/{}.dorst", &path.display(), get_name(target));
+
         if Path::new(&destination).exists() {
             match fs::remove_dir_all(&destination) {
                 Ok(_) => {}
@@ -201,28 +149,34 @@ fn main() -> Result<(), Error> {
         ));
 
         if let Some(ref ssh_key) = config.ssh_key {
-            match clone_with_key(
-                ssh_key,
-                &destination,
-                target,
-                needs_password,
-                credentials.ssh_password.clone(),
-            ) {
-                Ok(_) => {}
-                Err(error) => {
-                    eprintln!("\x1b[1;31mError:\x1b[0m {error}");
-                    std::process::exit(1)
+            callbacks.credentials(|_url, username_from_url, allowed_types| {
+                // TODO
+                // `is_user_pass_plaintext`?
+                if allowed_types.is_ssh_key() {
+                    let key = shellexpand::tilde(ssh_key.to_str().unwrap()).into_owned();
+                    let key_path = PathBuf::from(&key);
+                    if needs_password {
+                        if let Some(pwd) = credentials.ssh_password.clone() {
+                            Cred::ssh_key(username_from_url.unwrap(), None, &key_path, Some(&pwd))
+                        } else {
+                            Cred::default()
+                        }
+                    } else {
+                        Cred::ssh_key(username_from_url.unwrap(), None, &key_path, None)
+                    }
+                } else {
+                    Cred::default()
                 }
-            };
-        } else {
-            match clone_with_defaults(&destination, target) {
-                Ok(_) => {}
-                Err(error) => {
-                    eprintln!("\x1b[1;31mError:\x1b[0m {error}");
-                    std::process::exit(1)
-                }
-            };
+            });
         }
+
+        match clone(&destination, target, callbacks) {
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("\x1b[1;31mError:\x1b[0m {error}");
+                std::process::exit(1)
+            }
+        };
     });
 
     spinner.finish_with_message("\x1b[1;32mDONE\x1b[0m");
