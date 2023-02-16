@@ -3,7 +3,7 @@ use serde_yaml::{self};
 
 use std::{
     fs,
-    io::{Read, Write},
+    io::Write,
     path::{Path, PathBuf},
 };
 
@@ -20,11 +20,7 @@ pub struct Config {
 
 impl Config {
     fn read(path: &PathBuf) -> Result<Self, Error> {
-        let mut file = fs::File::open(path)?;
-        let mut config_data = String::new();
-
-        file.read_to_string(&mut config_data)?;
-
+        let config_data = fs::read_to_string(path)?;
         let config: Self = serde_yaml::from_str(&config_data)?;
 
         Ok(Self {
