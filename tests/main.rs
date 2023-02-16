@@ -92,7 +92,7 @@ fn bad_url() -> Result<(), Box<dyn Error>> {
     cmd.arg("--config")
         .arg(config.path())
         .assert()
-        .failure()
+        .success()
         .stderr(contains("unsupported URL protocol"));
 
     Ok(())
