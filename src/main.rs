@@ -166,11 +166,17 @@ fn main() -> Result<(), Error> {
                     let key = shellexpand::tilde(ssh_key.to_str().unwrap()).into_owned();
                     let key_path = PathBuf::from(&key);
                     if needs_password {
-                        if let Some(pwd) = credentials.ssh_password.clone() {
-                            Cred::ssh_key(username_from_url.unwrap(), None, &key_path, Some(&pwd))
-                        } else {
-                            Cred::default()
-                        }
+                        credentials.ssh_password.clone().map_or_else(
+                            || Cred::default(),
+                            |pwd| {
+                                Cred::ssh_key(
+                                    username_from_url.unwrap(),
+                                    None,
+                                    &key_path,
+                                    Some(&pwd),
+                                )
+                            },
+                        )
                     } else {
                         Cred::ssh_key(username_from_url.unwrap(), None, &key_path, None)
                     }
