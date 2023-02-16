@@ -170,12 +170,12 @@ fn main() -> Result<(), Error> {
                         credentials
                             .ssh_password
                             .clone()
-                            .map_or_else(Cred::default, |pwd| {
+                            .map_or_else(Cred::default, |passphrase| {
                                 Cred::ssh_key(
                                     username_from_url.unwrap(),
                                     None,
                                     &key_path,
-                                    Some(&pwd),
+                                    Some(&passphrase),
                                 )
                             })
                     } else {
