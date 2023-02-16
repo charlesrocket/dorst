@@ -155,8 +155,7 @@ fn main() -> Result<(), Error> {
         }
 
         spinner.set_message(format!(
-            "\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m",
-            target_name
+            "\x1b[36mpulling\x1b[0m \x1b[33m{target_name}\x1b[0m"
         ));
 
         if let Some(ref ssh_key) = config.ssh_key {
