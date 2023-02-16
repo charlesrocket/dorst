@@ -142,6 +142,7 @@ fn main() -> Result<(), Error> {
     config.targets.par_iter().for_each(|target| {
         let mut callbacks = RemoteCallbacks::new();
         let destination = format!("{}/{}.dorst", &path.display(), get_name(target));
+        let target_name = get_name(target);
 
         if Path::new(&destination).exists() {
             match fs::remove_dir_all(&destination) {
@@ -155,7 +156,7 @@ fn main() -> Result<(), Error> {
 
         spinner.set_message(format!(
             "\x1b[36mpulling\x1b[0m \x1b[33m{}\x1b[0m",
-            get_name(target)
+            target_name
         ));
 
         if let Some(ref ssh_key) = config.ssh_key {
@@ -183,8 +184,7 @@ fn main() -> Result<(), Error> {
         match clone(&destination, target, callbacks) {
             Ok(_) => {}
             Err(error) => {
-                eprintln!("\x1b[1;31mError:\x1b[0m {error}");
-                std::process::exit(1)
+                eprintln!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
             }
         };
     });
