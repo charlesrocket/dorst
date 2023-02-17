@@ -114,6 +114,8 @@ fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) -> Result<
 }
 
 fn main() -> Result<(), Error> {
+    println!("{BANNER}");
+
     let matches = args();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let threads = *matches.get_one::<u8>("threads").unwrap();
@@ -128,7 +130,6 @@ fn main() -> Result<(), Error> {
         config.open()?;
     }
 
-    println!("{BANNER}");
     set_threads(threads);
     config.check()?;
 
