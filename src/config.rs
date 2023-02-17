@@ -70,16 +70,14 @@ impl Config {
     }
 
     pub fn check(&self) -> Result<(), Error> {
-        if self.ssh_key.is_some() && self.ssh_pass_protected.is_none() {
-            Err(Error::Config(
+        match (&self.ssh_key, &self.ssh_pass_protected) {
+            (Some(_), None) => Err(Error::Config(
                 "Invalid configuration: Password status is missing".to_string(),
-            ))
-        } else if self.ssh_key.is_none() && self.ssh_pass_protected.is_some() {
-            Err(Error::Config(
+            )),
+            (None, Some(_)) => Err(Error::Config(
                 "Invalid configuration: SSH key is missing".to_string(),
-            ))
-        } else {
-            Ok(())
+            )),
+            _ => Ok(()),
         }
     }
 }
