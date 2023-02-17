@@ -31,9 +31,10 @@ impl Config {
 
     pub fn open(&mut self) -> Result<(), Error> {
         let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
-            .unwrap_or(format!("{}/.config/dorst", std::env::var("HOME")?));
+            .unwrap_or(format!("{}/.config", std::env::var("HOME")?));
 
-        let file_path = format!("{xdg_config_home}/config.yaml");
+        let config_path = format!("{xdg_config_home}/dorst");
+        let file_path = format!("{config_path}/config.yaml");
         if !Path::new(&file_path).exists() {
             let prompt = text_prompt("Enter backup target: ");
             let target: Vec<String> = prompt?.split(',').map(ToString::to_string).collect();
@@ -44,8 +45,8 @@ impl Config {
             };
 
             let new_config = serde_yaml::to_string(&config)?;
-            if !Path::new(&xdg_config_home).exists() {
-                fs::create_dir(xdg_config_home)?;
+            if !Path::new(&config_path).exists() {
+                fs::create_dir_all(config_path)?;
             }
 
             let mut file = fs::File::create(&file_path)?;
