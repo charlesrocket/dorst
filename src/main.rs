@@ -88,8 +88,7 @@ fn text_prompt(message: &str) -> Result<String, Error> {
 }
 
 fn pass_prompt(message: &str) -> Option<String> {
-    let pass = rpassword::prompt_password(message);
-    match pass {
+    match rpassword::prompt_password(message) {
         Ok(pass) => Some(pass),
         _ => None,
     }
