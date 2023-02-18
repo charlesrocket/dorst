@@ -97,8 +97,8 @@ fn pass_prompt(message: &str) -> Option<String> {
 
 fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) -> Result<(), Error> {
     let mut options = git2::FetchOptions::new();
-    let mut repo = git2::build::RepoBuilder::new();
-    let builder = repo
+    let mut repo_builder = git2::build::RepoBuilder::new();
+    let builder = repo_builder
         .bare(true)
         .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
 
