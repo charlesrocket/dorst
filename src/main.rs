@@ -49,30 +49,37 @@ fn set_threads(threads: u8) {
 fn args() -> ArgMatches {
     let matches = Command::new(env!("CARGO_PKG_NAME"))
         .author(env!("CARGO_PKG_AUTHORS"))
-        .about(BANNER)
         .version(env!("CARGO_PKG_VERSION"))
-        .help_template("{about-with-newline}Codebase backup utility\n\n{usage-heading} {usage}\n\n{all-args}{after-help}")
-        .arg(Arg::new("path")
-            .action(ArgAction::Set)
-            .value_name("PATH")
-            .help("Backup destination")
-            .value_parser(value_parser!(PathBuf))
-            .hide_default_value(true)
-            .default_value(get_dir()))
-        .arg(Arg::new("config")
-            .short('c')
-            .long("config")
-            .value_name("CONFIG")
-            .help("Use alternative config file")
-            .value_parser(value_parser!(PathBuf)))
-        .arg(Arg::new("threads")
-            .short('t')
-            .long("threads")
-            .value_name("THREADS")
-            .help("Concurrency limit")
-            .value_parser(value_parser!(u8))
-            .hide_default_value(true)
-            .default_value("0"));
+        .help_template(
+            "Codebase backup utility\n\n{usage-heading} {usage}\n\n{all-args}{after-help}",
+        )
+        .arg(
+            Arg::new("path")
+                .action(ArgAction::Set)
+                .value_name("PATH")
+                .help("Backup destination")
+                .value_parser(value_parser!(PathBuf))
+                .hide_default_value(true)
+                .default_value(get_dir()),
+        )
+        .arg(
+            Arg::new("config")
+                .short('c')
+                .long("config")
+                .value_name("CONFIG")
+                .help("Use alternative config file")
+                .value_parser(value_parser!(PathBuf)),
+        )
+        .arg(
+            Arg::new("threads")
+                .short('t')
+                .long("threads")
+                .value_name("THREADS")
+                .help("Concurrency limit")
+                .value_parser(value_parser!(u8))
+                .hide_default_value(true)
+                .default_value("0"),
+        );
 
     matches.get_matches()
 }
