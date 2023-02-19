@@ -26,6 +26,9 @@ const SPINNER: [&str; 7] = [
     "\u{2591}", "\u{2592}", "\u{2593}", "\u{2591}", "\u{2592}", "\u{2593}", "\u{2591}",
 ];
 
+const BAR_1: [&str; 3] = ["\u{25a0}", "\u{25a0}", "\u{25a1}"];
+const BAR_2: [&str; 3] = ["+", "+", "-"];
+
 #[derive(Default)]
 struct Credentials {
     ssh_password: Option<String>,
@@ -147,10 +150,20 @@ fn main() -> Result<(), Error> {
         }
     }
 
+    let bar_chars = if cfg!(unix) {
+        if env::var_os("DISPLAY").is_some() {
+            BAR_1
+        } else {
+            BAR_2
+        }
+    } else {
+        BAR_2
+    };
+
     let indicat = Arc::new(MultiProgress::new());
     let indicat_template = ProgressStyle::with_template("{bar:23}")
         .unwrap()
-        .progress_chars("■■□");
+        .progress_chars(&bar_chars.join(""));
 
     let progress_bar = indicat.add(ProgressBar::new(config.count));
     let spinner = indicat.add(ProgressBar::new_spinner());
