@@ -166,14 +166,12 @@ fn main() -> Result<(), Error> {
         .progress_chars(&bar_chars.join(""));
 
     let progress_bar = indicat.add(ProgressBar::new(config.count));
-    let spinner = indicat.add(ProgressBar::new_spinner());
 
     progress_bar.set_style(indicat_template);
     progress_bar.set_position(0);
-    spinner.enable_steady_tick(std::time::Duration::from_millis(90));
-    spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
     config.targets.par_iter().for_each(|target| {
+        let spinner = indicat.add(ProgressBar::new_spinner());
         let mut callbacks = RemoteCallbacks::new();
         let destination = format!("{}/{}.dorst", &path.display(), get_name(target));
         let target_name = get_name(target);
@@ -188,6 +186,8 @@ fn main() -> Result<(), Error> {
             }
         }
 
+        spinner.enable_steady_tick(std::time::Duration::from_millis(90));
+        spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
         spinner.set_message(format!(
             "\x1b[96mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m"
         ));
@@ -228,13 +228,11 @@ fn main() -> Result<(), Error> {
         };
 
         progress_bar.inc(1);
-        spinner.set_message(format!(
+        spinner.finish_with_message(format!(
             "\x1b[96mpulled\x1b[0m \x1b[93m{target_name}\x1b[0m"
         ));
     });
 
     progress_bar.finish();
-    spinner.finish_with_message("\x1b[1;32mDONE\x1b[0m");
-
     Ok(())
 }
