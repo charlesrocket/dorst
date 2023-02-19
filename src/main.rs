@@ -106,18 +106,18 @@ fn pass_prompt(message: &str) -> Option<String> {
 }
 
 fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) -> Result<(), Error> {
-    let mut options = git2::FetchOptions::new();
+    let mut fetch_options = git2::FetchOptions::new();
     let mut repo_builder = git2::build::RepoBuilder::new();
     let builder = repo_builder
         .bare(true)
         .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
 
-    options
+    fetch_options
         .remote_callbacks(callbacks)
         .download_tags(AutotagOption::All);
 
     builder
-        .fetch_options(options)
+        .fetch_options(fetch_options)
         .clone(target, Path::new(&destination))?;
 
     Ok(())
