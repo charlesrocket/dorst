@@ -41,9 +41,11 @@ impl Config {
         let config_path = format!("{xdg_config_home}/dorst");
         let file_path = format!("{config_path}/config.yaml");
         if !Path::new(&file_path).exists() {
-            println!("DORST: Initialization");
+            println!("\x1b[7m DORST: Initialization \x1b[0m");
 
-            let prompt = text_prompt("Enter backup target: ");
+            let prompt =
+                text_prompt("\x1b[7m Enter backup targets  \n separated by a comma: \x1b[0m ");
+
             let target: Vec<String> = prompt?.split(',').map(ToString::to_string).collect();
             let config = Self {
                 ssh_key: None,
