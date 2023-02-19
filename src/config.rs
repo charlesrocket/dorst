@@ -91,4 +91,13 @@ impl Config {
             _ => Ok(()),
         }
     }
+
+    pub fn check_targets(&self) {
+        for target in &self.targets {
+            if !target.starts_with("http") && self.ssh_key.is_none() {
+                eprintln!("\x1b[1;31mError:\x1b[0m {target} - missing SSH authentication");
+                std::process::exit(1)
+            }
+        }
+    }
 }
