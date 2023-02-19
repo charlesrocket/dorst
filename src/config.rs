@@ -15,17 +15,22 @@ pub struct Config {
     #[serde(skip_serializing)]
     pub ssh_pass_protected: Option<bool>,
     pub targets: Vec<String>,
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
+    pub count: u64,
 }
 
 impl Config {
     fn read(path: &PathBuf) -> Result<Self, Error> {
         let config_data = fs::read_to_string(path)?;
         let config: Self = serde_yaml::from_str(&config_data)?;
+        let config_count = config.targets.len().try_into().unwrap();
 
         Ok(Self {
             ssh_key: config.ssh_key,
             ssh_pass_protected: config.ssh_pass_protected,
             targets: config.targets,
+            count: config_count,
         })
     }
 
@@ -36,12 +41,17 @@ impl Config {
         let config_path = format!("{xdg_config_home}/dorst");
         let file_path = format!("{config_path}/config.yaml");
         if !Path::new(&file_path).exists() {
-            let prompt = text_prompt("Enter backup target: ");
+            println!("\x1b[7m DORST: Initialization \x1b[0m");
+
+            let prompt =
+                text_prompt("\x1b[7m Enter backup targets  \n separated by a comma: \x1b[0m ");
+
             let target: Vec<String> = prompt?.split(',').map(ToString::to_string).collect();
             let config = Self {
                 ssh_key: None,
                 ssh_pass_protected: None,
                 targets: target,
+                count: 0,
             };
 
             let new_config = serde_yaml::to_string(&config)?;
@@ -65,6 +75,7 @@ impl Config {
         self.ssh_key = config.ssh_key;
         self.ssh_pass_protected = config.ssh_pass_protected;
         self.targets = config.targets;
+        self.count = config.count;
 
         Ok(())
     }
@@ -78,6 +89,16 @@ impl Config {
                 "Invalid configuration: SSH key is missing".to_string(),
             )),
             _ => Ok(()),
+        }
+    }
+
+    pub fn check_targets(&self) {
+        for target in &self.targets {
+            if (target.starts_with("git@") || target.starts_with("ssh:")) && self.ssh_key.is_none()
+            {
+                eprintln!("\x1b[1;31mError:\x1b[0m {target} - missing SSH authentication");
+                std::process::exit(1)
+            }
         }
     }
 }

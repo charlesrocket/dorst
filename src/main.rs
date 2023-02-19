@@ -2,13 +2,14 @@
 
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use git2::{AutotagOption, Cred, RemoteCallbacks};
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use std::{
     env, fs,
     io::Write,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 mod config;
@@ -125,7 +126,6 @@ fn main() -> Result<(), Error> {
     let matches = args();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let threads = *matches.get_one::<u8>("threads").unwrap();
-    let spinner = ProgressBar::new_spinner();
     let mut config = Config::default();
     let mut credentials = Credentials::default();
     let mut needs_password = false;
@@ -138,14 +138,25 @@ fn main() -> Result<(), Error> {
 
     set_threads(threads);
     config.check()?;
+    config.check_targets();
 
     if let Some(pwd) = config.ssh_pass_protected {
         if config.ssh_pass_protected == Some(true) {
-            credentials.ssh_password = pass_prompt("Enter \x1b[1mSSH\x1b[0m key password:");
+            credentials.ssh_password = pass_prompt("\x1b[7mEnter SSH key password:\x1b[0m");
             needs_password = pwd;
         }
     }
 
+    let indicat = Arc::new(MultiProgress::new());
+    let indicat_template = ProgressStyle::with_template("{bar:23}")
+        .unwrap()
+        .progress_chars("■■□");
+
+    let progress_bar = indicat.add(ProgressBar::new(config.count));
+    let spinner = indicat.add(ProgressBar::new_spinner());
+
+    progress_bar.set_style(indicat_template);
+    progress_bar.set_position(0);
     spinner.enable_steady_tick(std::time::Duration::from_millis(90));
     spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
 
@@ -165,7 +176,7 @@ fn main() -> Result<(), Error> {
         }
 
         spinner.set_message(format!(
-            "\x1b[36mpulling\x1b[0m \x1b[33m{target_name}\x1b[0m"
+            "\x1b[96mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m"
         ));
 
         if let Some(ref ssh_key) = config.ssh_key {
@@ -202,9 +213,15 @@ fn main() -> Result<(), Error> {
                 eprintln!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
             }
         };
+
+        progress_bar.inc(1);
+        spinner.set_message(format!(
+            "\x1b[96mpulled\x1b[0m \x1b[93m{target_name}\x1b[0m"
+        ));
     });
 
-    spinner.finish_with_message("\x1b[1;32mDONE\x1b[0m");
+    progress_bar.finish();
+    spinner.finish_with_message("\x1b[1;92mDONE\x1b[0m");
 
     Ok(())
 }
