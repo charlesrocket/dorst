@@ -221,7 +221,7 @@ fn main() -> Result<(), Error> {
     });
 
     progress_bar.finish();
-    spinner.finish_with_message("\x1b[1;92mDONE\x1b[0m");
+    spinner.finish_with_message("\x1b[1;32mDONE\x1b[0m");
 
     Ok(())
 }
