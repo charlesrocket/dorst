@@ -83,6 +83,13 @@ fn args() -> ArgMatches {
                 .value_parser(value_parser!(u8))
                 .hide_default_value(true)
                 .default_value("0"),
+        )
+        .arg(
+            Arg::new("silent")
+                .short('s')
+                .long("silent")
+                .help("Do not output status")
+                .action(ArgAction::SetTrue),
         );
 
     matches.get_matches()
@@ -129,6 +136,7 @@ fn main() -> Result<(), Error> {
     let matches = args();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let threads = *matches.get_one::<u8>("threads").unwrap();
+    let silent = matches.get_flag("silent");
     let mut config = Config::default();
     let mut credentials = Credentials::default();
     let mut needs_password = false;
@@ -186,11 +194,13 @@ fn main() -> Result<(), Error> {
             }
         }
 
-        spinner.enable_steady_tick(std::time::Duration::from_millis(90));
-        spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
-        spinner.set_message(format!(
-            "\x1b[96mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m"
-        ));
+        if !silent {
+            spinner.enable_steady_tick(std::time::Duration::from_millis(90));
+            spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
+            spinner.set_message(format!(
+                "\x1b[96mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m"
+            ));
+        }
 
         if let Some(ref ssh_key) = config.ssh_key {
             callbacks.credentials(|_url, username_from_url, allowed_types| {
@@ -228,7 +238,11 @@ fn main() -> Result<(), Error> {
         };
 
         progress_bar.inc(1);
-        spinner.finish_with_message(format!("\x1b[96mdone\x1b[0m \x1b[93m{target_name}\x1b[0m"));
+
+        if !silent {
+            spinner
+                .finish_with_message(format!("\x1b[96mdone\x1b[0m \x1b[93m{target_name}\x1b[0m"));
+        }
     });
 
     progress_bar.finish();
