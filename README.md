@@ -14,7 +14,7 @@ cargo install dorst
 
 ### Usage
 
-Run `dorst` to create a configuration file in `$HOME/.config/dorst` and set the first backup target.
+Run `dorst` to create a configuration file in `$HOME/.config/dorst` and set backup targets.
 
 `dorst /tmp/src-backups`
 
