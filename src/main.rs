@@ -232,5 +232,6 @@ fn main() -> Result<(), Error> {
     });
 
     progress_bar.finish();
+
     Ok(())
 }
