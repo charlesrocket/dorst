@@ -83,10 +83,10 @@ impl Config {
     pub fn check(&self) -> Result<(), Error> {
         match (&self.ssh_key, &self.ssh_pass_protected) {
             (Some(_), None) => Err(Error::Config(
-                "Invalid configuration: Password status is missing".to_string(),
+                "Invalid configuration: Password status is missing".to_owned(),
             )),
             (None, Some(_)) => Err(Error::Config(
-                "Invalid configuration: SSH key is missing".to_string(),
+                "Invalid configuration: SSH key is missing".to_owned(),
             )),
             _ => Ok(()),
         }

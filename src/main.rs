@@ -40,7 +40,7 @@ fn get_name(target: &str) -> &str {
 
 fn get_dir() -> String {
     let current_dir = env::current_dir().unwrap();
-    current_dir.to_str().unwrap().to_string()
+    current_dir.to_str().unwrap().to_owned()
 }
 
 fn set_threads(threads: u8) {
@@ -95,7 +95,7 @@ fn text_prompt(message: &str) -> Result<String, Error> {
     std::io::stdout().flush()?;
     std::io::stdin().read_line(&mut line)?;
 
-    Ok(line.trim().to_string())
+    Ok(line.trim().to_owned())
 }
 
 fn pass_prompt(message: &str) -> Option<String> {
