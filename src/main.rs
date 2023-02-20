@@ -52,7 +52,6 @@ fn set_threads(threads: u8) {
 
 fn args() -> ArgMatches {
     let matches = Command::new(env!("CARGO_PKG_NAME"))
-        .author(env!("CARGO_PKG_AUTHORS"))
         .version(env!("CARGO_PKG_VERSION"))
         .help_template(
             "Codebase backup utility\n\n{usage-heading} {usage}\n\n{all-args}{after-help}",
