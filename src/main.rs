@@ -228,9 +228,7 @@ fn main() -> Result<(), Error> {
         };
 
         progress_bar.inc(1);
-        spinner.finish_with_message(format!(
-            "\x1b[96mpulled\x1b[0m \x1b[93m{target_name}\x1b[0m"
-        ));
+        spinner.finish_with_message(format!("\x1b[96mdone\x1b[0m \x1b[93m{target_name}\x1b[0m"));
     });
 
     progress_bar.finish();
