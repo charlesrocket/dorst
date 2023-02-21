@@ -131,7 +131,7 @@ fn clone(
 
         match copy_dir(destination, &cache) {
             Ok(_) => {
-                fs::remove_dir_all(&destination)?;
+                fs::remove_dir_all(destination)?;
             }
 
             Err(error) => {
