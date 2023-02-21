@@ -193,7 +193,7 @@ fn main() -> Result<(), Error> {
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let threads = *matches.get_one::<u8>("threads").unwrap();
     let silent = matches.get_flag("silent");
-    let cache_dir = std::env::var("XDG_CONFIG_HOME").unwrap_or_else(|_| "/tmp".to_owned());
+    let cache_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_owned());
     let mut config = Config::default();
     let mut credentials = Credentials::default();
     let mut needs_password = false;
