@@ -1,4 +1,9 @@
-use std::{error::Error, fs::create_dir_all, io::Write, process::Command};
+use std::{
+    error::Error,
+    fs::{create_dir_all, File},
+    io::Write,
+    process::Command,
+};
 
 use assert_cmd::prelude::*;
 use predicates::str::contains;
@@ -14,6 +19,9 @@ fn default() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
 
     create_dir_all("punk.dorst")?;
+
+    let mut file = File::create("punk.dorst/test.txt")?;
+    file.write_all(b"test")?;
 
     cmd.arg("--config")
         .arg("tests/default.yml")
