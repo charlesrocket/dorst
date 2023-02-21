@@ -111,20 +111,77 @@ fn pass_prompt(message: &str) -> Option<String> {
     }
 }
 
-fn clone(destination: &str, target: &str, callbacks: RemoteCallbacks) -> Result<(), Error> {
+fn clone(
+    destination: &str,
+    target: &str,
+    cache_dir: &str,
+    callbacks: RemoteCallbacks,
+) -> Result<(), Error> {
+    let cache = format!("{cache_dir}/{}-cache", get_name(target));
     let mut fetch_options = git2::FetchOptions::new();
     let mut repo_builder = git2::build::RepoBuilder::new();
     let builder = repo_builder
         .bare(true)
         .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
 
+    if Path::new(&destination).exists() {
+        if Path::new(&cache).exists() {
+            fs::remove_dir_all(&cache)?;
+        }
+
+        match copy_dir(destination, &cache) {
+            Ok(_) => {
+                fs::remove_dir_all(&destination)?;
+            }
+
+            Err(error) => {
+                eprintln!("\x1b[1;31mError:\x1b[0m {error}");
+                std::process::exit(1)
+            }
+        }
+    }
+
     fetch_options
         .remote_callbacks(callbacks)
         .download_tags(AutotagOption::All);
 
-    builder
+    match builder
         .fetch_options(fetch_options)
-        .clone(target, Path::new(&destination))?;
+        .clone(target, Path::new(&destination))
+    {
+        Ok(_) => {
+            if Path::new(&cache).exists() {
+                fs::remove_dir_all(&cache)?;
+            }
+        }
+
+        Err(error) => {
+            if Path::new(&cache).exists() {
+                copy_dir(&cache, destination)?;
+            }
+
+            eprintln!("\x1b[1;31mError:\x1b[0m {error}");
+        }
+    }
+
+    Ok(())
+}
+
+fn copy_dir(src: &str, dst: &str) -> Result<(), Error> {
+    fs::create_dir_all(dst)?;
+
+    for file in fs::read_dir(src)? {
+        let file = file?;
+        let path = file.path();
+
+        if path.is_dir() {
+            let sub_dst = format!("{}/{}", dst, path.file_name().unwrap().to_str().unwrap());
+            copy_dir(path.to_str().unwrap(), &sub_dst)?;
+        } else {
+            let dst_file = format!("{}/{}", dst, path.file_name().unwrap().to_str().unwrap());
+            fs::copy(&path, &dst_file)?;
+        }
+    }
 
     Ok(())
 }
@@ -136,6 +193,7 @@ fn main() -> Result<(), Error> {
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let threads = *matches.get_one::<u8>("threads").unwrap();
     let silent = matches.get_flag("silent");
+    let cache_dir = std::env::var("XDG_CONFIG_HOME").unwrap_or_else(|_| "/tmp".to_owned());
     let mut config = Config::default();
     let mut credentials = Credentials::default();
     let mut needs_password = false;
@@ -183,16 +241,6 @@ fn main() -> Result<(), Error> {
         let destination = format!("{}/{}.dorst", &path.display(), get_name(target));
         let target_name = get_name(target);
 
-        if Path::new(&destination).exists() {
-            match fs::remove_dir_all(&destination) {
-                Ok(_) => {}
-                Err(error) => {
-                    eprintln!("\x1b[1;31mError:\x1b[0m {error}");
-                    std::process::exit(1)
-                }
-            }
-        }
-
         if !silent {
             spinner.enable_steady_tick(std::time::Duration::from_millis(90));
             spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
@@ -229,7 +277,7 @@ fn main() -> Result<(), Error> {
             });
         }
 
-        match clone(&destination, target, callbacks) {
+        match clone(&destination, target, &cache_dir, callbacks) {
             Ok(_) => {}
             Err(error) => {
                 eprintln!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
