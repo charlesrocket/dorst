@@ -1,7 +1,6 @@
 #![forbid(unsafe_code)]
 
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
-use git2::{AutotagOption, Cred, RemoteCallbacks};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
@@ -14,6 +13,8 @@ use std::{
 
 mod config;
 mod error;
+mod git;
+mod util;
 
 use crate::{config::Config, error::Error};
 
@@ -123,124 +124,6 @@ fn bar_chars() -> [&'static str; 3] {
     }
 }
 
-fn callbacks(
-    ssh_key: Option<PathBuf>,
-    needs_password: bool,
-    password: Option<String>,
-) -> RemoteCallbacks<'static> {
-    let mut callbacks = RemoteCallbacks::new();
-
-    callbacks.credentials(move |_url, username_from_url, allowed_types| {
-        if allowed_types.is_ssh_key() {
-            ssh_key.as_ref().map_or_else(Cred::default, |ssh_key| {
-                let key = shellexpand::tilde(ssh_key.to_str().unwrap()).into_owned();
-                let key_path = PathBuf::from(&key);
-
-                if needs_password {
-                    password.as_ref().map_or_else(Cred::default, |pwd| {
-                        Cred::ssh_key(username_from_url.unwrap(), None, &key_path, Some(pwd))
-                    })
-                } else {
-                    Cred::ssh_key(username_from_url.unwrap(), None, &key_path, None)
-                }
-            })
-        } else {
-            Cred::default()
-        }
-    });
-
-    callbacks
-}
-
-fn clone(
-    destination: &str,
-    target: &str,
-    cache_dir: &str,
-    callbacks: RemoteCallbacks,
-) -> Result<(), Error> {
-    let cache = format!("{cache_dir}/{}-cache", get_name(target));
-    let mut fetch_options = git2::FetchOptions::new();
-    let mut repo_builder = git2::build::RepoBuilder::new();
-    let builder = repo_builder
-        .bare(true)
-        .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
-
-    if Path::new(&destination).exists() {
-        if Path::new(&cache).exists() {
-            fs::remove_dir_all(&cache)?;
-        }
-
-        match copy_dir(destination, &cache) {
-            Ok(_) => {
-                fs::remove_dir_all(destination)?;
-            }
-
-            Err(error) => {
-                error.to_string();
-                std::process::exit(1)
-            }
-        }
-    }
-
-    fetch_options
-        .remote_callbacks(callbacks)
-        .download_tags(AutotagOption::All);
-
-    let mirror = match builder
-        .fetch_options(fetch_options)
-        .clone(target, Path::new(&destination))
-    {
-        Ok(repo) => {
-            if Path::new(&cache).exists() {
-                fs::remove_dir_all(&cache)?;
-            }
-
-            Ok(repo)
-        }
-
-        Err(error) => Err({
-            if Path::new(&cache).exists() {
-                copy_dir(&cache, destination)?;
-            }
-
-            Error::CloneFailed(error.to_string())
-        }),
-    };
-
-    let repo = mirror?;
-    let remote = repo.find_remote("origin")?;
-    let remote_branch = remote.name().unwrap();
-    let remote_branch_ref = repo.resolve_reference_from_short_name(remote_branch)?;
-    let remote_branch_name = remote_branch_ref
-        .name()
-        .ok_or_else(|| Error::CloneFailed("No default branch".to_owned()));
-
-    let head = remote_branch_name?.to_owned();
-
-    repo.set_head(&head)?;
-
-    Ok(())
-}
-
-fn copy_dir(src: &str, dst: &str) -> Result<(), Error> {
-    fs::create_dir_all(dst)?;
-
-    for file in fs::read_dir(src)? {
-        let src_file = file?;
-        let path = src_file.path();
-
-        if path.is_dir() {
-            let sub_dst = format!("{}/{}", dst, path.file_name().unwrap().to_str().unwrap());
-            copy_dir(path.to_str().unwrap(), &sub_dst)?;
-        } else {
-            let dst_file = format!("{}/{}", dst, path.file_name().unwrap().to_str().unwrap());
-            fs::copy(&path, &dst_file)?;
-        }
-    }
-
-    Ok(())
-}
-
 fn main() -> Result<(), Error> {
     println!("{BANNER}");
 
@@ -284,7 +167,7 @@ fn main() -> Result<(), Error> {
 
     config.targets.par_iter().for_each(|target| {
         let spinner = indicat.add(ProgressBar::new_spinner());
-        let mut callbacks = callbacks(config.ssh_key.clone(), needs_password, credentials.ssh_password.clone());
+        let mut callbacks = git::callbacks(config.ssh_key.clone(), needs_password, credentials.ssh_password.clone());
         let destination = format!("{}/{}.dorst", &path.display(), get_name(target));
         let target_name = get_name(target);
 
@@ -319,7 +202,7 @@ fn main() -> Result<(), Error> {
             });
         }
 
-        match clone(&destination, target, &cache_dir, callbacks) {
+        match git::clone(&destination, target, &cache_dir, callbacks) {
             Ok(_) => {
                 if !silent {
                     spinner.finish_with_message(format!(
