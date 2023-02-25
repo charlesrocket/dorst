@@ -262,7 +262,7 @@ fn main() -> Result<(), Error> {
             spinner.enable_steady_tick(std::time::Duration::from_millis(90));
             spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
             spinner.set_message(format!(
-                "\x1b[96mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m"
+                "\x1b[96mstarting\x1b[0m \x1b[93m{target_name}\x1b[0m"
             ));
         }
 
@@ -291,6 +291,29 @@ fn main() -> Result<(), Error> {
                 } else {
                     Cred::default()
                 }
+            });
+        }
+
+        if !silent {
+            callbacks.transfer_progress(|stats| {
+                if stats.received_objects() == stats.total_objects() {
+                    spinner.set_message(format!(
+                        "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m resolving deltas {}/{}",
+                        stats.indexed_deltas(),
+                        stats.total_deltas()
+                    ));
+
+                } else if stats.total_objects() > 0 {
+                    spinner.set_message(format!(
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} objects ({}) in {} bytes",
+                        stats.received_objects(),
+                        stats.total_objects(),
+                        stats.indexed_objects(),
+                        stats.received_bytes()
+                    ));
+                }
+
+                true
             });
         }
 
