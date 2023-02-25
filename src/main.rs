@@ -172,7 +172,7 @@ fn clone(
     let remote_branch_ref = repo.resolve_reference_from_short_name(remote_branch)?;
     let remote_branch_name = remote_branch_ref
         .name()
-        .ok_or_else(|| Error::CloneFailed("No default branch".to_string()));
+        .ok_or_else(|| Error::CloneFailed("No default branch".to_owned()));
 
     let head = remote_branch_name?.to_owned();
 
