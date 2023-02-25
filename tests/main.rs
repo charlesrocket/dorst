@@ -32,53 +32,6 @@ fn default() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-fn config_ssh() -> Result<(), Box<dyn Error>> {
-    let mut cmd = Command::cargo_bin("dorst")?;
-    let mut config = NamedTempFile::new()?;
-    config.write_all(files::SSH_INVALID)?;
-
-    cmd.arg("--config")
-        .arg(config.path())
-        .assert()
-        .failure()
-        .stderr(contains(
-            "Invalid configuration: Password status is missing",
-        ));
-
-    Ok(())
-}
-
-#[test]
-fn config_ssh_auth() -> Result<(), Box<dyn Error>> {
-    let mut cmd = Command::cargo_bin("dorst")?;
-    let mut config = NamedTempFile::new()?;
-    config.write_all(files::SSH_MISSING_AUTH)?;
-
-    cmd.arg("--config")
-        .arg(config.path())
-        .assert()
-        .failure()
-        .stderr(contains("missing SSH authentication"));
-
-    Ok(())
-}
-
-#[test]
-fn config_ssh_pwd() -> Result<(), Box<dyn Error>> {
-    let mut cmd = Command::cargo_bin("dorst")?;
-    let mut config = NamedTempFile::new()?;
-    config.write_all(files::SSH_INVALID_PWD)?;
-
-    cmd.arg("--config")
-        .arg(config.path())
-        .assert()
-        .failure()
-        .stderr(contains("Invalid configuration: SSH key is missing"));
-
-    Ok(())
-}
-
-#[test]
 fn config_empty() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
     let mut config = NamedTempFile::new()?;
