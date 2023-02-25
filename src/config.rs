@@ -10,10 +10,6 @@ use crate::{error::Error, text_prompt};
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Config {
-    #[serde(skip_serializing)]
-    pub ssh_key: Option<PathBuf>,
-    #[serde(skip_serializing)]
-    pub ssh_pass_protected: Option<bool>,
     pub targets: Vec<String>,
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -27,8 +23,6 @@ impl Config {
         let config_count = config.targets.len().try_into().unwrap();
 
         Ok(Self {
-            ssh_key: config.ssh_key,
-            ssh_pass_protected: config.ssh_pass_protected,
             targets: config.targets,
             count: config_count,
         })
@@ -48,8 +42,6 @@ impl Config {
 
             let target: Vec<String> = prompt?.split(',').map(ToString::to_string).collect();
             let config = Self {
-                ssh_key: None,
-                ssh_pass_protected: None,
                 targets: target,
                 count: 0,
             };
@@ -72,39 +64,8 @@ impl Config {
     pub fn load_config(&mut self, path: &PathBuf) -> Result<(), Error> {
         let config = Self::read(path)?;
 
-        self.ssh_key = config.ssh_key;
-        self.ssh_pass_protected = config.ssh_pass_protected;
         self.targets = config.targets;
         self.count = config.count;
-
-        Ok(())
-    }
-
-    pub fn check(&self) -> Result<(), Error> {
-        self.check_targets()?;
-
-        match (&self.ssh_key, &self.ssh_pass_protected) {
-            (Some(_), None) => Err(Error::Config(
-                "Invalid configuration: Password status is missing".to_owned(),
-            )),
-
-            (None, Some(_)) => Err(Error::Config(
-                "Invalid configuration: SSH key is missing".to_owned(),
-            )),
-
-            _ => Ok(()),
-        }
-    }
-
-    pub fn check_targets(&self) -> Result<(), Error> {
-        for target in &self.targets {
-            if (target.starts_with("git@") || target.starts_with("ssh:")) && self.ssh_key.is_none()
-            {
-                return Err(Error::Config(
-                    "{target} - missing SSH authentication".to_owned(),
-                ));
-            }
-        }
 
         Ok(())
     }

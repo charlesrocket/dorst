@@ -1,9 +1,6 @@
 use git2::{AutotagOption, Cred, RemoteCallbacks};
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path};
 
 use crate::{error::Error, util::copy_dir};
 
@@ -11,27 +8,13 @@ fn get_name(target: &str) -> &str {
     target.rsplit('/').next().unwrap_or(target)
 }
 
-pub fn callbacks(
-    ssh_key: Option<PathBuf>,
-    needs_password: bool,
-    password: Option<String>,
-) -> RemoteCallbacks<'static> {
+pub fn callbacks() -> RemoteCallbacks<'static> {
     let mut callbacks = RemoteCallbacks::new();
+    let git_config = git2::Config::open_default().unwrap();
 
-    callbacks.credentials(move |_url, username_from_url, allowed_types| {
-        if allowed_types.is_ssh_key() {
-            ssh_key.as_ref().map_or_else(Cred::default, |ssh_key| {
-                let key = shellexpand::tilde(ssh_key.to_str().unwrap()).into_owned();
-                let key_path = PathBuf::from(&key);
-
-                if needs_password {
-                    password.as_ref().map_or_else(Cred::default, |pwd| {
-                        Cred::ssh_key(username_from_url.unwrap(), None, &key_path, Some(pwd))
-                    })
-                } else {
-                    Cred::ssh_key(username_from_url.unwrap(), None, &key_path, None)
-                }
-            })
+    callbacks.credentials(move |url, username_from_url, allowed_types| {
+        if allowed_types.is_user_pass_plaintext() {
+            Cred::credential_helper(&git_config, url, username_from_url)
         } else {
             Cred::default()
         }

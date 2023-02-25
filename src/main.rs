@@ -30,11 +30,6 @@ const SPINNER: [&str; 7] = [
 const BAR_1: [&str; 3] = ["\u{25a0}", "\u{25a0}", "\u{25a1}"];
 const BAR_2: [&str; 3] = ["+", "+", "-"];
 
-#[derive(Default)]
-struct Credentials {
-    ssh_password: Option<String>,
-}
-
 fn get_name(target: &str) -> &str {
     target.rsplit('/').next().unwrap_or(target)
 }
@@ -105,13 +100,6 @@ fn text_prompt(message: &str) -> Result<String, Error> {
     Ok(line.trim().to_owned())
 }
 
-fn pass_prompt(message: &str) -> Option<String> {
-    match rpassword::prompt_password(message) {
-        Ok(pass) => Some(pass),
-        _ => None,
-    }
-}
-
 fn bar_chars() -> [&'static str; 3] {
     if cfg!(unix) {
         if env::var_os("DISPLAY").is_some() {
@@ -132,8 +120,6 @@ fn main() -> Result<(), Error> {
     let threads = *matches.get_one::<u8>("threads").unwrap();
     let silent = matches.get_flag("silent");
     let mut config = Config::default();
-    let mut credentials = Credentials::default();
-    let mut needs_password = false;
     let cache_dir = format!(
         "{}/dorst",
         std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_owned())
@@ -146,14 +132,6 @@ fn main() -> Result<(), Error> {
     }
 
     set_threads(threads);
-    config.check()?;
-
-    if let Some(pwd) = config.ssh_pass_protected {
-        if config.ssh_pass_protected == Some(true) {
-            credentials.ssh_password = pass_prompt("\x1b[7mEnter SSH key password:\x1b[0m");
-            needs_password = pwd;
-        }
-    }
 
     let indicat = Arc::new(MultiProgress::new());
     let indicat_template = ProgressStyle::with_template("{bar:23}")
@@ -167,7 +145,7 @@ fn main() -> Result<(), Error> {
 
     config.targets.par_iter().for_each(|target| {
         let spinner = indicat.add(ProgressBar::new_spinner());
-        let mut callbacks = git::callbacks(config.ssh_key.clone(), needs_password, credentials.ssh_password.clone());
+        let mut callbacks = git::callbacks();
         let destination = format!("{}/{}.dorst", &path.display(), get_name(target));
         let target_name = get_name(target);
 
