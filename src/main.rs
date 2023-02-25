@@ -135,7 +135,7 @@ fn clone(
             }
 
             Err(error) => {
-                eprintln!("\x1b[1;31mError:\x1b[0m {error}");
+                error.to_string();
                 std::process::exit(1)
             }
         }
@@ -145,24 +145,38 @@ fn clone(
         .remote_callbacks(callbacks)
         .download_tags(AutotagOption::All);
 
-    match builder
+    let mirror = match builder
         .fetch_options(fetch_options)
         .clone(target, Path::new(&destination))
     {
-        Ok(_) => {
+        Ok(repo) => {
             if Path::new(&cache).exists() {
                 fs::remove_dir_all(&cache)?;
             }
+
+            Ok(repo)
         }
 
-        Err(error) => {
+        Err(error) => Err({
             if Path::new(&cache).exists() {
                 copy_dir(&cache, destination)?;
             }
 
-            eprintln!("\x1b[1;31mError:\x1b[0m {error}");
-        }
-    }
+            Error::CloneFailed(error.to_string())
+        }),
+    };
+
+    let repo = mirror?;
+    let remote = repo.find_remote("origin")?;
+    let remote_branch = format!("refs/remotes/{}/{}", remote.name().unwrap(), "HEAD");
+    let remote_branch_ref = repo.resolve_reference_from_short_name(&remote_branch)?;
+    let remote_branch_name = remote_branch_ref
+        .name()
+        .ok_or_else(|| Error::CloneFailed("No default branch".to_string()));
+
+    let head = remote_branch_name?.to_owned();
+
+    repo.set_head(&head)?;
 
     Ok(())
 }
