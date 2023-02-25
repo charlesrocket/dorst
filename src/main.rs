@@ -295,18 +295,21 @@ fn main() -> Result<(), Error> {
         }
 
         match clone(&destination, target, &cache_dir, callbacks) {
-            Ok(_) => {}
+            Ok(_) => {
+                if !silent {
+                    spinner.finish_with_message(format!(
+                        "\x1b[96mdone\x1b[0m \x1b[93m{target_name}\x1b[0m"
+                    ));
+                }
+            }
+
             Err(error) => {
-                eprintln!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
+                let err = format!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
+                spinner.finish_with_message(err);
             }
         };
 
         progress_bar.inc(1);
-
-        if !silent {
-            spinner
-                .finish_with_message(format!("\x1b[96mdone\x1b[0m \x1b[93m{target_name}\x1b[0m"));
-        }
     });
 
     progress_bar.finish();
