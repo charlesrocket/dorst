@@ -81,24 +81,31 @@ impl Config {
     }
 
     pub fn check(&self) -> Result<(), Error> {
+        self.check_targets()?;
+
         match (&self.ssh_key, &self.ssh_pass_protected) {
             (Some(_), None) => Err(Error::Config(
                 "Invalid configuration: Password status is missing".to_owned(),
             )),
+
             (None, Some(_)) => Err(Error::Config(
                 "Invalid configuration: SSH key is missing".to_owned(),
             )),
+
             _ => Ok(()),
         }
     }
 
-    pub fn check_targets(&self) {
+    pub fn check_targets(&self) -> Result<(), Error> {
         for target in &self.targets {
             if (target.starts_with("git@") || target.starts_with("ssh:")) && self.ssh_key.is_none()
             {
-                eprintln!("\x1b[1;31mError:\x1b[0m {target} - missing SSH authentication");
-                std::process::exit(1)
+                return Err(Error::Config(
+                    "{target} - missing SSH authentication".to_owned(),
+                ));
             }
         }
+
+        Ok(())
     }
 }

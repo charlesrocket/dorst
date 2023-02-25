@@ -235,7 +235,6 @@ fn main() -> Result<(), Error> {
 
     set_threads(threads);
     config.check()?;
-    config.check_targets();
 
     if let Some(pwd) = config.ssh_pass_protected {
         if config.ssh_pass_protected == Some(true) {
