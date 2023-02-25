@@ -111,6 +111,18 @@ fn pass_prompt(message: &str) -> Option<String> {
     }
 }
 
+fn bar_chars() -> [&'static str; 3] {
+    if cfg!(unix) {
+        if env::var_os("DISPLAY").is_some() {
+            BAR_1
+        } else {
+            BAR_2
+        }
+    } else {
+        BAR_2
+    }
+}
+
 fn clone(
     destination: &str,
     target: &str,
@@ -232,20 +244,10 @@ fn main() -> Result<(), Error> {
         }
     }
 
-    let bar_chars = if cfg!(unix) {
-        if env::var_os("DISPLAY").is_some() {
-            BAR_1
-        } else {
-            BAR_2
-        }
-    } else {
-        BAR_2
-    };
-
     let indicat = Arc::new(MultiProgress::new());
     let indicat_template = ProgressStyle::with_template("{bar:23}")
         .unwrap()
-        .progress_chars(&bar_chars.join(""));
+        .progress_chars(&bar_chars().join(""));
 
     let progress_bar = indicat.add(ProgressBar::new(config.count));
 
