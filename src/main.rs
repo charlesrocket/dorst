@@ -168,7 +168,7 @@ fn clone(
 
     let repo = mirror?;
     let remote = repo.find_remote("origin")?;
-    let remote_branch = format!("refs/remotes/{}/{}", remote.name().unwrap(), "HEAD");
+    let remote_branch = remote.name().unwrap();
     let remote_branch_ref = repo.resolve_reference_from_short_name(&remote_branch)?;
     let remote_branch_name = remote_branch_ref
         .name()
