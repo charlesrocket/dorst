@@ -123,6 +123,35 @@ fn bar_chars() -> [&'static str; 3] {
     }
 }
 
+fn callbacks(
+    ssh_key: Option<PathBuf>,
+    needs_password: bool,
+    password: Option<String>,
+) -> RemoteCallbacks<'static> {
+    let mut callbacks = RemoteCallbacks::new();
+
+    callbacks.credentials(move |_url, username_from_url, allowed_types| {
+        if allowed_types.is_ssh_key() {
+            ssh_key.as_ref().map_or_else(Cred::default, |ssh_key| {
+                let key = shellexpand::tilde(ssh_key.to_str().unwrap()).into_owned();
+                let key_path = PathBuf::from(&key);
+
+                if needs_password {
+                    password.as_ref().map_or_else(Cred::default, |pwd| {
+                        Cred::ssh_key(username_from_url.unwrap(), None, &key_path, Some(pwd))
+                    })
+                } else {
+                    Cred::ssh_key(username_from_url.unwrap(), None, &key_path, None)
+                }
+            })
+        } else {
+            Cred::default()
+        }
+    });
+
+    callbacks
+}
+
 fn clone(
     destination: &str,
     target: &str,
@@ -255,7 +284,7 @@ fn main() -> Result<(), Error> {
 
     config.targets.par_iter().for_each(|target| {
         let spinner = indicat.add(ProgressBar::new_spinner());
-        let mut callbacks = RemoteCallbacks::new();
+        let mut callbacks = callbacks(config.ssh_key.clone(), needs_password, credentials.ssh_password.clone());
         let destination = format!("{}/{}.dorst", &path.display(), get_name(target));
         let target_name = get_name(target);
 
@@ -265,34 +294,6 @@ fn main() -> Result<(), Error> {
             spinner.set_message(format!(
                 "\x1b[96mstarting\x1b[0m \x1b[93m{target_name}\x1b[0m"
             ));
-        }
-
-        if let Some(ref ssh_key) = config.ssh_key {
-            callbacks.credentials(|_url, username_from_url, allowed_types| {
-                // TODO
-                // `is_user_pass_plaintext`?
-                if allowed_types.is_ssh_key() {
-                    let key = shellexpand::tilde(ssh_key.to_str().unwrap()).into_owned();
-                    let key_path = PathBuf::from(&key);
-                    if needs_password {
-                        credentials
-                            .ssh_password
-                            .clone()
-                            .map_or_else(Cred::default, |passphrase| {
-                                Cred::ssh_key(
-                                    username_from_url.unwrap(),
-                                    None,
-                                    &key_path,
-                                    Some(&passphrase),
-                                )
-                            })
-                    } else {
-                        Cred::ssh_key(username_from_url.unwrap(), None, &key_path, None)
-                    }
-                } else {
-                    Cred::default()
-                }
-            });
         }
 
         if !silent {
