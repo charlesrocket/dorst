@@ -18,24 +18,13 @@ Run `dorst` to create a configuration file in `$HOME/.config/dorst` and set back
 
 `dorst /tmp/src-backups`
 
-Example without authentication:
+Example:
 
 ```yaml
 ---
 targets:
   - https://github.com/charlesrocket/dotfiles
-  - https://github.com/charlesrocket/freebsd-server
-```
-
-Add `ssh_key` path and `ssh_pass_protected` boolean to authenticate with SSH key:
-
-```yaml
----
-ssh_key: ~/private-ssh-key
-ssh_pass_protected: true
-targets:
   - https://github.com/charlesrocket/freebsd-station
-  - git@github.com:charlesrocket/openbsd-station
 ```
 
 The `-c`/`--config` flag allows the usage of an alterantive configuration file.
