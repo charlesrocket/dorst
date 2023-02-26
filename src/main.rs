@@ -22,9 +22,7 @@ const BANNER: &str = "\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u
                       \u{2588} \u{2588} \u{2588} \u{2580}\u{2584} \u{2588} \u{2580}\u{2580}\u{2584}\u{2588}\u{2584}\u{2584}\u{2580}\u{2588}\u{2588} \u{2588}\u{2588}\n\
                       \u{2588}\u{2584}\u{2584}\u{2588}\u{2588}\u{2588}\u{2584}\u{2584}\u{2588}\u{2588}\u{2584}\u{2588}\u{2584}\u{2584}\u{2588}\u{2584}\u{2584}\u{2584}\u{2588}\u{2588}\u{2584}\u{2588}\u{2588}";
 
-const SPINNER: [&str; 7] = [
-    "\u{2591}", "\u{2592}", "\u{2593}", "\u{2591}", "\u{2592}", "\u{2593}", "\u{2591}",
-];
+const SPINNER: [&str; 2] = ["\u{2591}", "\u{2592}"];
 
 const BAR_1: [&str; 3] = ["\u{25a0}", "\u{25a0}", "\u{25a1}"];
 const BAR_2: [&str; 3] = ["+", "+", "-"];
@@ -129,7 +127,7 @@ fn main() -> Result<(), Error> {
         let target_name = get_name(&target);
 
         if !silent {
-            spinner.enable_steady_tick(std::time::Duration::from_millis(90));
+            spinner.tick();
             spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
             spinner.set_message(format!(
                 "\x1b[96mstarting\x1b[0m \x1b[93m{target_name}\x1b[0m"
