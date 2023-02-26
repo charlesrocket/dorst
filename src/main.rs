@@ -2,7 +2,6 @@
 
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use std::{
     env, fs,
@@ -39,13 +38,6 @@ fn get_dir() -> String {
     current_dir.to_str().unwrap().to_owned()
 }
 
-fn set_threads(threads: u8) {
-    rayon::ThreadPoolBuilder::new()
-        .num_threads(threads.into())
-        .build_global()
-        .unwrap();
-}
-
 fn args() -> ArgMatches {
     let matches = Command::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
@@ -68,16 +60,6 @@ fn args() -> ArgMatches {
                 .value_name("CONFIG")
                 .help("Use alternative config file")
                 .value_parser(value_parser!(PathBuf)),
-        )
-        .arg(
-            Arg::new("threads")
-                .short('t')
-                .long("threads")
-                .value_name("THREADS")
-                .help("Concurrency limit")
-                .value_parser(value_parser!(u8))
-                .hide_default_value(true)
-                .default_value("0"),
         )
         .arg(
             Arg::new("silent")
@@ -117,7 +99,6 @@ fn main() -> Result<(), Error> {
 
     let matches = args();
     let path = matches.get_one::<PathBuf>("path").unwrap();
-    let threads = *matches.get_one::<u8>("threads").unwrap();
     let silent = matches.get_flag("silent");
     let mut config = Config::default();
     let cache_dir = format!(
@@ -131,8 +112,6 @@ fn main() -> Result<(), Error> {
         config.open()?;
     }
 
-    set_threads(threads);
-
     let indicat = Arc::new(MultiProgress::new());
     let indicat_template = ProgressStyle::with_template("{bar:23}")
         .unwrap()
@@ -143,11 +122,11 @@ fn main() -> Result<(), Error> {
     progress_bar.set_style(indicat_template);
     progress_bar.set_position(0);
 
-    config.targets.par_iter().for_each(|target| {
+    for target in config.targets {
         let spinner = indicat.add(ProgressBar::new_spinner());
         let mut callbacks = git::callbacks();
-        let destination = format!("{}/{}.dorst", &path.display(), get_name(target));
-        let target_name = get_name(target);
+        let destination = format!("{}/{}.dorst", &path.display(), get_name(&target));
+        let target_name = get_name(&target);
 
         if !silent {
             spinner.enable_steady_tick(std::time::Duration::from_millis(90));
@@ -180,7 +159,7 @@ fn main() -> Result<(), Error> {
             });
         }
 
-        match git::clone(&destination, target, &cache_dir, callbacks) {
+        match git::clone(&destination, &target, &cache_dir, callbacks) {
             Ok(_) => {
                 if !silent {
                     spinner.finish_with_message(format!(
@@ -196,7 +175,7 @@ fn main() -> Result<(), Error> {
         };
 
         progress_bar.inc(1);
-    });
+    }
 
     progress_bar.finish();
 
