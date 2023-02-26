@@ -121,7 +121,7 @@ fn main() -> Result<(), Error> {
     progress_bar.set_position(0);
 
     for target in config.targets {
-        let spinner = indicat.add(ProgressBar::new_spinner());
+        let spinner = indicat.insert_before(&progress_bar, ProgressBar::new_spinner());
         let mut callbacks = git::callbacks();
         let destination = format!("{}/{}.dorst", &path.display(), get_name(&target));
         let target_name = get_name(&target);
