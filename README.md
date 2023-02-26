@@ -14,7 +14,7 @@ cargo install dorst
 
 ### Usage
 
-Run `dorst` to create a configuration file in `$HOME/.config/dorst` and set backup targets. Dørts will use `gitconfig`'s credential helper for the authentication if needed.
+To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` and set backup targets. Dørts will use `gitconfig`'s credential helper for the authentication if needed.
 
 `dorst /tmp/src-backups`
 
