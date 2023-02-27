@@ -14,7 +14,7 @@ cargo install dorst
 
 ### Usage
 
-To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` and set backup targets (the current directory is the default destination). Dørts will use `gitconfig`'s credential helper for authentication if needed.
+To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` and set backup targets (the current directory is the default destination). Dørts can query `ssh-agent` and use `gitconfig`'s credential helper for authentication if needed.
 
 `dorst ~/backups/src`
 
@@ -25,6 +25,7 @@ Example:
 targets:
   - https://github.com/charlesrocket/dotfiles
   - https://github.com/charlesrocket/freebsd-station
+  - git@gitlab.com:charlesrocket/openbsd-station.git
 ```
 
 The `-c`/`--config` flag allows the usage of an alterantive configuration file.
