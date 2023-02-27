@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use indicatif::{HumanBytes, MultiProgress, ProgressBar, ProgressStyle};
 
 use std::{
     env, fs,
@@ -147,11 +147,11 @@ fn main() -> Result<(), Error> {
 
                 } else if stats.total_objects() > 0 {
                     spinner.set_message(format!(
-                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} objects ({}) in {} bytes",
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} objects ({}) in {}",
                         stats.received_objects(),
                         stats.total_objects(),
                         stats.indexed_objects(),
-                        stats.received_bytes()
+                        HumanBytes(stats.received_bytes().try_into().unwrap())
                     ));
                 }
 
