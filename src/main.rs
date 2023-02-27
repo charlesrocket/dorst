@@ -111,10 +111,12 @@ fn main() -> Result<(), Error> {
     }
 
     let indicat = Arc::new(MultiProgress::new());
-    let indicat_template = ProgressStyle::with_template("{bar:23}")
+    let indicat_template = ProgressStyle::with_template("{bar:23}\n{msg}")
         .unwrap()
         .progress_chars(&bar_chars().join(""));
 
+    let mut err_count = 0;
+    let mut compl_count = 0;
     let progress_bar = indicat.add(ProgressBar::new(config.count));
 
     progress_bar.set_style(indicat_template);
@@ -159,6 +161,7 @@ fn main() -> Result<(), Error> {
 
         match git::clone(&destination, &target, &cache_dir, callbacks) {
             Ok(_) => {
+                compl_count += 1;
                 if !silent {
                     spinner.finish_with_message(format!(
                         "\x1b[96mdone\x1b[0m \x1b[93m{target_name}\x1b[0m"
@@ -168,6 +171,7 @@ fn main() -> Result<(), Error> {
 
             Err(error) => {
                 let err = format!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
+                err_count += 1;
                 spinner.finish_with_message(err);
             }
         };
@@ -175,7 +179,9 @@ fn main() -> Result<(), Error> {
         progress_bar.inc(1);
     }
 
-    progress_bar.finish();
+    progress_bar.finish_with_message(format!(
+        "COMPLETED: \x1b[92m{compl_count}\x1b[0m \x1b[37m/\x1b[0m \x1b[91m{err_count}\x1b[0m"
+    ));
 
     if Path::new(&cache_dir).exists() {
         fs::remove_dir_all(&cache_dir)?;
