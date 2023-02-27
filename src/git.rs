@@ -16,7 +16,10 @@ pub fn callbacks() -> RemoteCallbacks<'static> {
         if allowed_types.is_user_pass_plaintext() {
             Cred::credential_helper(&git_config, url, username_from_url)
         } else if allowed_types.is_ssh_key() {
-            Cred::ssh_key_from_agent(username_from_url.unwrap())
+            match username_from_url {
+                Some(username) => Cred::ssh_key_from_agent(username),
+                None => Err(git2::Error::from_str("Could not extract username from URL")),
+            }
         } else {
             Cred::default()
         }
