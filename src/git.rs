@@ -15,6 +15,8 @@ pub fn callbacks() -> RemoteCallbacks<'static> {
     callbacks.credentials(move |url, username_from_url, allowed_types| {
         if allowed_types.is_user_pass_plaintext() {
             Cred::credential_helper(&git_config, url, username_from_url)
+        } else if allowed_types.is_ssh_key() {
+            Cred::ssh_key_from_agent(username_from_url.unwrap())
         } else {
             Cred::default()
         }
