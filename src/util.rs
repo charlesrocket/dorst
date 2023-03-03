@@ -1,8 +1,7 @@
+use anyhow::Result;
 use std::fs;
 
-use crate::error::Error;
-
-pub fn copy_dir(src: &str, dst: &str) -> Result<(), Error> {
+pub fn copy_dir(src: &str, dst: &str) -> Result<()> {
     fs::create_dir_all(dst)?;
 
     for file in fs::read_dir(src)? {

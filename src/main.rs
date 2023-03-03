@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+use anyhow::Result;
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use indicatif::{HumanBytes, MultiProgress, ProgressBar, ProgressStyle};
 
@@ -11,11 +12,10 @@ use std::{
 };
 
 mod config;
-mod error;
 mod git;
 mod util;
 
-use crate::{config::Config, error::Error};
+use crate::config::Config;
 
 const BANNER: &str = "\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\n\
                       \u{2588} \u{2584}\u{2580}\u{2588}\u{2580}\u{2584}\u{2584}\u{2580}\u{2588} \u{2584}\u{2584}\u{2580}\u{2588} \u{2584}\u{2584}\u{2588}\u{2584} \u{2584}\u{2588}\n\
@@ -70,7 +70,7 @@ fn args() -> ArgMatches {
     matches.get_matches()
 }
 
-fn text_prompt(message: &str) -> Result<String, Error> {
+fn text_prompt(message: &str) -> Result<String> {
     let mut line = String::new();
     print!("{message}");
 
@@ -92,7 +92,7 @@ fn bar_chars() -> [&'static str; 3] {
     }
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> Result<()> {
     println!("{BANNER}");
 
     let matches = args();

@@ -1,8 +1,9 @@
+use anyhow::{anyhow, Result};
 use git2::{AutotagOption, Cred, RemoteCallbacks};
 
 use std::{fs, path::Path};
 
-use crate::{error::Error, util::copy_dir};
+use crate::util::copy_dir;
 
 fn get_name(target: &str) -> &str {
     target.rsplit('/').next().unwrap_or(target)
@@ -33,7 +34,7 @@ pub fn clone(
     target: &str,
     cache_dir: &str,
     callbacks: RemoteCallbacks,
-) -> Result<(), Error> {
+) -> Result<()> {
     let cache = format!("{cache_dir}/{}-cache", get_name(target));
     let mut fetch_options = git2::FetchOptions::new();
     let mut repo_builder = git2::build::RepoBuilder::new();
@@ -79,7 +80,7 @@ pub fn clone(
                 copy_dir(&cache, destination)?;
             }
 
-            Error::CloneFailed(error.to_string())
+            anyhow!(error)
         }),
     };
 
@@ -89,7 +90,7 @@ pub fn clone(
     let remote_branch_ref = repo.resolve_reference_from_short_name(remote_branch)?;
     let remote_branch_name = remote_branch_ref
         .name()
-        .ok_or_else(|| Error::CloneFailed("No default branch".to_owned()));
+        .ok_or_else(|| anyhow!("No default branch"));
 
     let head = remote_branch_name?.to_owned();
 

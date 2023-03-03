@@ -17,6 +17,7 @@ strip = true
 lto = true
 
 [dependencies]
+anyhow = "1.0"
 clap = { version = "4.1", features = ["string"] }
 git2 = "0.16"
 indicatif = "0.17"

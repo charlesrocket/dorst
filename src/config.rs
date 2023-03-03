@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 use std::{
@@ -6,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{error::Error, text_prompt};
+use crate::text_prompt;
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Config {
@@ -17,7 +18,7 @@ pub struct Config {
 }
 
 impl Config {
-    fn read(path: &PathBuf) -> Result<Self, Error> {
+    fn read(path: &PathBuf) -> Result<Self> {
         let config_data = fs::read_to_string(path)?;
         let config: Self = serde_yaml::from_str(&config_data)?;
         let config_count = config.targets.len().try_into().unwrap();
@@ -28,7 +29,7 @@ impl Config {
         })
     }
 
-    pub fn open(&mut self) -> Result<(), Error> {
+    pub fn open(&mut self) -> Result<()> {
         let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
             .unwrap_or(format!("{}/.config", std::env::var("HOME")?));
 
@@ -61,8 +62,8 @@ impl Config {
         Ok(())
     }
 
-    pub fn load_config(&mut self, path: &PathBuf) -> Result<(), Error> {
-        let config = Self::read(path)?;
+    pub fn load_config(&mut self, path: &PathBuf) -> Result<()> {
+        let config = Self::read(path).context("Failed to read config file")?;
 
         self.targets = config.targets;
         self.count = config.count;
