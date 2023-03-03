@@ -63,7 +63,7 @@ impl Config {
     }
 
     pub fn load_config(&mut self, path: &PathBuf) -> Result<()> {
-        let config = Self::read(path).context("Failed to read config file")?;
+        let config = Self::read(path).context("Failed to read the configuration file")?;
 
         self.targets = config.targets;
         self.count = config.count;
