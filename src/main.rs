@@ -5,7 +5,8 @@ use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use indicatif::{HumanBytes, MultiProgress, ProgressBar, ProgressStyle};
 
 use std::{
-    env, fs,
+    env::{self, var},
+    fs,
     io::Write,
     path::{Path, PathBuf},
     sync::Arc,
@@ -101,13 +102,22 @@ fn main() -> Result<()> {
     let mut config = Config::default();
     let cache_dir = format!(
         "{}/dorst",
-        std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_owned())
+        var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_owned())
     );
 
     if let Some(config_path) = matches.get_one::<PathBuf>("config") {
-        config.load_config(config_path)?;
+        config.open(config_path)?;
     } else {
-        config.open()?;
+        let xdg_config_home =
+            var("XDG_CONFIG_HOME").unwrap_or(format!("{}/.config", std::env::var("HOME")?));
+
+        let config_path = format!("{xdg_config_home}/dorst");
+        let file_path = format!("{config_path}/config.yaml");
+        if !Path::new(&config_path).exists() {
+            fs::create_dir_all(config_path)?;
+        }
+
+        config.open(&PathBuf::from(file_path))?;
     }
 
     let indicat = Arc::new(MultiProgress::new());

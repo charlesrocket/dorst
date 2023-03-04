@@ -29,12 +29,7 @@ impl Config {
         })
     }
 
-    pub fn open(&mut self) -> Result<()> {
-        let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
-            .unwrap_or(format!("{}/.config", std::env::var("HOME")?));
-
-        let config_path = format!("{xdg_config_home}/dorst");
-        let file_path = format!("{config_path}/config.yaml");
+    pub fn open(&mut self, file_path: &PathBuf) -> Result<()> {
         if !Path::new(&file_path).exists() {
             println!("\x1b[7m DORST: Initialization \x1b[0m");
 
@@ -48,10 +43,6 @@ impl Config {
             };
 
             let new_config = serde_yaml::to_string(&config)?;
-            if !Path::new(&config_path).exists() {
-                fs::create_dir_all(config_path)?;
-            }
-
             let mut file = fs::File::create(&file_path)?;
             file.write_all(new_config.as_bytes())?;
         }
