@@ -43,7 +43,8 @@ impl Config {
             };
 
             let new_config = serde_yaml::to_string(&config)?;
-            let mut file = fs::File::create(&file_path)?;
+            let mut file = fs::File::create(file_path)?;
+
             file.write_all(new_config.as_bytes())?;
         }
 
