@@ -28,5 +28,7 @@ shellexpand = "3.0"
 
 [dev-dependencies]
 assert_cmd = "2"
+flate2 = "1"
 predicates = "2"
+tar = "0.4"
 tempfile = "3"
