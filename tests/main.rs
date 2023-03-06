@@ -24,7 +24,7 @@ fn default() -> Result<(), Box<dyn Error>> {
     file.write_all(b"test")?;
 
     cmd.arg("--config")
-        .arg("tests/default.yml")
+        .arg("tests/default.yaml")
         .assert()
         .success();
 
