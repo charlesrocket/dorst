@@ -52,6 +52,7 @@ fn config_new() -> Result<(), Box<dyn Error>> {
     if Path::new("prompt_test").is_file() {
         remove_file("prompt_test")?;
     }
+
     let mut cmd = Command::cargo_bin("dorst")?;
 
     cmd.arg("-c");
