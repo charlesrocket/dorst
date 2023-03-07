@@ -55,3 +55,21 @@ fn config_empty() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+#[test]
+fn bad_url() -> Result<(), Box<dyn Error>> {
+    let mut cmd = Command::cargo_bin("dorst")?;
+    let mut config = NamedTempFile::new()?;
+    config.write_all(files::BAD_URL)?;
+
+    cmd.arg("--config")
+        .arg(config.path())
+        .arg("bad_url")
+        .assert()
+        .success()
+        .stdout(contains(
+            "\u{1b}[0m \u{1b}[1;92m0\u{1b}[0m \u{1b}[37m/\u{1b}[0m \u{1b}[1;91m1\u{1b}[0m",
+        ));
+
+    Ok(())
+}
