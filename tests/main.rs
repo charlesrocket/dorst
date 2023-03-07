@@ -69,9 +69,7 @@ fn bad_url() -> Result<(), Box<dyn Error>> {
         .arg(config.path())
         .assert()
         .success()
-        .stdout(contains(
-            "\u{1b}[1;92m0\u{1b}[0m \u{1b}[37m/\u{1b}[0m \u{1b}[1;91m1\u{1b}[0m",
-        ));
+        .stdout(contains("unsupported URL protocol"));
 
     Ok(())
 }
