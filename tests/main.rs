@@ -6,6 +6,7 @@ use std::{
     error::Error,
     fs::{create_dir_all, remove_dir_all, remove_file, File},
     io::Write,
+    path::Path,
 };
 
 use crate::{
@@ -42,6 +43,26 @@ fn local() -> Result<(), Box<dyn Error>> {
     remove_dir_all("testrepo")?;
     remove_dir_all("testdir")?;
     remove_file("local.yaml")?;
+
+    Ok(())
+}
+
+#[test]
+fn config_new() -> Result<(), Box<dyn Error>> {
+    if Path::new("prompt_test").is_file() {
+        remove_file("prompt_test")?;
+    }
+    let mut cmd = Command::cargo_bin("dorst")?;
+
+    cmd.arg("-c");
+    cmd.arg("prompt_test");
+    cmd.write_stdin("foo?\n");
+
+    cmd.assert().stdout(contains("unsupported URL protocol"));
+
+    if Path::new("prompt_test").is_file() {
+        remove_file("prompt_test")?;
+    }
 
     Ok(())
 }
