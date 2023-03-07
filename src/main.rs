@@ -182,7 +182,14 @@ fn main() -> Result<()> {
             Err(error) => {
                 let err = format!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
                 err_count += 1;
-                spinner.finish_with_message(err);
+
+                if !silent {
+                    if spinner.is_hidden() {
+                        println!("{}", &err);
+                    }
+
+                    spinner.finish_with_message(err);
+                }
             }
         };
 
