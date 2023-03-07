@@ -79,7 +79,6 @@ fn config_new() -> Result<(), Box<dyn Error>> {
     cmd.arg("-c");
     cmd.arg("prompt_test");
     cmd.write_stdin("foo?\n");
-
     cmd.assert().stdout(contains("unsupported URL protocol"));
 
     if Path::new("prompt_test").is_file() {
@@ -93,8 +92,8 @@ fn config_new() -> Result<(), Box<dyn Error>> {
 fn config_empty() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
     let mut config = NamedTempFile::new()?;
-    config.write_all(EMPTY)?;
 
+    config.write_all(EMPTY)?;
     cmd.arg("--config")
         .arg(config.path())
         .assert()
@@ -108,8 +107,8 @@ fn config_empty() -> Result<(), Box<dyn Error>> {
 fn bad_url() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
     let mut config = NamedTempFile::new()?;
-    config.write_all(BAD_URL)?;
 
+    config.write_all(BAD_URL)?;
     cmd.arg("--config")
         .arg(config.path())
         .assert()
