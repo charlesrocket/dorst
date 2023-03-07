@@ -189,9 +189,13 @@ fn main() -> Result<()> {
         progress_bar.inc(1);
     }
 
-    progress_bar.finish_with_message(format!(
-        "COMPLETED: \x1b[92m{compl_count}\x1b[0m \x1b[37m/\x1b[0m \x1b[91m{err_count}\x1b[0m"
-    ));
+    progress_bar.finish();
+
+    let report = format!(
+        "┗╸\x1b[1mCOMPLETED\x1b[0m \x1b[1;92m{compl_count}\x1b[0m \x1b[37m/\x1b[0m \x1b[1;91m{err_count}\x1b[0m"
+    );
+
+    println!("{report}");
 
     if Path::new(&cache_dir).exists() {
         fs::remove_dir_all(&cache_dir)?;
