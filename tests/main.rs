@@ -3,7 +3,7 @@ use predicates::str::contains;
 use tempfile::NamedTempFile;
 
 use std::{
-    env,
+    env::{self, var},
     error::Error,
     fs::{create_dir_all, remove_dir_all, remove_file, File},
     io::Write,
@@ -28,7 +28,12 @@ fn local() -> Result<(), Box<dyn Error>> {
     test_repo(TEST_REPO);
 
     let mut file = File::create("testdir/testrepo.dorst/test/test.txt")?;
+    let cache = format!(
+        "{}/dorst/testrepo-cache",
+        var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_owned())
+    );
 
+    create_dir_all(cache)?;
     file.write_all(b"test")?;
 
     let mut cmd = Command::cargo_bin("dorst")?;
@@ -43,7 +48,7 @@ fn local() -> Result<(), Box<dyn Error>> {
         ));
 
     remove_dir_all("testrepo")?;
-    remove_dir_all("testdir")?;
+    //remove_dir_all("testdir")?;
     remove_file("local.yaml")?;
 
     Ok(())
