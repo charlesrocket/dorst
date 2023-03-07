@@ -9,7 +9,10 @@ use std::{
     process::Command,
 };
 
-use crate::helper::{test_config, test_repo};
+use crate::{
+    files::{BAD_URL, EMPTY, TEST_REPO},
+    helper::{test_config, test_repo},
+};
 
 mod files;
 mod helper;
@@ -23,7 +26,7 @@ fn local() -> Result<(), Box<dyn Error>> {
 
     create_dir_all("testdir/testrepo.dorst")?;
     test_config();
-    test_repo(files::TEST_REPO);
+    test_repo(TEST_REPO);
 
     let mut file = File::create("testdir/testrepo.dorst/test.txt")?;
     file.write_all(b"test")?;
@@ -48,7 +51,7 @@ fn local() -> Result<(), Box<dyn Error>> {
 fn config_empty() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
     let mut config = NamedTempFile::new()?;
-    config.write_all(files::EMPTY)?;
+    config.write_all(EMPTY)?;
 
     cmd.arg("--config")
         .arg(config.path())
@@ -63,7 +66,7 @@ fn config_empty() -> Result<(), Box<dyn Error>> {
 fn bad_url() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
     let mut config = NamedTempFile::new()?;
-    config.write_all(files::BAD_URL)?;
+    config.write_all(BAD_URL)?;
 
     cmd.arg("--config")
         .arg(config.path())
