@@ -1,4 +1,4 @@
-use assert_cmd::prelude::*;
+use assert_cmd::Command;
 use predicates::str::contains;
 use tempfile::NamedTempFile;
 
@@ -6,7 +6,6 @@ use std::{
     error::Error,
     fs::{create_dir_all, remove_dir_all, remove_file, File},
     io::Write,
-    process::Command,
 };
 
 use crate::{
