@@ -23,14 +23,15 @@ mod helper;
 
 #[test]
 fn local() -> Result<(), Box<dyn Error>> {
-    let mut cmd = Command::cargo_bin("dorst")?;
-
-    create_dir_all("testdir/testrepo.dorst")?;
+    create_dir_all("testdir/testrepo.dorst/test")?;
     test_config();
     test_repo(TEST_REPO);
 
-    let mut file = File::create("testdir/testrepo.dorst/test.txt")?;
+    let mut file = File::create("testdir/testrepo.dorst/test/test.txt")?;
+
     file.write_all(b"test")?;
+
+    let mut cmd = Command::cargo_bin("dorst")?;
 
     cmd.arg("--config")
         .arg("local.yaml")
