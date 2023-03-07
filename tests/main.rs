@@ -1,13 +1,13 @@
+use assert_cmd::prelude::*;
+use predicates::str::contains;
+use tempfile::NamedTempFile;
+
 use std::{
     error::Error,
     fs::{create_dir_all, remove_dir_all, remove_file, File},
     io::Write,
     process::Command,
 };
-
-use assert_cmd::prelude::*;
-use predicates::str::contains;
-use tempfile::NamedTempFile;
 
 use crate::helper::{test_config, test_repo};
 
