@@ -3,6 +3,7 @@ use predicates::str::contains;
 use tempfile::NamedTempFile;
 
 use std::{
+    env,
     error::Error,
     fs::{create_dir_all, remove_dir_all, remove_file, File},
     io::Write,
@@ -43,6 +44,25 @@ fn local() -> Result<(), Box<dyn Error>> {
     remove_dir_all("testrepo")?;
     remove_dir_all("testdir")?;
     remove_file("local.yaml")?;
+
+    Ok(())
+}
+
+#[test]
+fn init() -> Result<(), Box<dyn Error>> {
+    env::set_var("XDG_CONFIG_HOME", "init_test");
+
+    if Path::new("init_test").exists() {
+        remove_dir_all("init_test")?;
+    }
+
+    let mut cmd = Command::cargo_bin("dorst")?;
+
+    cmd.assert().success();
+
+    if Path::new("init_test").exists() {
+        remove_dir_all("init_test")?;
+    }
 
     Ok(())
 }
