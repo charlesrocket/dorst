@@ -32,7 +32,10 @@ fn local() -> Result<(), Box<dyn Error>> {
         .arg("local.yaml")
         .arg("testdir")
         .assert()
-        .success();
+        .success()
+        .stdout(contains(
+            "\u{1b}[1;92m1\u{1b}[0m \u{1b}[37m/\u{1b}[0m \u{1b}[1;91m0\u{1b}[0m",
+        ));
 
     remove_dir_all("testrepo")?;
     remove_dir_all("testdir")?;
@@ -67,7 +70,7 @@ fn bad_url() -> Result<(), Box<dyn Error>> {
         .assert()
         .success()
         .stdout(contains(
-            "\u{1b}[0m \u{1b}[1;92m0\u{1b}[0m \u{1b}[37m/\u{1b}[0m \u{1b}[1;91m1\u{1b}[0m",
+            "\u{1b}[1;92m0\u{1b}[0m \u{1b}[37m/\u{1b}[0m \u{1b}[1;91m1\u{1b}[0m",
         ));
 
     Ok(())
