@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 use std::{
+    env::var,
     fs,
     io::Write,
     path::{Path, PathBuf},
@@ -62,4 +63,18 @@ impl Config {
 
         Ok(())
     }
+}
+
+pub fn xdg_path() -> Result<PathBuf> {
+    let xdg_config_home =
+        var("XDG_CONFIG_HOME").unwrap_or(format!("{}/.config", std::env::var("HOME")?));
+
+    let config_path = format!("{xdg_config_home}/dorst");
+    let file_path = format!("{config_path}/config.yaml");
+
+    if !Path::new(&config_path).exists() {
+        fs::create_dir_all(config_path)?;
+    }
+
+    Ok(PathBuf::from(file_path))
 }

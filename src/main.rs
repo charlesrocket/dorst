@@ -16,7 +16,7 @@ mod config;
 mod git;
 mod util;
 
-use crate::config::Config;
+use crate::config::{xdg_path, Config};
 
 const BANNER: &str = "\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\n\
                       \u{2588} \u{2584}\u{2580}\u{2588}\u{2580}\u{2584}\u{2584}\u{2580}\u{2588} \u{2584}\u{2584}\u{2580}\u{2588} \u{2584}\u{2584}\u{2588}\u{2584} \u{2584}\u{2588}\n\
@@ -108,16 +108,7 @@ fn main() -> Result<()> {
     if let Some(config_path) = matches.get_one::<PathBuf>("config") {
         config.open(config_path)?;
     } else {
-        let xdg_config_home =
-            var("XDG_CONFIG_HOME").unwrap_or(format!("{}/.config", std::env::var("HOME")?));
-
-        let config_path = format!("{xdg_config_home}/dorst");
-        let file_path = format!("{config_path}/config.yaml");
-        if !Path::new(&config_path).exists() {
-            fs::create_dir_all(config_path)?;
-        }
-
-        config.open(&PathBuf::from(file_path))?;
+        config.open(&xdg_path()?)?;
     }
 
     let indicat = Arc::new(MultiProgress::new());
