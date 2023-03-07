@@ -23,7 +23,7 @@ fn local() -> Result<(), Box<dyn Error>> {
 
     create_dir_all("testdir/testrepo.dorst")?;
     test_config();
-    test_repo();
+    test_repo(files::TEST_REPO);
 
     let mut file = File::create("testdir/testrepo.dorst/test.txt")?;
     file.write_all(b"test")?;

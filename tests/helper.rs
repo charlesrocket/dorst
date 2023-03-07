@@ -27,9 +27,11 @@ pub fn test_config() {
     file.write_all(config.as_bytes()).unwrap();
 }
 
-pub fn test_repo() {
-    let repo = format!("{}/tests/testrepo.tar.gz", dir());
-    let tar_gz = File::open(repo).unwrap();
+pub fn test_repo(bytes: &[u8]) {
+    let mut repo = tempfile::NamedTempFile::new().unwrap();
+    repo.write_all(bytes).unwrap();
+
+    let tar_gz = File::open(repo.path()).unwrap();
     let tar = GzDecoder::new(tar_gz);
     let mut archive = Archive::new(tar);
 
