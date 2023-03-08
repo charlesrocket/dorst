@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::text_prompt;
+use crate::util::text_prompt;
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Config {

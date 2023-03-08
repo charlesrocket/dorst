@@ -1,22 +1,22 @@
 use anyhow::Result;
 
-use std::fs;
+use std::{env, io::Write};
 
-pub fn copy_dir(src: &str, dst: &str) -> Result<()> {
-    fs::create_dir_all(dst)?;
+pub fn get_name(target: &str) -> &str {
+    target.rsplit('/').next().unwrap_or(target)
+}
 
-    for file in fs::read_dir(src)? {
-        let src_file = file?;
-        let path = src_file.path();
+pub fn get_dir() -> String {
+    let current_dir = env::current_dir().unwrap();
+    current_dir.to_str().unwrap().to_owned()
+}
 
-        if path.is_dir() {
-            let sub_dst = format!("{}/{}", dst, path.file_name().unwrap().to_str().unwrap());
-            copy_dir(path.to_str().unwrap(), &sub_dst)?;
-        } else {
-            let dst_file = format!("{}/{}", dst, path.file_name().unwrap().to_str().unwrap());
-            fs::copy(&path, &dst_file)?;
-        }
-    }
+pub fn text_prompt(message: &str) -> Result<String> {
+    let mut line = String::new();
+    print!("{message}");
 
-    Ok(())
+    std::io::stdout().flush()?;
+    std::io::stdin().read_line(&mut line)?;
+
+    Ok(line.trim().to_owned())
 }

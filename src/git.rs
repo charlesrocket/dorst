@@ -1,21 +1,28 @@
 use anyhow::{anyhow, Result};
-use git2::{AutotagOption, Cred, RemoteCallbacks};
+use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
+use indicatif::{HumanBytes, ProgressBar};
 
-use std::{fs, path::Path};
+use std::{
+    fs,
+    io::{self, Write},
+    path::Path,
+};
 
-use crate::util::copy_dir;
+use crate::util::get_name;
 
-fn get_name(target: &str) -> &str {
-    target.rsplit('/').next().unwrap_or(target)
-}
-
-pub fn callbacks() -> RemoteCallbacks<'static> {
+pub fn clone(
+    destination: &str,
+    target: &str,
+    spinner: &ProgressBar,
+    git_config: &git2::Config,
+    silent: bool,
+) -> Result<Repository, git2::Error> {
     let mut callbacks = RemoteCallbacks::new();
-    let git_config = git2::Config::open_default().unwrap();
+    let target_name = get_name(target);
 
     callbacks.credentials(move |url, username_from_url, allowed_types| {
         if allowed_types.is_user_pass_plaintext() {
-            Cred::credential_helper(&git_config, url, username_from_url)
+            Cred::credential_helper(git_config, url, username_from_url)
         } else if allowed_types.is_ssh_key() {
             match username_from_url {
                 Some(username) => Cred::ssh_key_from_agent(username),
@@ -26,65 +33,166 @@ pub fn callbacks() -> RemoteCallbacks<'static> {
         }
     });
 
-    callbacks
-}
+    if !silent {
+        callbacks.transfer_progress(|stats| {
+            if stats.received_objects() == stats.total_objects() {
+                spinner.set_message(format!(
+                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m resolving deltas {}/{}",
+                    stats.indexed_deltas(),
+                    stats.total_deltas()
+                ));
 
-pub fn clone(
-    destination: &str,
-    target: &str,
-    cache_dir: &str,
-    callbacks: RemoteCallbacks,
-) -> Result<()> {
-    let cache = format!("{cache_dir}/{}-cache", get_name(target));
+            } else if stats.total_objects() > 0 {
+                spinner.set_message(format!(
+                    "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} | indexed {} in {}",
+                    stats.received_objects(),
+                    stats.total_objects(),
+                    stats.indexed_objects(),
+                    HumanBytes(stats.received_bytes().try_into().unwrap())
+                ));
+            }
+
+            true
+        });
+    }
+
     let mut fetch_options = git2::FetchOptions::new();
     let mut repo_builder = git2::build::RepoBuilder::new();
     let builder = repo_builder
         .bare(true)
         .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
 
-    if Path::new(&destination).exists() {
-        if Path::new(&cache).exists() {
-            fs::remove_dir_all(&cache)?;
-        }
-
-        match copy_dir(destination, &cache) {
-            Ok(_) => {
-                fs::remove_dir_all(destination)?;
-            }
-
-            Err(error) => {
-                error.to_string();
-                std::process::exit(1)
-            }
-        }
-    }
-
     fetch_options
         .remote_callbacks(callbacks)
         .download_tags(AutotagOption::All);
 
-    let mirror = match builder
+    let mirror = builder
         .fetch_options(fetch_options)
-        .clone(target, Path::new(&destination))
-    {
-        Ok(repo) => {
-            if Path::new(&cache).exists() {
-                fs::remove_dir_all(&cache)?;
-            }
+        .clone(target, Path::new(&destination))?;
 
-            Ok(repo)
+    mirror.config()?.set_bool("remote.origin.mirror", true)?;
+
+    Ok(mirror)
+}
+
+pub fn fetch(
+    target: &str,
+    path: &str,
+    spinner: &ProgressBar,
+    silent: bool,
+) -> Result<Repository, git2::Error> {
+    let repo = Repository::open(path)?;
+    let target_name = get_name(target);
+
+    {
+        let mut cb = RemoteCallbacks::new();
+        let mut remote = repo
+            .find_remote("origin")
+            .or_else(|_| repo.remote_anonymous(target))?;
+
+        if !silent {
+            cb.sideband_progress(|data| {
+                spinner.set_message(format!("remote: {}", std::str::from_utf8(data).unwrap()));
+                io::stdout().flush().unwrap();
+
+                true
+            });
+
+            cb.update_tips(|refname, a, b| {
+                if a.is_zero() {
+                    spinner.set_message(format!("[new]     {:20} {}", b, refname));
+                } else {
+                    spinner.set_message(format!("[updated] {:10}..{:10} {}", a, b, refname));
+                }
+
+                true
+            });
+
+            cb.transfer_progress(|stats| {
+                if stats.received_objects() == stats.total_objects() {
+                    spinner.set_message(format!(
+                        "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m resolving deltas {}/{}",
+                        stats.indexed_deltas(),
+                        stats.total_deltas()
+                    ));
+                } else if stats.total_objects() > 0 {
+                    spinner.set_message(format!(
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} | indexed {} in {}",
+                        stats.received_objects(),
+                        stats.total_objects(),
+                        stats.indexed_objects(),
+                        HumanBytes(stats.received_bytes().try_into().unwrap())
+                    ));
+                }
+
+                io::stdout().flush().unwrap();
+
+                true
+            });
         }
 
-        Err(error) => Err({
-            if Path::new(&cache).exists() {
-                copy_dir(&cache, destination)?;
+        let mut fo = FetchOptions::new();
+        fo.remote_callbacks(cb);
+        remote.download(&[] as &[&str], Some(&mut fo))?;
+
+        {
+            if !silent {
+                let stats = remote.stats();
+
+                if stats.local_objects() > 0 {
+                    spinner.set_message(format!(
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} objects in {} (used {} local \
+                         objects)",
+                        stats.indexed_objects(),
+                        stats.total_objects(),
+                        HumanBytes(stats.received_bytes().try_into().unwrap()),
+                        stats.local_objects()
+                    ));
+                } else {
+                    spinner.set_message(format!(
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} objects in {}",
+                        stats.indexed_objects(),
+                        stats.total_objects(),
+                        HumanBytes(stats.received_bytes().try_into().unwrap())
+                    ));
+                }
             }
+        }
 
-            anyhow!(error)
-        }),
-    };
+        remote.disconnect()?;
 
-    let repo = mirror?;
+        remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
+    }
+
+    Ok(repo)
+}
+
+pub fn update_refs(mirror: &Repository) -> Result<()> {
+    let mut string = String::new();
+
+    for reference in mirror.references()? {
+        let reference = reference?;
+
+        if let Some(target) = reference.target() {
+            string.push_str(&format!("{}\t{}\n", target, reference.name().unwrap()));
+        }
+    }
+
+    let destination = mirror.path().join("info");
+
+    if !destination.exists() {
+        fs::create_dir_all(&destination)?;
+    }
+
+    let info = destination.join("refs");
+
+    fs::write(info, string)?;
+
+    Ok(())
+}
+
+pub fn set_head(mirror: &Repository) -> Result<()> {
+    let repo = mirror;
     let remote = repo.find_remote("origin")?;
     let remote_branch = remote.name().unwrap();
     let remote_branch_ref = repo.resolve_reference_from_short_name(remote_branch)?;
@@ -95,6 +203,26 @@ pub fn clone(
     let head = remote_branch_name?.to_owned();
 
     repo.set_head(&head)?;
+
+    Ok(())
+}
+
+pub fn update(repo: &Repository) -> Result<()> {
+    update_refs(repo)?;
+    set_head(repo)?;
+
+    Ok(())
+}
+
+pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bool) -> Result<()> {
+    let git_config = git2::Config::open_default().unwrap();
+    let repo = if Path::new(&destination).exists() {
+        fetch(target, destination, spinner, silent)?
+    } else {
+        clone(destination, target, spinner, &git_config, silent)?
+    };
+
+    update(&repo)?;
 
     Ok(())
 }
