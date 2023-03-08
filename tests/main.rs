@@ -3,9 +3,9 @@ use predicates::str::contains;
 use tempfile::NamedTempFile;
 
 use std::{
-    env::{self, var},
+    env,
     error::Error,
-    fs::{create_dir_all, remove_dir_all, remove_file, File},
+    fs::{remove_dir_all, remove_file},
     io::Write,
     path::Path,
 };
@@ -45,9 +45,21 @@ fn local() -> Result<(), Box<dyn Error>> {
     test_config("local.yaml", "testrepo");
     test_repo(TEST_REPO);
 
-    let mut cmd = Command::cargo_bin("dorst")?;
+    let mut clone = Command::cargo_bin("dorst")?;
+    let mut fetch = Command::cargo_bin("dorst")?;
 
-    cmd.arg("--config")
+    clone
+        .arg("--config")
+        .arg("local.yaml")
+        .arg("testdir1")
+        .assert()
+        .success()
+        .stdout(contains(
+            "\u{1b}[1;92m1\u{1b}[0m \u{1b}[37m/\u{1b}[0m \u{1b}[1;91m0\u{1b}[0m",
+        ));
+
+    fetch
+        .arg("--config")
         .arg("local.yaml")
         .arg("testdir1")
         .assert()
@@ -65,18 +77,8 @@ fn local() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn bad_refs() -> Result<(), Box<dyn Error>> {
-    create_dir_all("testdir2/badrefs.dorst/test")?;
     test_config("badrefs.yaml", "badrefs");
     test_repo(TEST_REPO_INVALID);
-
-    let mut file = File::create("testdir2/badrefs.dorst/test/test.txt")?;
-    let cache = format!(
-        "{}/dorst/badrefs-cache",
-        var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_owned())
-    );
-
-    create_dir_all(cache)?;
-    file.write_all(b"test")?;
 
     let mut cmd = Command::cargo_bin("dorst")?;
 
