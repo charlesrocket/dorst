@@ -48,7 +48,7 @@ fn local() -> Result<(), Box<dyn Error>> {
         ));
 
     remove_dir_all("testrepo")?;
-    //remove_dir_all("testdir")?;
+    remove_dir_all("testdir")?;
     remove_file("local.yaml")?;
 
     Ok(())
