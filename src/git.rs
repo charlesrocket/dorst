@@ -141,8 +141,7 @@ pub fn fetch(
 
                 if stats.local_objects() > 0 {
                     spinner.set_message(format!(
-                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} objects in {} (used {} local \
-                         objects)",
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} in {} (used {} local objects)",
                         stats.indexed_objects(),
                         stats.total_objects(),
                         HumanBytes(stats.received_bytes().try_into().unwrap()),
@@ -150,7 +149,7 @@ pub fn fetch(
                     ));
                 } else {
                     spinner.set_message(format!(
-                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} objects in {}",
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} in {}",
                         stats.indexed_objects(),
                         stats.total_objects(),
                         HumanBytes(stats.received_bytes().try_into().unwrap())
