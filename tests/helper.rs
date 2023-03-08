@@ -13,14 +13,16 @@ fn dir() -> String {
     env::current_dir().unwrap().display().to_string()
 }
 
-pub fn test_config() {
-    let dest = format!("{}/local.yaml", dir());
-    let target = format!("{}/testrepo", dir())
+pub fn test_config(dest: &str, target: &str) {
+    let dest = format!("{}/{}", dir(), dest);
+    let test_target = format!("{}/{}", dir(), target)
         .split(',')
         .map(ToString::to_string)
         .collect();
 
-    let test_config = TestConfig { targets: target };
+    let test_config = TestConfig {
+        targets: test_target,
+    };
     let config = serde_yaml::to_string(&test_config).unwrap();
     let mut file = File::create(dest).unwrap();
 
