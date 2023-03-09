@@ -108,7 +108,11 @@ fn fetch(
 
         if !silent {
             callbacks.sideband_progress(|data| {
-                spinner.set_message(format!("remote: {}", std::str::from_utf8(data).unwrap()));
+                spinner.set_message(format!(
+                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m remote: {}",
+                    std::str::from_utf8(data).unwrap()
+                ));
+
                 io::stdout().flush().unwrap();
 
                 true
