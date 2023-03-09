@@ -132,6 +132,7 @@ fn fetch(
         }
 
         let mut fo = FetchOptions::new();
+
         fo.remote_callbacks(cb);
         remote.download(&[] as &[&str], Some(&mut fo))?;
 
@@ -159,7 +160,6 @@ fn fetch(
         }
 
         remote.disconnect()?;
-
         remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
     }
 
