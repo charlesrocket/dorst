@@ -200,18 +200,16 @@ fn update_refs(mirror: &Repository) -> Result<()> {
     Ok(())
 }
 
-fn set_head(mirror: &Repository) -> Result<(), git2::Error> {
-    let repo = mirror;
-    let remote = repo.find_remote("origin")?;
-    let remote_branch = remote.name().unwrap();
-    let remote_branch_ref = repo.resolve_reference_from_short_name(remote_branch)?;
-    let remote_branch_name = remote_branch_ref
-        .name()
-        .ok_or_else(|| git2::Error::from_str("No default branch"));
+fn set_head(mirror: &Repository, git_config: &git2::Config) -> Result<(), git2::Error> {
+    let callbacks = callbacks(&git_config);
+    let mut remote = mirror.find_remote("origin")?;
 
-    let head = remote_branch_name?.to_owned();
+    remote.connect_auth(git2::Direction::Fetch, Some(callbacks), None)?;
 
-    repo.set_head(&head)?;
+    let default_branch = remote.default_branch()?;
+    let branch = default_branch.as_str().unwrap();
+
+    mirror.set_head(branch)?;
 
     Ok(())
 }
@@ -225,7 +223,7 @@ pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bo
     };
 
     update_refs(&repo)?;
-    set_head(&repo)?;
+    set_head(&repo, &git_config)?;
 
     Ok(())
 }
