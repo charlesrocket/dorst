@@ -81,14 +81,14 @@ fn fetch(
     spinner: &ProgressBar,
     silent: bool,
 ) -> Result<Repository, git2::Error> {
-    let repo = Repository::open(path)?;
+    let mirror = Repository::open(path)?;
     let target_name = get_name(target);
 
     {
         let mut cb = RemoteCallbacks::new();
-        let mut remote = repo
+        let mut remote = mirror
             .find_remote("origin")
-            .or_else(|_| repo.remote_anonymous(target))?;
+            .or_else(|_| mirror.remote_anonymous(target))?;
 
         if !silent {
             cb.sideband_progress(|data| {
@@ -163,7 +163,7 @@ fn fetch(
         remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
     }
 
-    Ok(repo)
+    Ok(mirror)
 }
 
 fn update_refs(mirror: &Repository) -> Result<()> {
