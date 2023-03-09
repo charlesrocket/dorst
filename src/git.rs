@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
 use indicatif::{HumanBytes, ProgressBar};
 
@@ -200,14 +200,14 @@ fn update_refs(mirror: &Repository) -> Result<()> {
     Ok(())
 }
 
-fn set_head(mirror: &Repository) -> Result<()> {
+fn set_head(mirror: &Repository) -> Result<(), git2::Error> {
     let repo = mirror;
     let remote = repo.find_remote("origin")?;
     let remote_branch = remote.name().unwrap();
     let remote_branch_ref = repo.resolve_reference_from_short_name(remote_branch)?;
     let remote_branch_name = remote_branch_ref
         .name()
-        .ok_or_else(|| anyhow!("No default branch"));
+        .ok_or_else(|| git2::Error::from_str("No default branch"));
 
     let head = remote_branch_name?.to_owned();
 
