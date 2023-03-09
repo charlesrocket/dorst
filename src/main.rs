@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 
-use std::{env, path::PathBuf, sync::Arc};
+use std::{env, fs::remove_dir_all, path::Path, path::PathBuf, sync::Arc};
 
 mod config;
 mod git;
@@ -49,6 +49,13 @@ fn args() -> ArgMatches {
                 .value_parser(value_parser!(PathBuf)),
         )
         .arg(
+            Arg::new("purge")
+                .short('p')
+                .long("purge")
+                .help("Purge current backups")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("silent")
                 .short('s')
                 .long("silent")
@@ -76,6 +83,7 @@ fn main() -> Result<()> {
 
     let matches = args();
     let path = matches.get_one::<PathBuf>("path").unwrap();
+    let purge = matches.get_flag("purge");
     let silent = matches.get_flag("silent");
     let mut config = Config::default();
 
@@ -100,7 +108,7 @@ fn main() -> Result<()> {
     for target in config.targets {
         let spinner = indicat.insert_before(&progress_bar, ProgressBar::new_spinner());
         let destination = format!("{}/{}.dorst", &path.display(), get_name(&target));
-        let target_name = util::get_name(&target);
+        let target_name = get_name(&target);
 
         if !silent {
             spinner.tick();
@@ -108,6 +116,10 @@ fn main() -> Result<()> {
             spinner.set_message(format!(
                 "\x1b[96mstarting\x1b[0m \x1b[93m{target_name}\x1b[0m"
             ));
+        }
+
+        if purge && Path::new(&destination).exists() {
+            remove_dir_all(&destination)?;
         }
 
         match git::mirror(&destination, &target, &spinner, silent) {
