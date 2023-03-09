@@ -79,26 +79,40 @@ fn fetch(
     target: &str,
     path: &str,
     spinner: &ProgressBar,
+    git_config: &git2::Config,
     silent: bool,
 ) -> Result<Repository, git2::Error> {
     let mirror = Repository::open(path)?;
     let target_name = get_name(target);
 
     {
-        let mut cb = RemoteCallbacks::new();
+        let mut callbacks = RemoteCallbacks::new();
+        callbacks.credentials(move |url, username_from_url, allowed_types| {
+            if allowed_types.is_user_pass_plaintext() {
+                Cred::credential_helper(git_config, url, username_from_url)
+            } else if allowed_types.is_ssh_key() {
+                match username_from_url {
+                    Some(username) => Cred::ssh_key_from_agent(username),
+                    None => Err(git2::Error::from_str("Could not extract username from URL")),
+                }
+            } else {
+                Cred::default()
+            }
+        });
+
         let mut remote = mirror
             .find_remote("origin")
             .or_else(|_| mirror.remote_anonymous(target))?;
 
         if !silent {
-            cb.sideband_progress(|data| {
+            callbacks.sideband_progress(|data| {
                 spinner.set_message(format!("remote: {}", std::str::from_utf8(data).unwrap()));
                 io::stdout().flush().unwrap();
 
                 true
             });
 
-            cb.update_tips(|refname, a, b| {
+            callbacks.update_tips(|refname, a, b| {
                 if a.is_zero() {
                     spinner.set_message(format!("[new]     {:20} {}", b, refname));
                 } else {
@@ -108,7 +122,7 @@ fn fetch(
                 true
             });
 
-            cb.transfer_progress(|stats| {
+            callbacks.transfer_progress(|stats| {
                 if stats.received_objects() == stats.total_objects() {
                     spinner.set_message(format!(
                         "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m resolving deltas {}/{}",
@@ -133,7 +147,7 @@ fn fetch(
 
         let mut fo = FetchOptions::new();
 
-        fo.remote_callbacks(cb);
+        fo.remote_callbacks(callbacks);
         remote.download(&[] as &[&str], Some(&mut fo))?;
 
         {
@@ -209,7 +223,7 @@ fn set_head(mirror: &Repository) -> Result<()> {
 pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bool) -> Result<()> {
     let git_config = git2::Config::open_default().unwrap();
     let repo = if Path::new(&destination).exists() {
-        fetch(target, destination, spinner, silent)?
+        fetch(target, destination, spinner, &git_config, silent)?
     } else {
         clone(destination, target, spinner, &git_config, silent)?
     };
