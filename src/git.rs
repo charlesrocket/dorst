@@ -87,6 +87,8 @@ fn fetch(
 
     {
         let mut callbacks = RemoteCallbacks::new();
+        let mut fetch_options = FetchOptions::new();
+
         callbacks.credentials(move |url, username_from_url, allowed_types| {
             if allowed_types.is_user_pass_plaintext() {
                 Cred::credential_helper(git_config, url, username_from_url)
@@ -145,10 +147,8 @@ fn fetch(
             });
         }
 
-        let mut fo = FetchOptions::new();
-
-        fo.remote_callbacks(callbacks);
-        remote.download(&[] as &[&str], Some(&mut fo))?;
+        fetch_options.remote_callbacks(callbacks);
+        remote.download(&[] as &[&str], Some(&mut fetch_options))?;
 
         {
             if !silent {
