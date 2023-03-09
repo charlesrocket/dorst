@@ -10,7 +10,7 @@ use std::{
 
 use crate::util::get_name;
 
-pub fn clone(
+fn clone(
     destination: &str,
     target: &str,
     spinner: &ProgressBar,
@@ -75,7 +75,7 @@ pub fn clone(
     Ok(mirror)
 }
 
-pub fn fetch(
+fn fetch(
     target: &str,
     path: &str,
     spinner: &ProgressBar,
@@ -166,7 +166,7 @@ pub fn fetch(
     Ok(repo)
 }
 
-pub fn update_refs(mirror: &Repository) -> Result<()> {
+fn update_refs(mirror: &Repository) -> Result<()> {
     let mut string = String::new();
 
     for reference in mirror.references()? {
@@ -190,7 +190,7 @@ pub fn update_refs(mirror: &Repository) -> Result<()> {
     Ok(())
 }
 
-pub fn set_head(mirror: &Repository) -> Result<()> {
+fn set_head(mirror: &Repository) -> Result<()> {
     let repo = mirror;
     let remote = repo.find_remote("origin")?;
     let remote_branch = remote.name().unwrap();
@@ -206,13 +206,6 @@ pub fn set_head(mirror: &Repository) -> Result<()> {
     Ok(())
 }
 
-pub fn update(repo: &Repository) -> Result<()> {
-    update_refs(repo)?;
-    set_head(repo)?;
-
-    Ok(())
-}
-
 pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bool) -> Result<()> {
     let git_config = git2::Config::open_default().unwrap();
     let repo = if Path::new(&destination).exists() {
@@ -221,7 +214,8 @@ pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bo
         clone(destination, target, spinner, &git_config, silent)?
     };
 
-    update(&repo)?;
+    update_refs(&repo)?;
+    set_head(&repo)?;
 
     Ok(())
 }
