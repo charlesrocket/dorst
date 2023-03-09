@@ -10,15 +10,8 @@ use std::{
 
 use crate::util::get_name;
 
-fn clone(
-    destination: &str,
-    target: &str,
-    spinner: &ProgressBar,
-    git_config: &git2::Config,
-    silent: bool,
-) -> Result<Repository, git2::Error> {
+fn callbacks(git_config: &git2::Config) -> RemoteCallbacks {
     let mut callbacks = RemoteCallbacks::new();
-    let target_name = get_name(target);
 
     callbacks.credentials(move |url, username_from_url, allowed_types| {
         if allowed_types.is_user_pass_plaintext() {
@@ -32,6 +25,19 @@ fn clone(
             Cred::default()
         }
     });
+
+    callbacks
+}
+
+fn clone(
+    destination: &str,
+    target: &str,
+    spinner: &ProgressBar,
+    git_config: &git2::Config,
+    silent: bool,
+) -> Result<Repository, git2::Error> {
+    let mut callbacks = callbacks(git_config);
+    let target_name = get_name(target);
 
     if !silent {
         callbacks.transfer_progress(|stats| {
@@ -86,22 +92,8 @@ fn fetch(
     let target_name = get_name(target);
 
     {
-        let mut callbacks = RemoteCallbacks::new();
+        let mut callbacks = callbacks(git_config);
         let mut fetch_options = FetchOptions::new();
-
-        callbacks.credentials(move |url, username_from_url, allowed_types| {
-            if allowed_types.is_user_pass_plaintext() {
-                Cred::credential_helper(git_config, url, username_from_url)
-            } else if allowed_types.is_ssh_key() {
-                match username_from_url {
-                    Some(username) => Cred::ssh_key_from_agent(username),
-                    None => Err(git2::Error::from_str("Could not extract username from URL")),
-                }
-            } else {
-                Cred::default()
-            }
-        });
-
         let mut remote = mirror
             .find_remote("origin")
             .or_else(|_| mirror.remote_anonymous(target))?;
