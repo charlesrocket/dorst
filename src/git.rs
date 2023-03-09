@@ -201,7 +201,7 @@ fn update_refs(mirror: &Repository) -> Result<()> {
 }
 
 fn set_head(mirror: &Repository, git_config: &git2::Config) -> Result<(), git2::Error> {
-    let callbacks = callbacks(&git_config);
+    let callbacks = callbacks(git_config);
     let mut remote = mirror.find_remote("origin")?;
 
     remote.connect_auth(git2::Direction::Fetch, Some(callbacks), None)?;
