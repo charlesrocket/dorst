@@ -112,9 +112,9 @@ fn fetch(
 
             callbacks.update_tips(|refname, a, b| {
                 if a.is_zero() {
-                    spinner.set_message(format!("[new]     {:20} {}", b, refname));
+                    spinner.set_message(format!("[new]     {b:20} {refname}"));
                 } else {
-                    spinner.set_message(format!("[updated] {:10}..{:10} {}", a, b, refname));
+                    spinner.set_message(format!("[updated] {a:10}..{b:10} {refname}"));
                 }
 
                 true
