@@ -1,5 +1,5 @@
 use anyhow::Result;
-use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
+use git2::{AutotagOption, Cred, Direction, FetchOptions, RemoteCallbacks, Repository};
 use indicatif::{HumanBytes, ProgressBar};
 
 use std::{
@@ -62,7 +62,7 @@ fn clone(
         });
     }
 
-    let mut fetch_options = git2::FetchOptions::new();
+    let mut fetch_options = FetchOptions::new();
     let mut repo_builder = git2::build::RepoBuilder::new();
     let builder = repo_builder
         .bare(true)
@@ -204,7 +204,7 @@ fn set_head(mirror: &Repository, git_config: &git2::Config) -> Result<(), git2::
     let callbacks = callbacks(git_config);
     let mut remote = mirror.find_remote("origin")?;
 
-    remote.connect_auth(git2::Direction::Fetch, Some(callbacks), None)?;
+    remote.connect_auth(Direction::Fetch, Some(callbacks), None)?;
 
     let default_branch = remote.default_branch()?;
     let branch = default_branch.as_str().unwrap();
