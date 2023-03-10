@@ -179,39 +179,14 @@ fn fetch(
     Ok(mirror)
 }
 
-fn update_refs(mirror: &Repository) -> Result<()> {
-    let mut string = String::new();
-
-    for reference in mirror.references()? {
-        let reference = reference?;
-
-        if let Some(target) = reference.target() {
-            string.push_str(&format!("{}\t{}\n", target, reference.name().unwrap()));
-        }
-    }
-
-    let destination = mirror.path().join("info");
-
-    if !destination.exists() {
-        fs::create_dir_all(&destination)?;
-    }
-
-    let info = destination.join("refs");
-
-    fs::write(info, string)?;
-
-    Ok(())
-}
-
 pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bool) -> Result<()> {
     let git_config = git2::Config::open_default().unwrap();
-    let repo = if Path::new(&destination).exists() {
+
+    if Path::new(&destination).exists() {
         fetch(target, destination, spinner, &git_config, silent)?
     } else {
         clone(destination, target, spinner, &git_config, silent)?
     };
-
-    update_refs(&repo)?;
 
     Ok(())
 }
