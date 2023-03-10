@@ -44,8 +44,8 @@ fn set_default_branch(mirror: &Repository) -> Result<(), git2::Error> {
 }
 
 fn clone(
-    destination: &str,
     target: &str,
+    destination: &str,
     spinner: &ProgressBar,
     git_config: &git2::Config,
     silent: bool,
@@ -200,7 +200,7 @@ pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bo
     if Path::new(&destination).exists() {
         fetch(target, destination, spinner, &git_config, silent)?
     } else {
-        clone(destination, target, spinner, &git_config, silent)?
+        clone(target, destination, spinner, &git_config, silent)?
     };
 
     Ok(())
