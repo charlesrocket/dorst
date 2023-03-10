@@ -28,6 +28,21 @@ fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks {
     callbacks
 }
 
+fn set_default_branch(mirror: &Repository) -> Result<(), git2::Error> {
+    let remote = mirror.find_remote("origin")?;
+    let remote_branch = remote.name().unwrap();
+    let remote_branch_ref = mirror.resolve_reference_from_short_name(remote_branch)?;
+    let remote_branch_name = remote_branch_ref
+        .name()
+        .ok_or_else(|| git2::Error::from_str("No default branch"));
+
+    let branch = remote_branch_name?.to_owned();
+
+    mirror.set_head(&branch)?;
+
+    Ok(())
+}
+
 fn clone(
     destination: &str,
     target: &str,
@@ -76,6 +91,7 @@ fn clone(
         .clone(target, Path::new(&destination))?;
 
     mirror.config()?.set_bool("remote.origin.mirror", true)?;
+    set_default_branch(&mirror)?;
 
     Ok(mirror)
 }
