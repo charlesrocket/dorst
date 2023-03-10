@@ -34,6 +34,7 @@ impl Config {
         if !Path::new(&file_path).exists() {
             println!("\x1b[7m DORST: Initialization \x1b[0m");
 
+            let dir = file_path.parent().unwrap();
             let prompt =
                 text_prompt("\x1b[7m Enter backup targets  \n separated by a comma: \x1b[0m ");
 
@@ -42,6 +43,8 @@ impl Config {
                 targets: target,
                 count: 0,
             };
+
+            std::fs::create_dir_all(dir).unwrap();
 
             let new_config = serde_yaml::to_string(&config)?;
             let mut file = fs::File::create(file_path)?;
