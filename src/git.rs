@@ -1,5 +1,5 @@
 use anyhow::Result;
-use git2::{AutotagOption, Cred, Direction, FetchOptions, RemoteCallbacks, Repository};
+use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
 use indicatif::{HumanBytes, ProgressBar};
 
 use std::{
@@ -169,6 +169,9 @@ fn fetch(
             }
         }
 
+        let default_branch = remote.default_branch()?;
+
+        mirror.set_head(default_branch.as_str().unwrap())?;
         remote.disconnect()?;
         remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
     }
@@ -200,20 +203,6 @@ fn update_refs(mirror: &Repository) -> Result<()> {
     Ok(())
 }
 
-fn set_head(mirror: &Repository, git_config: &git2::Config) -> Result<(), git2::Error> {
-    let callbacks = set_callbacks(git_config);
-    let mut remote = mirror.find_remote("origin")?;
-
-    remote.connect_auth(Direction::Fetch, Some(callbacks), None)?;
-
-    let default_branch = remote.default_branch()?;
-    let branch = default_branch.as_str().unwrap();
-
-    mirror.set_head(branch)?;
-
-    Ok(())
-}
-
 pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bool) -> Result<()> {
     let git_config = git2::Config::open_default().unwrap();
     let repo = if Path::new(&destination).exists() {
@@ -223,7 +212,6 @@ pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bo
     };
 
     update_refs(&repo)?;
-    set_head(&repo, &git_config)?;
 
     Ok(())
 }
