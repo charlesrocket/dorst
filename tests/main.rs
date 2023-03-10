@@ -12,7 +12,7 @@ use std::{
 
 use crate::{
     files::{EMPTY, TEST_REPO, TEST_REPO_INVALID},
-    helper::{test_config, test_repo},
+    helper::test_setup,
 };
 
 mod files;
@@ -42,16 +42,15 @@ fn init() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn local() -> Result<(), Box<dyn Error>> {
-    test_config("local.yaml", "testrepo");
-    test_repo(TEST_REPO);
+    test_setup(TEST_REPO, "test-local/testrepo", "test-local");
 
     let mut clone = Command::cargo_bin("dorst")?;
     let mut fetch = Command::cargo_bin("dorst")?;
 
     clone
         .arg("--config")
-        .arg("local.yaml")
-        .arg("testdir1")
+        .arg("test-local/config.yaml")
+        .arg("test-local/local")
         .assert()
         .success()
         .stdout(contains(
@@ -60,38 +59,33 @@ fn local() -> Result<(), Box<dyn Error>> {
 
     fetch
         .arg("--config")
-        .arg("local.yaml")
-        .arg("testdir1")
+        .arg("test-local/config.yaml")
+        .arg("test-local/local")
         .assert()
         .success()
         .stdout(contains(
             "\u{1b}[1;92m1\u{1b}[0m \u{1b}[37m/\u{1b}[0m \u{1b}[1;91m0\u{1b}[0m",
         ));
 
-    remove_dir_all("testrepo")?;
-    remove_dir_all("testdir1")?;
-    remove_file("local.yaml")?;
+    remove_dir_all("test-local")?;
 
     Ok(())
 }
 
 #[test]
 fn bad_refs() -> Result<(), Box<dyn Error>> {
-    test_config("badrefs.yaml", "badrefs");
-    test_repo(TEST_REPO_INVALID);
+    test_setup(TEST_REPO_INVALID, "test-bad_refs/badrefs", "test-bad_refs");
 
     let mut cmd = Command::cargo_bin("dorst")?;
 
     cmd.arg("--config")
-        .arg("badrefs.yaml")
-        .arg("testdir2")
+        .arg("test-bad_refs/config.yaml")
+        .arg("test-bad_refs/bad_refs")
         .assert()
         .success()
         .stdout(contains("badrefs: corrupted loose reference file"));
 
-    remove_dir_all("badrefs")?;
-    remove_dir_all("testdir2")?;
-    remove_file("badrefs.yaml")?;
+    remove_dir_all("test-bad_refs")?;
 
     Ok(())
 }
