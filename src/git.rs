@@ -195,7 +195,7 @@ fn fetch(
 }
 
 pub fn mirror(destination: &str, target: &str, spinner: &ProgressBar, silent: bool) -> Result<()> {
-    let git_config = git2::Config::open_default().unwrap();
+    let git_config = git2::Config::open_default()?;
 
     if Path::new(&destination).exists() {
         fetch(target, destination, spinner, &git_config, silent)?
