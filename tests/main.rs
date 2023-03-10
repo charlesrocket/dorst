@@ -23,18 +23,18 @@ mod helper;
 
 #[test]
 fn init() -> Result<(), Box<dyn Error>> {
-    env::set_var("XDG_CONFIG_HOME", "init_test");
+    env::set_var("XDG_CONFIG_HOME", "test-init");
 
-    if Path::new("init_test").exists() {
-        remove_dir_all("init_test")?;
+    if Path::new("test-init").exists() {
+        remove_dir_all("test-init")?;
     }
 
     let mut cmd = Command::cargo_bin("dorst")?;
 
     cmd.assert().success();
 
-    if Path::new("init_test").exists() {
-        remove_dir_all("init_test")?;
+    if Path::new("test-init").exists() {
+        remove_dir_all("test-init")?;
     }
 
     Ok(())
@@ -92,19 +92,19 @@ fn bad_refs() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn config_new() -> Result<(), Box<dyn Error>> {
-    if Path::new("prompt_test").is_file() {
-        remove_file("prompt_test")?;
+    if Path::new("test-prompt").is_file() {
+        remove_file("test-prompt")?;
     }
 
     let mut cmd = Command::cargo_bin("dorst")?;
 
     cmd.arg("-c");
-    cmd.arg("prompt_test");
+    cmd.arg("test-prompt");
     cmd.write_stdin("foo?\n");
     cmd.assert().stdout(contains("unsupported URL protocol"));
 
-    if Path::new("prompt_test").is_file() {
-        remove_file("prompt_test")?;
+    if Path::new("test-prompt").is_file() {
+        remove_file("test-prompt")?;
     }
 
     Ok(())
