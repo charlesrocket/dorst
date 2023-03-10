@@ -11,7 +11,7 @@ use std::{
 };
 
 use crate::{
-    files::{EMPTY, TEST_REPO, TEST_REPO_INVALID},
+    files::{CONFIG_EMPTY, TEST_REPO, TEST_REPO_INVALID},
     helper::test_setup,
 };
 
@@ -115,7 +115,7 @@ fn config_empty() -> Result<(), Box<dyn Error>> {
     let mut cmd = Command::cargo_bin("dorst")?;
     let mut config = NamedTempFile::new()?;
 
-    config.write_all(EMPTY)?;
+    config.write_all(CONFIG_EMPTY)?;
     cmd.arg("--config")
         .arg(config.path())
         .assert()
