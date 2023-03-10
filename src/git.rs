@@ -10,7 +10,7 @@ use std::{
 
 use crate::util::get_name;
 
-fn callbacks(git_config: &git2::Config) -> RemoteCallbacks {
+fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks {
     let mut callbacks = RemoteCallbacks::new();
 
     callbacks.credentials(move |url, username_from_url, allowed_types| {
@@ -36,7 +36,7 @@ fn clone(
     git_config: &git2::Config,
     silent: bool,
 ) -> Result<Repository, git2::Error> {
-    let mut callbacks = callbacks(git_config);
+    let mut callbacks = set_callbacks(git_config);
     let target_name = get_name(target);
 
     if !silent {
@@ -92,7 +92,7 @@ fn fetch(
     let target_name = get_name(target);
 
     {
-        let mut callbacks = callbacks(git_config);
+        let mut callbacks = set_callbacks(git_config);
         let mut fetch_options = FetchOptions::new();
         let mut remote = mirror
             .find_remote("origin")
@@ -201,7 +201,7 @@ fn update_refs(mirror: &Repository) -> Result<()> {
 }
 
 fn set_head(mirror: &Repository, git_config: &git2::Config) -> Result<(), git2::Error> {
-    let callbacks = callbacks(git_config);
+    let callbacks = set_callbacks(git_config);
     let mut remote = mirror.find_remote("origin")?;
 
     remote.connect_auth(Direction::Fetch, Some(callbacks), None)?;
