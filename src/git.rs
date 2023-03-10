@@ -3,7 +3,6 @@ use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
 use indicatif::{HumanBytes, ProgressBar};
 
 use std::{
-    fs,
     io::{self, Write},
     path::Path,
 };
