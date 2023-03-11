@@ -68,7 +68,7 @@ fn args() -> ArgMatches {
 
 fn bar_chars() -> [&'static str; 3] {
     if cfg!(unix) {
-        if env::var_os("DISPLAY").is_some() {
+        if env::var_os("DISPLAY").is_some() | cfg!(target_os = "macos") {
             BAR_1
         } else {
             BAR_2
