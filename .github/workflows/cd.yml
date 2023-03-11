@@ -1,0 +1,75 @@
+name: CD
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Announce release
+    if: github.repository_owner == 'charlesrocket'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-assets:
+    needs: create-release
+    name: Upload binaries
+    if: github.repository_owner == 'charlesrocket'
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-unknown-linux-gnu
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-unknown-linux-gnu
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: x86_64-unknown-freebsd
+          - target: universal-apple-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
+        if: (matrix.os == '' || startsWith(matrix.os, 'ubuntu'))
+      - uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: dorst
+          target: ${{ matrix.target }}
+          tar: all
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: upload-assets
+    name: Publish crate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: cargo publish --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
