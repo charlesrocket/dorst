@@ -21,6 +21,7 @@ anyhow = "1.0"
 clap = { version = "4.1", features = ["string"] }
 git2 = "0.16"
 indicatif = "0.17"
+openssl-sys = { version = "0.9", features = ["vendored"] }
 rpassword = "7.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
