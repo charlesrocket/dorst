@@ -59,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest]
     needs: cargo
     name: Code coverage on ${{ matrix.os }}
     if: "!startsWith(github.ref, 'refs/tags/')"
