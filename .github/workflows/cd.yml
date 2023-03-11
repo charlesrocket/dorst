@@ -1,9 +1,9 @@
 name: CD
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
+  workflow_call:
+    secrets:
+      CRATES_TOKEN:
+        required: true
 
 permissions:
   contents: read
@@ -13,11 +13,7 @@ env:
 
 jobs:
   create-release:
-    name: Announce release
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.repository_owner == 'charlesrocket' &&
-      startsWith(github.ref, 'refs/tags/')
+    name: Create release
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -32,10 +28,6 @@ jobs:
   upload-assets:
     needs: create-release
     name: Upload binaries
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.repository_owner == 'charlesrocket' &&
-      startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
     strategy:
@@ -73,10 +65,6 @@ jobs:
   publish:
     needs: upload-assets
     name: Publish crate
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.repository_owner == 'charlesrocket' &&
-      startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

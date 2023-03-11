@@ -1,6 +1,9 @@
 name: CI
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -86,3 +89,13 @@ jobs:
         with:
           files: lcov.info
           fail_ci_if_error: true
+
+  release:
+    needs: cargo
+    name: Release
+    permissions:
+      contents: write
+    if: github.repository_owner == 'charlesrocket' && startsWith(github.ref, 'refs/tags/')
+    uses: charlesrocket/dorst/.github/workflows/cd.yml@trunk
+    secrets:
+      CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
