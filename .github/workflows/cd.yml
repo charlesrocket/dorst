@@ -35,9 +35,11 @@ jobs:
       matrix:
         include:
           - target: aarch64-unknown-linux-gnu
+          - target: aarch64-unknown-linux-musl
           - target: aarch64-apple-darwin
             os: macos-latest
           - target: x86_64-unknown-linux-gnu
+          - target: x86_64-unknown-linux-musl
           - target: x86_64-apple-darwin
             os: macos-latest
           - target: x86_64-unknown-freebsd
@@ -51,7 +53,9 @@ jobs:
       - uses: taiki-e/setup-cross-toolchain-action@v1
         with:
           target: ${{ matrix.target }}
-        if: (matrix.os == '' || startsWith(matrix.os, 'ubuntu'))
+        if: (matrix.os == '' || startsWith(matrix.os, 'ubuntu')) && !contains(matrix.target, '-musl')
+      - uses: taiki-e/install-action@cross
+        if: contains(matrix.target, '-musl')
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: dorst
