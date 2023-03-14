@@ -31,7 +31,10 @@ fn init() -> Result<(), Box<dyn Error>> {
 
     let mut cmd = Command::cargo_bin("dorst")?;
 
-    cmd.assert().success();
+    cmd.write_stdin("init-test-target\n")
+        .assert()
+        .failure()
+        .stdout(contains("init-test-target: unsupported URL protocol;"));
 
     if Path::new("test-init").exists() {
         remove_dir_all("test-init")?;
@@ -54,7 +57,8 @@ fn local() -> Result<(), Box<dyn Error>> {
         .assert()
         .success()
         .stdout(contains(
-            "\u{1b}[1;92m1\u{1b}[0m \u{1b}[37m/\u{1b}[0m \u{1b}[1;91m0\u{1b}[0m",
+            "COMPLETED\u{1b}[0m \
+             \u{1b}[37m(\u{1b}[0m\u{1b}[1;92m1\u{1b}[0m\u{1b}[37m)\u{1b}[0m",
         ));
 
     fetch
@@ -64,7 +68,8 @@ fn local() -> Result<(), Box<dyn Error>> {
         .assert()
         .success()
         .stdout(contains(
-            "\u{1b}[1;92m1\u{1b}[0m \u{1b}[37m/\u{1b}[0m \u{1b}[1;91m0\u{1b}[0m",
+            "COMPLETED\u{1b}[0m \
+             \u{1b}[37m(\u{1b}[0m\u{1b}[1;92m1\u{1b}[0m\u{1b}[37m)\u{1b}[0m",
         ));
 
     remove_dir_all("test-local")?;
@@ -82,7 +87,7 @@ fn bad_refs() -> Result<(), Box<dyn Error>> {
         .arg("test-bad_refs/config.yaml")
         .arg("test-bad_refs/bad_refs")
         .assert()
-        .success()
+        .failure()
         .stdout(contains("badrefs: corrupted loose reference file"));
 
     remove_dir_all("test-bad_refs")?;
