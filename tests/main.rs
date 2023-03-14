@@ -18,9 +18,6 @@ use crate::{
 mod files;
 mod helper;
 
-// TODO
-// Simulate responses
-
 #[test]
 fn init() -> Result<(), Box<dyn Error>> {
     env::set_var("XDG_CONFIG_HOME", "test-init");
