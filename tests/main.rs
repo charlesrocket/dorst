@@ -34,7 +34,7 @@ fn init() -> Result<(), Box<dyn Error>> {
     cmd.write_stdin("init-test-target\n")
         .assert()
         .failure()
-        .stdout(contains("init-test-target: unsupported URL protocol;"));
+        .stderr(contains("init-test-target: unsupported URL protocol;"));
 
     if Path::new("test-init").exists() {
         remove_dir_all("test-init")?;
@@ -88,7 +88,7 @@ fn bad_refs() -> Result<(), Box<dyn Error>> {
         .arg("test-bad_refs/bad_refs")
         .assert()
         .failure()
-        .stdout(contains("badrefs: corrupted loose reference file"));
+        .stderr(contains("badrefs: corrupted loose reference file"));
 
     remove_dir_all("test-bad_refs")?;
 
@@ -106,7 +106,7 @@ fn config_new() -> Result<(), Box<dyn Error>> {
     cmd.arg("-c");
     cmd.arg("test-prompt");
     cmd.write_stdin("foo?\n");
-    cmd.assert().stdout(contains("unsupported URL protocol"));
+    cmd.assert().stderr(contains("unsupported URL protocol"));
 
     if Path::new("test-prompt").is_file() {
         remove_file("test-prompt")?;

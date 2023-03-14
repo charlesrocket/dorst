@@ -148,7 +148,7 @@ fn main() -> Result<()> {
 
                 if !silent {
                     if spinner.is_hidden() {
-                        println!("{}", &err);
+                        eprintln!("{}", &err);
                     }
 
                     spinner.finish_with_message(err);
