@@ -57,14 +57,15 @@ fn clone(
         callbacks.transfer_progress(|stats| {
             if stats.received_objects() == stats.total_objects() {
                 spinner.set_message(format!(
-                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m resolving deltas {}/{}",
+                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\
+                     \x1b[0m resolving deltas {}/{}",
                     stats.indexed_deltas(),
                     stats.total_deltas()
                 ));
-
             } else if stats.total_objects() > 0 {
                 spinner.set_message(format!(
-                    "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} | indexed {} in {}",
+                    "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                     \x1b[0m received {}/{} | indexed {} in {}",
                     stats.received_objects(),
                     stats.total_objects(),
                     stats.indexed_objects(),
@@ -116,7 +117,8 @@ fn fetch(
         if !silent {
             callbacks.sideband_progress(|data| {
                 spinner.set_message(format!(
-                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m remote: {}",
+                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\
+                     \x1b[0m remote: {}",
                     std::str::from_utf8(data).unwrap()
                 ));
 
@@ -138,13 +140,15 @@ fn fetch(
             callbacks.transfer_progress(|stats| {
                 if stats.received_objects() == stats.total_objects() {
                     spinner.set_message(format!(
-                        "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m resolving deltas {}/{}",
+                        "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\
+                         \x1b[0m resolving deltas {}/{}",
                         stats.indexed_deltas(),
                         stats.total_deltas()
                     ));
                 } else if stats.total_objects() > 0 {
                     spinner.set_message(format!(
-                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} | indexed {} in {}",
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                         \x1b[0m received {}/{} | indexed {} in {}",
                         stats.received_objects(),
                         stats.total_objects(),
                         stats.indexed_objects(),
@@ -167,7 +171,8 @@ fn fetch(
 
                 if stats.local_objects() > 0 {
                     spinner.set_message(format!(
-                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} in {} (used {} local objects)",
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                         \x1b[0m received {}/{} in {} (used {} local objects)",
                         stats.indexed_objects(),
                         stats.total_objects(),
                         HumanBytes(stats.received_bytes().try_into().unwrap()),
@@ -175,7 +180,8 @@ fn fetch(
                     ));
                 } else {
                     spinner.set_message(format!(
-                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\x1b[0m received {}/{} in {}",
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                         \x1b[0m received {}/{} in {}",
                         stats.indexed_objects(),
                         stats.total_objects(),
                         HumanBytes(stats.received_bytes().try_into().unwrap())
