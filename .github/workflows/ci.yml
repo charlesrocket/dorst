@@ -96,6 +96,6 @@ jobs:
     permissions:
       contents: write
     if: github.repository_owner == 'charlesrocket' && startsWith(github.ref, 'refs/tags/')
-    uses: charlesrocket/dorst/.github/workflows/cd.yml@trunk
+    uses: ./.github/workflows/cd.yml
     secrets:
       CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
