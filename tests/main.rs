@@ -2,17 +2,15 @@ use assert_cmd::Command;
 use predicates::str::contains;
 use tempfile::NamedTempFile;
 
-use std::{
-    env,
-    error::Error,
-    fs::remove_dir_all,
-    io::Write,
-    path::Path,
+use std::{env, error::Error, fs::remove_dir_all, io::Write, path::Path};
+
+use crate::{
+    files::{CONFIG_EMPTY, CONFIG_LOCAL},
+    helper::serve,
 };
 
-use crate::files::CONFIG_EMPTY;
-
 mod files;
+mod helper;
 
 #[test]
 fn init() -> Result<(), Box<dyn Error>> {
@@ -31,6 +29,49 @@ fn init() -> Result<(), Box<dyn Error>> {
 
     if Path::new("test-init").exists() {
         remove_dir_all("test-init")?;
+    }
+
+    Ok(())
+}
+
+#[test]
+fn mirror() -> Result<(), Box<dyn Error>> {
+    let mut clone = Command::cargo_bin("dorst")?;
+    let mut fetch = Command::cargo_bin("dorst")?;
+    let mut config = NamedTempFile::new()?;
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(1)
+        .build()?;
+
+    config.write_all(CONFIG_LOCAL)?;
+    runtime.spawn(async move {
+        serve();
+    });
+
+    clone
+        .arg("--config")
+        .arg(config.path())
+        .arg("test-mirror")
+        .assert()
+        .success()
+        .stdout(contains(
+            "COMPLETED\u{1b}[0m \
+             \u{1b}[37m(\u{1b}[0m\u{1b}[1;92m1\u{1b}[0m\u{1b}[37m)\u{1b}[0m",
+        ));
+
+    fetch
+        .arg("--config")
+        .arg(config.path())
+        .arg("test-mirror")
+        .assert()
+        .success()
+        .stdout(contains(
+            "COMPLETED\u{1b}[0m \
+             \u{1b}[37m(\u{1b}[0m\u{1b}[1;92m1\u{1b}[0m\u{1b}[37m)\u{1b}[0m",
+        ));
+
+    if Path::new("test-mirror").exists() {
+        remove_dir_all("test-mirror")?;
     }
 
     Ok(())
