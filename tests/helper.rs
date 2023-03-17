@@ -19,7 +19,7 @@ pub fn serve() {
     let (_handle, sender) = server.stoppable();
 
     thread::spawn(move || {
-        thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(10));
         sender.send(()).unwrap();
     });
 }
