@@ -2,7 +2,7 @@ use assert_cmd::Command;
 use predicates::str::contains;
 use tempfile::NamedTempFile;
 
-use std::{env, error::Error, fs::remove_dir_all, io::Write, path::Path};
+use std::{env, error::Error, fs::remove_dir_all, io::Write, path::Path, thread};
 
 use crate::{
     files::{CONFIG_EMPTY, CONFIG_LOCAL},
@@ -47,6 +47,8 @@ fn mirror() -> Result<(), Box<dyn Error>> {
     runtime.spawn(async move {
         serve();
     });
+
+    thread::sleep(std::time::Duration::from_millis(300));
 
     clone
         .arg("--config")
