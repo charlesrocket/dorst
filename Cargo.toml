@@ -29,7 +29,7 @@ shellexpand = "3.0"
 
 [dev-dependencies]
 assert_cmd = "2"
-predicates = "2"
+predicates = "3"
 rouille = "3"
 tempfile = "3"
 tokio = { version = "1", features = ["rt-multi-thread"] }
