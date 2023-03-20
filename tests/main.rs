@@ -6,7 +6,7 @@ use std::{env, error::Error, fs::remove_dir_all, io::Write, path::Path, thread};
 
 use crate::{
     files::{CONFIG_EMPTY, CONFIG_LOCAL},
-    helper::serve,
+    helper::{commit, serve},
 };
 
 mod files;
@@ -36,6 +36,14 @@ fn init() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn mirror() -> Result<(), Box<dyn Error>> {
+    if Path::new("test-mirror").exists() {
+        remove_dir_all("test-mirror")?;
+    }
+
+    if Path::new("test-repo").exists() {
+        remove_dir_all("test-repo")?;
+    }
+
     let mut clone = Command::cargo_bin("dorst")?;
     let mut fetch = Command::cargo_bin("dorst")?;
     let mut config = NamedTempFile::new()?;
@@ -61,6 +69,7 @@ fn mirror() -> Result<(), Box<dyn Error>> {
              \u{1b}[37m(\u{1b}[0m\u{1b}[1;92m1\u{1b}[0m\u{1b}[37m)\u{1b}[0m",
         ));
 
+    commit();
     fetch
         .arg("--config")
         .arg(config.path())
@@ -74,6 +83,10 @@ fn mirror() -> Result<(), Box<dyn Error>> {
 
     if Path::new("test-mirror").exists() {
         remove_dir_all("test-mirror")?;
+    }
+
+    if Path::new("test-repo").exists() {
+        remove_dir_all("test-repo")?;
     }
 
     Ok(())
