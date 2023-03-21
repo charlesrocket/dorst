@@ -83,5 +83,6 @@ fn last_commit(repo: &Repository) -> Commit {
         .unwrap()
         .peel(ObjectType::Commit)
         .unwrap();
+
     obj.into_commit().unwrap()
 }
