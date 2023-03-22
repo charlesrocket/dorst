@@ -9,9 +9,9 @@ pub fn test_repo() -> TempDir {
     let sig = Signature::now("foo", "bar").unwrap();
     let repo = Repository::init(&dir).unwrap();
 
-    File::create(&dir.path().join(".git").join("git-daemon-export-ok")).unwrap();
-    File::create(&dir.path().join("foo")).unwrap();
-    File::create(&dir.path().join("bar")).unwrap();
+    File::create(dir.path().join(".git").join("git-daemon-export-ok")).unwrap();
+    File::create(dir.path().join("foo")).unwrap();
+    File::create(dir.path().join("bar")).unwrap();
 
     {
         let mut index = repo.index().unwrap();
