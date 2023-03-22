@@ -40,7 +40,7 @@ pub fn serve(dir: TempDir) {
         let mut cmd = Command::new("git");
 
         cmd.arg("http-backend");
-        cmd.env("GIT_PROJECT_ROOT", dir.path().clone());
+        cmd.env("GIT_PROJECT_ROOT", dir.path());
         cmd.env("GIT_HTTP_EXPORT_ALL", "");
         cmd.start_cgi(request).unwrap()
     })
