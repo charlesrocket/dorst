@@ -162,14 +162,16 @@ fn main() -> Result<()> {
 
     if err_count > 0 {
         eprintln!(
-            "┗╸\x1b[1mCOMPLETED\x1b[0m \x1b[37m(\x1b[0m\x1b[1;92m{compl_count}\
+            "\u{2517}\u{2578}\x1b[1mCOMPLETED\x1b[0m \
+             \x1b[37m(\x1b[0m\x1b[1;92m{compl_count}\
              \x1b[0m\x1b[37m/\x1b[0m\x1b[1;91m{err_count}\x1b[0m\x1b[37m)\x1b[0m"
         );
 
         std::process::exit(1);
     } else {
         println!(
-            "┗╸\x1b[1mCOMPLETED\x1b[0m \x1b[37m(\x1b[0m\x1b[1;92m{compl_count}\
+            "\u{2517}\u{2578}\x1b[1mCOMPLETED\x1b[0m \
+             \x1b[37m(\x1b[0m\x1b[1;92m{compl_count}\
              \x1b[0m\x1b[37m)\x1b[0m"
         );
     }
