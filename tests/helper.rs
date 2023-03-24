@@ -65,7 +65,7 @@ pub fn commit(dir: String) {
     let parent = last_commit(&repo);
 
     repo.commit(
-        Some("HEAD"),
+        Some("refs/heads/dev"),
         &sig,
         &sig,
         "test2",
