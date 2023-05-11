@@ -18,7 +18,7 @@ lto = true
 
 [dependencies]
 anyhow = "1.0"
-clap = { version = "4.1", features = ["string"] }
+clap = { version = "4.2", features = ["string"] }
 git2 = "0.17"
 indicatif = "0.17"
 openssl-sys = { version = "0.9", features = ["vendored"] }
