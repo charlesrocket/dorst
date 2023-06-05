@@ -96,7 +96,7 @@ fn config_empty() -> Result<(), Box<dyn Error>> {
         .arg(config.path())
         .assert()
         .failure()
-        .stderr(contains("Error: Failed to read the configuration file"));
+        .stderr(contains("Failed to read the configuration file"));
 
     Ok(())
 }
