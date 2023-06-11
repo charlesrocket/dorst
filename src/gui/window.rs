@@ -1,11 +1,13 @@
 use adw::{prelude::*, subclass::prelude::*, ActionRow};
 use git2::{AutotagOption, FetchOptions, Repository};
-use glib::{clone, Object};
+use glib::{clone, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection};
 
 use std::{
+    cell::RefMut,
     fs,
     path::{Path, PathBuf},
+    thread,
 };
 
 mod imp;
@@ -21,6 +23,10 @@ glib::wrapper! {
                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
 }
 
+enum Message {
+    MirrorRepo(String, String),
+}
+
 impl Window {
     pub fn new(app: &adw::Application) -> Self {
         Object::builder::<Window>()
@@ -34,6 +40,19 @@ impl Window {
     }
 
     fn setup_actions(&self) {
+        let (sender, receiver) = MainContext::channel(PRIORITY_DEFAULT);
+        let sender_clone = sender.clone();
+
+        receiver.attach(None, move |x| match x {
+            Message::MirrorRepo(url, dest) => {
+                thread::spawn(move || {
+                    mirror_repo(&url, &dest);
+                });
+
+                return Continue(true);
+            }
+        });
+
         let action_about = gio::SimpleAction::new("about", None);
         action_about.connect_activate(clone!(@weak self as window => move |_, _| {
             window.show_about_dialog();
@@ -41,7 +60,11 @@ impl Window {
 
         let action_mirror_all = gio::SimpleAction::new("mirror-all", None);
         action_mirror_all.connect_activate(clone!(@weak self as window => move |_, _| {
-            window.mirror_all();
+            let dest = &window.get_dest().clone();
+            let links = &window.get_links().clone();
+            for repo_data in links {
+                 let _ = sender_clone.send(Message::MirrorRepo(repo_data.link.clone(), dest.display().to_string()));
+            }
 
         }));
 
@@ -99,6 +122,19 @@ impl Window {
             .expect("Could not get current repositories.")
     }
 
+    fn get_dest(&self) -> RefMut<PathBuf> {
+        self.imp().directory_output.borrow_mut()
+    }
+
+    fn get_links(&self) -> Vec<RepoData> {
+        self.repos()
+            .snapshot()
+            .iter()
+            .filter_map(Cast::downcast_ref::<RepoObject>)
+            .map(RepoObject::repo_data)
+            .collect()
+    }
+
     fn set_repo_list_visible(&self, repos: &gio::ListStore) {
         self.imp().repos_list.set_visible(repos.n_items() > 0);
     }
@@ -132,93 +168,6 @@ impl Window {
         let mut dir = self.imp().directory_output.borrow_mut();
         dir.clear();
         dir.push(directory)
-    }
-
-    fn clone_repo(
-        &self,
-        target: &str,
-        destination: &str,
-        git_config: &git2::Config,
-    ) -> Result<Repository, git2::Error> {
-        let callbacks = git::set_callbacks(git_config);
-        let _target_name = util::get_name(target);
-
-        let mut fetch_options = FetchOptions::new();
-        let mut repo_builder = git2::build::RepoBuilder::new();
-        let builder = repo_builder
-            .bare(true)
-            .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
-
-        fetch_options
-            .remote_callbacks(callbacks)
-            .download_tags(AutotagOption::All);
-
-        let mirror = builder
-            .fetch_options(fetch_options)
-            .clone(target, Path::new(&destination))?;
-
-        mirror.config()?.set_bool("remote.origin.mirror", true)?;
-        git::set_default_branch(&mirror)?;
-
-        Ok(mirror)
-    }
-
-    fn fetch_repo(
-        &self,
-        target: &str,
-        path: &str,
-        git_config: &git2::Config,
-    ) -> Result<Repository, git2::Error> {
-        let mirror = Repository::open(path)?;
-        let _target_name = util::get_name(target);
-
-        {
-            let callbacks = git::set_callbacks(git_config);
-            let mut fetch_options = FetchOptions::new();
-            let mut remote = mirror
-                .find_remote("origin")
-                .or_else(|_| mirror.remote_anonymous(target))?;
-
-            fetch_options.remote_callbacks(callbacks);
-            remote.download(&[] as &[&str], Some(&mut fetch_options))?;
-
-            let default_branch = remote.default_branch()?;
-
-            mirror.set_head(default_branch.as_str().unwrap())?;
-            remote.disconnect()?;
-            remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
-        }
-
-        Ok(mirror)
-    }
-
-    fn mirror_repo(&self, target: &str) {
-        let git_config = git2::Config::open_default().unwrap();
-        let dest = format!(
-            "{}/{}.dorst",
-            &self.imp().directory_output.borrow_mut().display(),
-            util::get_name(target)
-        );
-
-        if Path::new(&dest).exists() {
-            self.fetch_repo(target, &dest, &git_config).unwrap()
-        } else {
-            self.clone_repo(target, &dest, &git_config).unwrap()
-        };
-    }
-
-    fn mirror_all(&self) {
-        let links: Vec<RepoData> = self
-            .repos()
-            .snapshot()
-            .iter()
-            .filter_map(Cast::downcast_ref::<RepoObject>)
-            .map(RepoObject::repo_data)
-            .collect();
-
-        for repo_data in links {
-            self.mirror_repo(&repo_data.link);
-        }
     }
 
     fn restore_data(&self) {
@@ -288,4 +237,71 @@ impl Window {
             .build()
             .present();
     }
+}
+
+fn clone_repo(
+    target: &str,
+    destination: &str,
+    git_config: &git2::Config,
+) -> Result<Repository, git2::Error> {
+    let callbacks = git::set_callbacks(git_config);
+    let _target_name = util::get_name(target);
+
+    let mut fetch_options = FetchOptions::new();
+    let mut repo_builder = git2::build::RepoBuilder::new();
+    let builder = repo_builder
+        .bare(true)
+        .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
+
+    fetch_options
+        .remote_callbacks(callbacks)
+        .download_tags(AutotagOption::All);
+
+    let mirror = builder
+        .fetch_options(fetch_options)
+        .clone(target, Path::new(&destination))?;
+
+    mirror.config()?.set_bool("remote.origin.mirror", true)?;
+    git::set_default_branch(&mirror)?;
+
+    Ok(mirror)
+}
+
+fn fetch_repo(
+    target: &str,
+    path: &str,
+    git_config: &git2::Config,
+) -> Result<Repository, git2::Error> {
+    let mirror = Repository::open(path)?;
+    let _target_name = util::get_name(target);
+
+    {
+        let callbacks = git::set_callbacks(git_config);
+        let mut fetch_options = FetchOptions::new();
+        let mut remote = mirror
+            .find_remote("origin")
+            .or_else(|_| mirror.remote_anonymous(target))?;
+
+        fetch_options.remote_callbacks(callbacks);
+        remote.download(&[] as &[&str], Some(&mut fetch_options))?;
+
+        let default_branch = remote.default_branch()?;
+
+        mirror.set_head(default_branch.as_str().unwrap())?;
+        remote.disconnect()?;
+        remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
+    }
+
+    Ok(mirror)
+}
+
+fn mirror_repo(target: &str, destination: &str) {
+    let git_config = git2::Config::open_default().unwrap();
+    let dest = format!("{}/{}.dorst", &destination, util::get_name(target));
+
+    if Path::new(&dest).exists() {
+        fetch_repo(target, &dest, &git_config).unwrap()
+    } else {
+        clone_repo(target, &dest, &git_config).unwrap()
+    };
 }
