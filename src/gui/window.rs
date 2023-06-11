@@ -24,7 +24,7 @@ glib::wrapper! {
 }
 
 enum Message {
-    MirrorRepo(String, String),
+    MirrorRepo(Vec<RepoData>, PathBuf),
 }
 
 impl Window {
@@ -41,15 +41,17 @@ impl Window {
 
     fn setup_actions(&self) {
         let (sender, receiver) = MainContext::channel(PRIORITY_DEFAULT);
-        let sender_clone = sender.clone();
 
         receiver.attach(None, move |x| match x {
-            Message::MirrorRepo(url, dest) => {
-                thread::spawn(move || {
-                    mirror_repo(&url, &dest);
-                });
+            Message::MirrorRepo(data, destination) => {
+                for repo_data in data {
+                    let dest = destination.clone();
+                    thread::spawn(move || {
+                        mirror_repo(&repo_data.link, &dest.display().to_string());
+                    });
+                }
 
-                return Continue(true);
+                Continue(true)
             }
         });
 
@@ -60,11 +62,9 @@ impl Window {
 
         let action_mirror_all = gio::SimpleAction::new("mirror-all", None);
         action_mirror_all.connect_activate(clone!(@weak self as window => move |_, _| {
-            let dest = &window.get_dest().clone();
-            let links = &window.get_links().clone();
-            for repo_data in links {
-                 let _ = sender_clone.send(Message::MirrorRepo(repo_data.link.clone(), dest.display().to_string()));
-            }
+            let dest = window.get_dest();
+            let links = window.get_links();
+            let _ = sender.send(Message::MirrorRepo(links, dest.to_path_buf()));
 
         }));
 
