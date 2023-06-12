@@ -16,9 +16,7 @@ pub fn start() {
 
     app.connect_activate(build_ui);
 
-    app.set_accels_for_action("win.minimize", &["m"]);
-    app.set_accels_for_action("win.maximize", &["f"]);
-    app.set_accels_for_action("win.toggle-color-scheme", &["c"]);
+    app.set_accels_for_action("win.toggle-color-scheme", &["<Primary>l"]);
     app.set_accels_for_action("win.close", &["<Primary>q"]);
 
     app.run_with_args(&args);
