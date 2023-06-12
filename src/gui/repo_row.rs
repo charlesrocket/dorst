@@ -25,8 +25,16 @@ impl RepoRow {
     }
 
     pub fn bind(&self, repo_object: &RepoObject) {
+        let name_label = self.imp().name_label.get();
         let link_label = self.imp().link_label.get();
         let mut bindings = self.imp().bindings.borrow_mut();
+
+        let name_label_binding = repo_object
+            .bind_property("name", &name_label, "label")
+            .sync_create()
+            .build();
+
+        bindings.push(name_label_binding);
 
         let link_label_binding = repo_object
             .bind_property("link", &link_label, "label")

@@ -10,8 +10,11 @@ glib::wrapper! {
 }
 
 impl RepoObject {
-    pub fn new(link: String) -> Self {
-        Object::builder().property("link", link).build()
+    pub fn new(name: String, link: String) -> Self {
+        Object::builder()
+            .property("name", name)
+            .property("link", link)
+            .build()
     }
 
     pub fn repo_data(&self) -> RepoData {
@@ -19,11 +22,12 @@ impl RepoObject {
     }
 
     pub fn from_repo_data(repo_data: RepoData) -> Self {
-        Self::new(repo_data.link)
+        Self::new(repo_data.name, repo_data.link)
     }
 }
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct RepoData {
+    pub name: String,
     pub link: String,
 }

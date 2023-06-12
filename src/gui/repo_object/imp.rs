@@ -10,6 +10,7 @@ use crate::gui::RepoData;
 #[derive(Properties, Default)]
 #[properties(wrapper_type = super::RepoObject)]
 pub struct RepoObject {
+    #[property(name = "name", get, set, type = String, member = name)]
     #[property(name = "link", get, set, type = String, member = link)]
     pub data: RefCell<RepoData>,
 }

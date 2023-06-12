@@ -8,6 +8,8 @@ use std::cell::RefCell;
 #[template(resource = "/org/hellbyte/dorst/repo_row.ui")]
 pub struct RepoRow {
     #[template_child]
+    pub name_label: TemplateChild<Label>,
+    #[template_child]
     pub link_label: TemplateChild<Label>,
     pub bindings: RefCell<Vec<Binding>>,
 }

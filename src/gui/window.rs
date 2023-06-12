@@ -143,7 +143,12 @@ impl Window {
         let row = ActionRow::builder().build();
 
         repo_object
-            .bind_property("link", &row, "title")
+            .bind_property("name", &row, "title")
+            .sync_create()
+            .build();
+
+        repo_object
+            .bind_property("link", &row, "subtitle")
             .sync_create()
             .build();
 
@@ -160,7 +165,8 @@ impl Window {
 
         buffer.set_text("");
 
-        let repo = RepoObject::new(content);
+        let name = util::get_name(&content).to_owned();
+        let repo = RepoObject::new(name, content);
         self.repos().append(&repo);
     }
 
@@ -179,6 +185,7 @@ impl Window {
                     .iter()
                     .filter_map(|target| {
                         target.as_str().map(|link| RepoData {
+                            name: util::get_name(link).to_owned(),
                             link: link.to_owned(),
                         })
                     })
