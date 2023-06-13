@@ -5,7 +5,7 @@
 ### Intro
 
 Backup codebases with Dørst.
-
+## CLI
 ### Compilation
 
 ```
@@ -29,3 +29,14 @@ targets:
 ```
 
 The `-c`/`--config` flag allows the usage of an alterantive configuration file.
+
+## GUI
+### Compilation
+
+```
+cargo install dorst --features gui
+```
+
+### Usage
+
+`dorst gui`
