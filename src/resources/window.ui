@@ -33,6 +33,7 @@
   </menu>
   <template class="DorstWindow" parent="AdwApplicationWindow">
     <property name="title" translatable="no">DØRST</property>
+    <property name="default_width">423</property>
     <child>
       <object class="GtkBox">
         <property name="orientation">vertical</property>
