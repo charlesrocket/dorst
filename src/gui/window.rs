@@ -1,4 +1,5 @@
 use adw::{prelude::*, subclass::prelude::*, ActionRow};
+use anyhow::{Error, Result};
 use git2::{AutotagOption, FetchOptions, Repository};
 use glib::{clone, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection, ProgressBar};
@@ -57,7 +58,7 @@ impl Window {
                     let dest = destination.clone();
                     let completed_repos_clone = completed_repos.clone();
                     thread::spawn(move || {
-                        mirror_repo(&repo_data.link, &dest.display().to_string());
+                        mirror_repo(&repo_data.link, &dest.display().to_string()).unwrap();
                         completed_repos_clone.fetch_add(1, Ordering::Relaxed);
                     });
                 }
@@ -340,13 +341,15 @@ fn fetch_repo(
     Ok(mirror)
 }
 
-fn mirror_repo(target: &str, destination: &str) {
+fn mirror_repo(target: &str, destination: &str) -> Result<()> {
     let git_config = git2::Config::open_default().unwrap();
     let dest = format!("{}/{}.dorst", &destination, util::get_name(target));
 
     if Path::new(&dest).exists() {
-        fetch_repo(target, &dest, &git_config).unwrap()
+        fetch_repo(target, &dest, &git_config)?
     } else {
-        clone_repo(target, &dest, &git_config).unwrap()
+        clone_repo(target, &dest, &git_config)?
     };
+
+    Ok(())
 }
