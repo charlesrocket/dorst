@@ -1,12 +1,16 @@
 use adw::{prelude::*, subclass::prelude::*, ActionRow};
 use git2::{AutotagOption, FetchOptions, Repository};
 use glib::{clone, MainContext, Object, PRIORITY_DEFAULT};
-use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection};
+use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection, ProgressBar};
 
 use std::{
     cell::RefMut,
     fs,
     path::{Path, PathBuf},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
     thread,
 };
 
@@ -24,7 +28,7 @@ glib::wrapper! {
 }
 
 enum Message {
-    MirrorRepo(Vec<RepoData>, PathBuf),
+    MirrorRepo(ProgressBar, Vec<RepoData>, PathBuf),
 }
 
 impl Window {
@@ -43,13 +47,35 @@ impl Window {
         let (sender, receiver) = MainContext::channel(PRIORITY_DEFAULT);
 
         receiver.attach(None, move |x| match x {
-            Message::MirrorRepo(data, destination) => {
+            Message::MirrorRepo(bar, data, destination) => {
+                bar.set_fraction(0.0);
+
+                let total_repos = data.len();
+                let completed_repos = Arc::new(AtomicUsize::new(0));
+
                 for repo_data in data {
                     let dest = destination.clone();
+                    let completed_repos_clone = completed_repos.clone();
                     thread::spawn(move || {
                         mirror_repo(&repo_data.link, &dest.display().to_string());
+                        completed_repos_clone.fetch_add(1, Ordering::Relaxed);
                     });
                 }
+
+                glib::idle_add_local(
+                    clone!(@weak bar => @default-return Continue(true), move || {
+                        let completed = completed_repos.load(Ordering::Relaxed) as f64;
+                        let progress = completed / total_repos as f64;
+
+                        bar.set_fraction(progress);
+
+                        if completed == total_repos as f64 {
+                            Continue(false)
+                        } else {
+                            Continue(true)
+                        }
+                    }),
+                );
 
                 Continue(true)
             }
@@ -64,7 +90,8 @@ impl Window {
         action_mirror_all.connect_activate(clone!(@weak self as window => move |_, _| {
             let dest = window.get_dest();
             let links = window.get_links();
-            let _ = sender.send(Message::MirrorRepo(links, dest.to_path_buf()));
+            let bar = window.imp().progress_bar.clone();
+            let _ = sender.send(Message::MirrorRepo(bar, links, dest.to_path_buf()));
 
         }));
 

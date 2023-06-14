@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
-use gtk::{gio, glib, CompositeTemplate, Entry, ListBox};
+use gtk::{gio, glib, CompositeTemplate, Entry, ListBox, ProgressBar};
 use serde_yaml::{Mapping, Sequence, Value};
 
 use std::{cell::RefCell, fs::File, io::Write, path::PathBuf};
@@ -20,6 +20,8 @@ pub struct Window {
     pub repos: RefCell<Option<gio::ListStore>>,
     pub directory_output: RefCell<PathBuf>,
     pub directory_dialog: gtk::FileDialog,
+    #[template_child]
+    pub progress_bar: TemplateChild<ProgressBar>,
 }
 
 #[glib::object_subclass]
