@@ -199,6 +199,7 @@ impl Window {
 
     fn set_directory(&self, directory: &PathBuf) {
         let mut dir = self.imp().directory_output.borrow_mut();
+        self.show_message(directory.to_str().unwrap(), 2);
         dir.clear();
         dir.push(directory)
     }
@@ -259,6 +260,16 @@ impl Window {
         } else {
             style_manager.set_color_scheme(adw::ColorScheme::ForceDark);
         }
+    }
+
+    pub fn add_toast(&self, toast: adw::Toast) {
+        self.imp().toast_overlay.add_toast(toast);
+    }
+
+    pub fn show_message(&self, message: &str, timeout: u32) {
+        let toast = adw::Toast::new(message);
+        toast.set_timeout(timeout);
+        self.add_toast(toast);
     }
 
     fn show_about_dialog(&self) {

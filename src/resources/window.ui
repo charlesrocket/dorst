@@ -35,89 +35,93 @@
     <property name="title" translatable="no">DØRST</property>
     <property name="default_width">423</property>
     <child>
-      <object class="GtkBox">
-        <property name="orientation">vertical</property>
-        <property name="hexpand">True</property>
+      <object class="AdwToastOverlay" id="toast_overlay">
         <child>
-          <object class="AdwHeaderBar">
-            <style>
-              <class name="flat"/>
-            </style>
-            <child type="start">
-              <object class="GtkButton">
-                <property name="action-name">win.mirror-all</property>
-                <property name="icon-name">media-floppy-symbolic</property>
-                <property name="tooltip-text">Start</property>
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <property name="hexpand">True</property>
+            <child>
+              <object class="AdwHeaderBar">
+                <style>
+                  <class name="flat"/>
+                </style>
+                <child type="start">
+                  <object class="GtkButton">
+                    <property name="action-name">win.mirror-all</property>
+                    <property name="icon-name">media-floppy-symbolic</property>
+                    <property name="tooltip-text">Start</property>
+                  </object>
+                </child>
+                <child type="end">
+                  <object class="GtkMenuButton">
+                    <property name="icon-name">open-menu-symbolic</property>
+                    <property name="menu-model">main-menu</property>
+                    <property name="tooltip-text" translatable="yes">Menu</property>
+                  </object>
+                </child>
               </object>
             </child>
-            <child type="end">
-              <object class="GtkMenuButton">
-                <property name="icon-name">open-menu-symbolic</property>
-                <property name="menu-model">main-menu</property>
-                <property name="tooltip-text" translatable="yes">Menu</property>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child>
-          <object class="GtkScrolledWindow">
-            <property name="hscrollbar-policy">never</property>
-            <property name="min-content-height">360</property>
-            <property name="vexpand">True</property>
-            <property name="child">
-              <object class="AdwClamp">
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="hscrollbar-policy">never</property>
+                <property name="min-content-height">360</property>
+                <property name="vexpand">True</property>
                 <property name="child">
-                  <object class="GtkBox">
-                    <property name="orientation">vertical</property>
-                    <property name="margin-top">12</property>
-                    <property name="margin-bottom">12</property>
-                    <property name="margin-start">12</property>
-                    <property name="margin-end">12</property>
-                    <child>
-                      <object class="AdwClamp">
-                        <property name="child">
-                          <object class="GtkBox">
-                            <property name="orientation">horizontal</property>
-                            <style>
-                              <class name="linked"/>
-                            </style>
-                            <child>
-                              <object class="GtkButton">
-                                <property name="action-name">win.select-directory</property>
-                                <property name="icon-name">folder-symbolic</property>
-                                <property name="tooltip-text" translatable="yes">Select output directory</property>
+                  <object class="AdwClamp">
+                    <property name="child">
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="margin-top">12</property>
+                        <property name="margin-bottom">12</property>
+                        <property name="margin-start">12</property>
+                        <property name="margin-end">12</property>
+                        <child>
+                          <object class="AdwClamp">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <style>
+                                  <class name="linked"/>
+                                </style>
+                                <child>
+                                  <object class="GtkButton">
+                                    <property name="action-name">win.select-directory</property>
+                                    <property name="icon-name">folder-symbolic</property>
+                                    <property name="tooltip-text" translatable="yes">Select output directory</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkEntry" id="repo_entry">
+                                    <property name="placeholder-text" translatable="yes">Enter repository URL</property>
+                                    <property name="secondary-icon-name">list-add-symbolic</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
                               </object>
-                            </child>
-                            <child>
-                              <object class="GtkEntry" id="repo_entry">
-                                <property name="placeholder-text" translatable="yes">Enter repository URL</property>
-                                <property name="secondary-icon-name">list-add-symbolic</property>
-                                <property name="hexpand">true</property>
-                              </object>
-                            </child>
+                            </property>
                           </object>
-                        </property>
+                        </child>
+                        <child>
+                          <object class="GtkProgressBar" id="progress_bar">
+                            <property name="margin-top">6</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkListBox" id="repos_list">
+                            <property name="margin-top">6</property>
+                            <property name="visible">False</property>
+                            <property name="selection-mode">none</property>
+                            <style>
+                              <class name="boxed-list"/>
+                            </style>
+                          </object>
+                        </child>
                       </object>
-                    </child>
-                    <child>
-                      <object class="GtkProgressBar" id="progress_bar">
-                        <property name="margin-top">6</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkListBox" id="repos_list">
-                        <property name="margin-top">6</property>
-                        <property name="visible">False</property>
-                        <property name="selection-mode">none</property>
-                        <style>
-                          <class name="boxed-list"/>
-                        </style>
-                      </object>
-                    </child>
+                    </property>
                   </object>
                 </property>
               </object>
-            </property>
+            </child>
           </object>
         </child>
       </object>

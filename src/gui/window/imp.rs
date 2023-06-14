@@ -1,4 +1,4 @@
-use adw::{prelude::*, subclass::prelude::*};
+use adw::{prelude::*, subclass::prelude::*, ToastOverlay};
 use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
 use gtk::{gio, glib, CompositeTemplate, Entry, ListBox, ProgressBar};
@@ -22,6 +22,8 @@ pub struct Window {
     pub directory_dialog: gtk::FileDialog,
     #[template_child]
     pub progress_bar: TemplateChild<ProgressBar>,
+    #[template_child]
+    pub toast_overlay: TemplateChild<ToastOverlay>,
 }
 
 #[glib::object_subclass]
