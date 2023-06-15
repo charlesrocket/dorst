@@ -1,5 +1,5 @@
 use adw::{prelude::*, subclass::prelude::*, ActionRow};
-use anyhow::{Error, Result};
+use anyhow::Result;
 use git2::{AutotagOption, FetchOptions, Repository};
 use glib::{clone, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection};
@@ -51,6 +51,7 @@ impl Window {
 
         receiver.attach(None, move |x| match x {
             Message::MirrorRepo(window) => {
+                window.imp().banner.set_revealed(false);
                 window.imp().progress_bar.set_fraction(0.0);
 
                 let links = window.get_links();
@@ -82,8 +83,12 @@ impl Window {
                                                                       .collect::<Vec<_>>()
                                 .join("\n");
 
+                            if !errors_locked.is_empty() {
+                                window.imp().banner.set_title(&errors_locked);
+                                window.imp().banner.set_revealed(true);
+                            }
+
                             window.imp().progress_bar.set_fraction(1.0);
-                            window.show_message(&errors_locked, 3);
                             Continue(false)
                         } else {
                             window.imp().progress_bar.set_fraction(progress);
