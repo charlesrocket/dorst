@@ -24,16 +24,15 @@ gui = ["dep:adw", "dep:glib", "dep:gtk"]
 [dependencies]
 anyhow = { version = "1.0", optional = true }
 adw = { version = "0.4", package = "libadwaita", features = ["v1_3"], optional = true }
-clap = { version = "4.2", features = ["string"], optional = true }
+clap = { version = "4.3", features = ["string"], optional = true }
 git2 = "0.17"
 glib = { version = "0.17", optional = true }
 gtk = { version = "0.6", package = "gtk4", features = ["v4_10"], optional = true }
 indicatif = { version = "0.17", optional = true }
 openssl-sys = { version = "0.9", features = ["vendored"] }
-rpassword = "7.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
-shellexpand = "3.0"
+shellexpand = "3.1"
 
 [dev-dependencies]
 assert_cmd = "2"
