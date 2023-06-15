@@ -8,19 +8,6 @@
       </item>
     </section>
     <section>
-      <submenu>
-        <attribute name="label" translatable="yes">_Filter</attribute>
-        <item>
-          <attribute name="label" translatable="yes">_All</attribute>
-          <attribute name="action">win.filter</attribute>
-          <attribute name="target">All</attribute>
-        </item>
-        <item>
-          <attribute name="label" translatable="yes">_GitHub</attribute>
-          <attribute name="action">win.filter</attribute>
-          <attribute name="target">Github</attribute>
-        </item>
-      </submenu>
       <item>
         <attribute name="label" translatable="yes">_Toggle color scheme</attribute>
         <attribute name="action">win.toggle-color-scheme</attribute>
