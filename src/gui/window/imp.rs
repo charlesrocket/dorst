@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*, Banner, ToastOverlay};
 use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
-use gtk::{gio, glib, CompositeTemplate, Entry, ListBox, ProgressBar};
+use gtk::{gio, glib, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer};
 use serde_yaml::{Mapping, Sequence, Value};
 
 use std::{cell::RefCell, fs::File, io::Write, path::PathBuf};
@@ -26,6 +26,8 @@ pub struct Window {
     pub toast_overlay: TemplateChild<ToastOverlay>,
     #[template_child]
     pub banner: TemplateChild<Banner>,
+    #[template_child]
+    pub revealer: TemplateChild<Revealer>,
 }
 
 #[glib::object_subclass]

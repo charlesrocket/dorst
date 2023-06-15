@@ -53,6 +53,7 @@ impl Window {
             Message::MirrorRepo(window) => {
                 window.imp().banner.set_revealed(false);
                 window.imp().progress_bar.set_fraction(0.0);
+                window.imp().revealer.set_reveal_child(true);
 
                 let links = window.get_links();
                 let total_repos = links.len();
@@ -89,6 +90,7 @@ impl Window {
                             }
 
                             window.imp().progress_bar.set_fraction(1.0);
+                            window.imp().revealer.set_reveal_child(false);
                             Continue(false)
                         } else {
                             window.imp().progress_bar.set_fraction(progress);
