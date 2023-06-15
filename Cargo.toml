@@ -18,12 +18,12 @@ lto = true
 
 [features]
 default = ["cli"]
-cli = ["dep:anyhow", "dep:clap", "dep:indicatif"]
+cli = ["dep:clap", "dep:indicatif"]
 gui = ["dep:adw", "dep:glib", "dep:gtk"]
 
 [dependencies]
-anyhow = { version = "1.0", optional = true }
 adw = { version = "0.4", package = "libadwaita", features = ["v1_3"], optional = true }
+anyhow = "1.0"
 clap = { version = "4.3", features = ["string"], optional = true }
 git2 = "0.17"
 glib = { version = "0.17", optional = true }
@@ -32,7 +32,6 @@ indicatif = { version = "0.17", optional = true }
 openssl-sys = { version = "0.9", features = ["vendored"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
-shellexpand = "3.1"
 
 [dev-dependencies]
 assert_cmd = "2"
