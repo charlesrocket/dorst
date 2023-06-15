@@ -47,9 +47,9 @@ impl Window {
     }
 
     fn setup_actions(&self) {
-        let (sender, receiver) = MainContext::channel(PRIORITY_DEFAULT);
+        let (tx, rx) = MainContext::channel(PRIORITY_DEFAULT);
 
-        receiver.attach(None, move |x| match x {
+        rx.attach(None, move |x| match x {
             Message::MirrorRepo(window) => {
                 window.imp().banner.set_revealed(false);
                 window.imp().progress_bar.set_fraction(0.0);
@@ -110,7 +110,7 @@ impl Window {
 
         let action_mirror_all = gio::SimpleAction::new("mirror-all", None);
         action_mirror_all.connect_activate(clone!(@weak self as window => move |_, _| {
-            let _ = sender.send(Message::MirrorRepo(window));
+            let _ = tx.send(Message::MirrorRepo(window));
 
         }));
 
