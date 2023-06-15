@@ -59,14 +59,20 @@ impl Window {
                 let total_repos = links.len();
                 let completed_repos = Arc::new(AtomicUsize::new(0));
                 let errors = Arc::new(Mutex::new(Vec::new()));
+                let success: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
 
                 for repo_data in links {
                     let dest = window.get_dest().clone();
                     let completed_repos_clone = completed_repos.clone();
                     let errors_clone = errors.clone();
+                    let success_clone = success.clone();
+
                     thread::spawn(move || {
                         match mirror_repo(&repo_data.link, &dest.display().to_string()) {
-                            Ok(()) => {},
+                            Ok(()) => {
+                                let success_item = repo_data.link;
+                                success_clone.lock().unwrap().push(success_item);
+                            },
                             Err(error) => errors_clone.lock().unwrap().push(error),
                         }
                         completed_repos_clone.fetch_add(1, Ordering::Relaxed);
@@ -77,6 +83,26 @@ impl Window {
                     clone!(@weak window => @default-return Continue(true), move || {
                         let completed = completed_repos.load(Ordering::Relaxed) as f64;
                         let progress = completed / total_repos as f64;
+
+                        let repos = window.repos();
+                        let success = success.lock().unwrap().clone();
+
+                        for i in 0..repos.n_items() {
+                            if let Some(obj) = repos.item(i) {
+                                if let Some(repo_object) = obj.downcast_ref::<RepoObject>() {
+                                    let link = repo_object.repo_data().link.clone();
+                                    if success.contains(&link) {
+                                        if let Some(row) = window.imp().repos_list.row_at_index(i as i32) {
+                                            row.remove_css_class("error");
+                                            row.add_css_class("success");
+                                        }
+                                    } else if let Some(row) = window.imp().repos_list.row_at_index(i as i32) {
+                                            row.remove_css_class("success");
+                                            row.add_css_class("error");
+                                    }
+                                }
+                            }
+                        }
 
                         if completed == total_repos as f64 {
                             let errors_locked = errors.lock().unwrap().iter()
