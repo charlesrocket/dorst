@@ -2,7 +2,7 @@ use adw::{prelude::*, subclass::prelude::*, ActionRow};
 use anyhow::{Error, Result};
 use git2::{AutotagOption, FetchOptions, Repository};
 use glib::{clone, MainContext, Object, PRIORITY_DEFAULT};
-use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection, ProgressBar};
+use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection};
 
 use std::{
     cell::RefMut,
@@ -10,16 +10,18 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     thread,
 };
 
 mod imp;
 
-use crate::gui::repo_object::RepoObject;
-use crate::gui::RepoData;
-use crate::{git, util};
+use crate::{
+    git,
+    gui::{repo_object::RepoObject, window, RepoData},
+    util,
+};
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -29,7 +31,7 @@ glib::wrapper! {
 }
 
 enum Message {
-    MirrorRepo(ProgressBar, Vec<RepoData>, PathBuf),
+    MirrorRepo(window::Window),
 }
 
 impl Window {
@@ -48,31 +50,43 @@ impl Window {
         let (sender, receiver) = MainContext::channel(PRIORITY_DEFAULT);
 
         receiver.attach(None, move |x| match x {
-            Message::MirrorRepo(bar, data, destination) => {
-                bar.set_fraction(0.0);
+            Message::MirrorRepo(window) => {
+                window.imp().progress_bar.set_fraction(0.0);
 
-                let total_repos = data.len();
+                let links = window.get_links();
+                let total_repos = links.len();
                 let completed_repos = Arc::new(AtomicUsize::new(0));
+                let errors = Arc::new(Mutex::new(Vec::new()));
 
-                for repo_data in data {
-                    let dest = destination.clone();
+                for repo_data in links {
+                    let dest = window.get_dest().clone();
                     let completed_repos_clone = completed_repos.clone();
+                    let errors_clone = errors.clone();
                     thread::spawn(move || {
-                        mirror_repo(&repo_data.link, &dest.display().to_string()).unwrap();
+                        match mirror_repo(&repo_data.link, &dest.display().to_string()) {
+                            Ok(()) => {},
+                            Err(error) => errors_clone.lock().unwrap().push(error),
+                        }
                         completed_repos_clone.fetch_add(1, Ordering::Relaxed);
                     });
                 }
 
                 glib::idle_add_local(
-                    clone!(@weak bar => @default-return Continue(true), move || {
+                    clone!(@weak window => @default-return Continue(true), move || {
                         let completed = completed_repos.load(Ordering::Relaxed) as f64;
                         let progress = completed / total_repos as f64;
 
-                        bar.set_fraction(progress);
-
                         if completed == total_repos as f64 {
+                            let errors_locked = errors.lock().unwrap().iter()
+                                                                      .map(|error| error.to_string())
+                                                                      .collect::<Vec<_>>()
+                                .join("\n");
+
+                            window.imp().progress_bar.set_fraction(1.0);
+                            window.show_message(&errors_locked, 3);
                             Continue(false)
                         } else {
+                            window.imp().progress_bar.set_fraction(progress);
                             Continue(true)
                         }
                     }),
@@ -89,10 +103,7 @@ impl Window {
 
         let action_mirror_all = gio::SimpleAction::new("mirror-all", None);
         action_mirror_all.connect_activate(clone!(@weak self as window => move |_, _| {
-            let dest = window.get_dest();
-            let links = window.get_links();
-            let bar = window.imp().progress_bar.clone();
-            let _ = sender.send(Message::MirrorRepo(bar, links, dest.to_path_buf()));
+            let _ = sender.send(Message::MirrorRepo(window));
 
         }));
 
