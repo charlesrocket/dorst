@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*, ActionRow};
 use anyhow::Result;
 use git2::{AutotagOption, FetchOptions, Repository};
-use glib::{clone, MainContext, Object, PRIORITY_DEFAULT};
+use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection};
 
 use std::{
@@ -326,6 +326,42 @@ impl Window {
             .comments(env!("CARGO_PKG_DESCRIPTION"))
             .build()
             .present();
+    }
+
+    fn save_settings(&self) {
+        let keyfile = KeyFile::new();
+        let size = self.default_size();
+
+        keyfile.set_int64("window", "width", size.0.into());
+        keyfile.set_int64("window", "height", size.1.into());
+
+        let cache_dir = glib::user_cache_dir();
+        let settings_path = cache_dir.join("dorst");
+        std::fs::create_dir_all(&settings_path).expect("Failed to create settings path");
+
+        let settings = settings_path.join("gui.ini");
+
+        keyfile
+            .save_to_file(settings)
+            .expect("Failed to save settings");
+    }
+
+    fn load_settings(&self) {
+        let keyfile = KeyFile::new();
+        let cache_dir = glib::user_cache_dir();
+        let settings_path = cache_dir.join("dorst");
+        let settings = settings_path.join("gui.ini");
+
+        if settings.exists() {
+            keyfile
+                .load_from_file(settings, glib::KeyFileFlags::NONE)
+                .expect("Failed to load settings");
+
+            let width = keyfile.int64("window", "width").unwrap();
+            let height = keyfile.int64("window", "height").unwrap();
+
+            self.set_default_size(width.try_into().unwrap(), height.try_into().unwrap());
+        }
     }
 }
 

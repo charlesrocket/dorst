@@ -67,6 +67,7 @@ impl ObjectImpl for Window {
         obj.setup_actions();
         #[cfg(debug_assertions)]
         obj.setup_debug();
+        obj.load_settings();
     }
 }
 
@@ -100,6 +101,7 @@ impl WindowImpl for Window {
         let yaml_data = serde_yaml::to_string(&yaml_mapping).unwrap();
         let mut file = File::create(util::xdg_path().unwrap()).unwrap();
         file.write_all(yaml_data.as_bytes()).unwrap();
+        self.obj().save_settings();
         self.parent_close_request()
     }
 }
