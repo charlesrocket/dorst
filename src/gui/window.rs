@@ -73,7 +73,7 @@ impl Window {
                                 let success_item = repo_data.link;
                                 success_clone.lock().unwrap().push(success_item);
                             },
-                            Err(error) => errors_clone.lock().unwrap().push(error),
+                            Err(error) => errors_clone.lock().unwrap().push(format!("{}: {}", repo_data.link, error)),
                         }
                         completed_repos_clone.fetch_add(1, Ordering::Relaxed);
                     });
@@ -86,6 +86,10 @@ impl Window {
 
                         let repos = window.repos();
                         let success = success.lock().unwrap().clone();
+                        let errors_locked = errors.lock().unwrap().iter()
+                                                                  .map(|error| error.to_string())
+                                                                  .collect::<Vec<_>>()
+                            .join("\n");
 
                         for i in 0..repos.n_items() {
                             if let Some(obj) = repos.item(i) {
@@ -93,23 +97,28 @@ impl Window {
                                     let link = repo_object.repo_data().link.clone();
                                     if success.contains(&link) {
                                         if let Some(row) = window.imp().repos_list.row_at_index(i as i32) {
+                                            row.remove_css_class("warning");
                                             row.remove_css_class("error");
                                             row.add_css_class("success");
                                         }
-                                    } else if let Some(row) = window.imp().repos_list.row_at_index(i as i32) {
+
+                                    } else if errors_locked.contains(&link) {
+                                        if let Some(row) = window.imp().repos_list.row_at_index(i as i32) {
+                                            row.remove_css_class("warning");
                                             row.remove_css_class("success");
                                             row.add_css_class("error");
+                                        }
+
+                                    } else if let Some(row) = window.imp().repos_list.row_at_index(i as i32) {
+                                        row.remove_css_class("success");
+                                        row.remove_css_class("error");
+                                        row.add_css_class("warning");
                                     }
                                 }
                             }
                         }
 
                         if completed == total_repos as f64 {
-                            let errors_locked = errors.lock().unwrap().iter()
-                                                                      .map(|error| error.to_string())
-                                                                      .collect::<Vec<_>>()
-                                .join("\n");
-
                             if !errors_locked.is_empty() {
                                 window.imp().banner.set_title(&errors_locked);
                                 window.imp().banner.set_revealed(true);
