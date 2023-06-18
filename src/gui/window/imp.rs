@@ -4,7 +4,13 @@ use glib::subclass::InitializingObject;
 use gtk::{gio, glib, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer};
 use serde_yaml::{Mapping, Sequence, Value};
 
-use std::{cell::RefCell, fs::File, io::Write, path::PathBuf};
+use std::{
+    cell::RefCell,
+    fs::File,
+    io::Write,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 use crate::gui::window::RepoObject;
 use crate::gui::RepoData;
@@ -28,6 +34,9 @@ pub struct Window {
     pub banner: TemplateChild<Banner>,
     #[template_child]
     pub revealer: TemplateChild<Revealer>,
+    pub filter_option: RefCell<String>,
+    pub errors_list: Arc<Mutex<Vec<String>>>,
+    pub success_list: Arc<Mutex<Vec<String>>>,
 }
 
 #[glib::object_subclass]

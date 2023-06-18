@@ -10,7 +10,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc, Mutex,
+        Arc,
     },
     thread,
 };
@@ -52,20 +52,20 @@ impl Window {
         rx.attach(None, move |x| match x {
             Message::MirrorRepo(window) => {
                 window.imp().banner.set_revealed(false);
+                window.imp().errors_list.lock().unwrap().clear();
+                window.imp().success_list.lock().unwrap().clear();
                 window.imp().progress_bar.set_fraction(0.0);
                 window.imp().revealer.set_reveal_child(true);
 
                 let links = window.get_links();
                 let total_repos = links.len();
                 let completed_repos = Arc::new(AtomicUsize::new(0));
-                let errors = Arc::new(Mutex::new(Vec::new()));
-                let success: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
 
                 for repo_data in links {
                     let dest = window.get_dest().clone();
                     let completed_repos_clone = completed_repos.clone();
-                    let errors_clone = errors.clone();
-                    let success_clone = success.clone();
+                    let errors_clone = window.imp().errors_list.clone();
+                    let success_clone = window.imp().success_list.clone();
 
                     thread::spawn(move || {
                         match mirror_repo(&repo_data.link, &dest.display().to_string()) {
@@ -84,41 +84,14 @@ impl Window {
                         let completed = completed_repos.load(Ordering::Relaxed) as f64;
                         let progress = completed / total_repos as f64;
 
-                        let repos = window.repos();
-                        let success = success.lock().unwrap().clone();
-                        let errors_locked = errors.lock().unwrap().iter()
-                                                                  .map(|error| error.to_string())
-                                                                  .collect::<Vec<_>>()
-                            .join("\n");
-
-                        for i in 0..repos.n_items() {
-                            if let Some(obj) = repos.item(i) {
-                                if let Some(repo_object) = obj.downcast_ref::<RepoObject>() {
-                                    let link = repo_object.repo_data().link.clone();
-                                    if success.contains(&link) {
-                                        if let Some(row) = window.imp().repos_list.row_at_index(i as i32) {
-                                            row.remove_css_class("warning");
-                                            row.remove_css_class("error");
-                                            row.add_css_class("success");
-                                        }
-
-                                    } else if errors_locked.contains(&link) {
-                                        if let Some(row) = window.imp().repos_list.row_at_index(i as i32) {
-                                            row.remove_css_class("warning");
-                                            row.remove_css_class("success");
-                                            row.add_css_class("error");
-                                        }
-
-                                    } else if let Some(row) = window.imp().repos_list.row_at_index(i as i32) {
-                                        row.remove_css_class("success");
-                                        row.remove_css_class("error");
-                                        row.add_css_class("warning");
-                                    }
-                                }
-                            }
-                        }
+                        window.update_repos();
 
                         if completed == total_repos as f64 {
+                            let errors_locked = window.imp().errors_list.lock().unwrap().iter()
+                                                                                        .map(|error| error.to_string())
+                                                                                        .collect::<Vec<_>>()
+                                .join("\n");
+
                             if !errors_locked.is_empty() {
                                 window.imp().banner.set_title(&errors_locked);
                                 window.imp().banner.set_revealed(true);
@@ -178,7 +151,7 @@ impl Window {
         self.imp().repos.replace(Some(model));
 
         let filter_model = FilterListModel::new(Some(self.repos()), self.filter());
-        let selection_model = NoSelection::new(Some(filter_model));
+        let selection_model = NoSelection::new(Some(filter_model.clone()));
         self.imp().repos_list.bind_model(
             Some(&selection_model),
             clone!(@weak self as window => @default-panic, move |obj| {
@@ -193,6 +166,22 @@ impl Window {
             .connect_items_changed(clone!(@weak self as window => move |repos, _, _, _| {
                 window.set_repo_list_visible(repos);
             }));
+
+        let action_filter = gio::SimpleAction::new("toggle-ssh-filter", None);
+        action_filter.connect_activate(
+            clone!(@weak self as window, @weak filter_model => move |_, _| {
+                if window.imp().filter_option.borrow().to_owned().is_empty() {
+                    *window.imp().filter_option.borrow_mut() = "SSH".to_owned();
+                } else {
+                    *window.imp().filter_option.borrow_mut() = "".to_owned();
+                }
+
+                filter_model.set_filter(window.filter().as_ref());
+                window.update_repos();
+            }),
+        );
+
+        self.add_action(&action_filter);
     }
 
     fn repos(&self) -> gio::ListStore {
@@ -201,6 +190,42 @@ impl Window {
             .borrow()
             .clone()
             .expect("Could not get current repositories.")
+    }
+
+    fn update_repos(&self) {
+        let repos = self.repos();
+
+        for i in 0..repos.n_items() {
+            if let Some(obj) = repos.item(i) {
+                if let Some(repo_object) = obj.downcast_ref::<RepoObject>() {
+                    let link = repo_object.repo_data().link.clone();
+                    if self.imp().success_list.lock().unwrap().contains(&link) {
+                        if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+                            row.remove_css_class("warning");
+                            row.remove_css_class("error");
+                            row.add_css_class("success");
+                        }
+                    } else if self
+                        .imp()
+                        .errors_list
+                        .lock()
+                        .unwrap()
+                        .iter()
+                        .any(|x| x.contains(&link))
+                    {
+                        if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+                            row.remove_css_class("warning");
+                            row.remove_css_class("success");
+                            row.add_css_class("error");
+                        }
+                    } else if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+                        row.remove_css_class("success");
+                        row.remove_css_class("error");
+                        row.add_css_class("warning");
+                    }
+                }
+            }
+        }
     }
 
     fn get_dest(&self) -> RefMut<PathBuf> {
@@ -279,29 +304,19 @@ impl Window {
         }
     }
 
-    // TODO
     fn filter(&self) -> Option<CustomFilter> {
-        let filter_state: String = "All".to_string();
-        let filter_gitlab = CustomFilter::new(|obj| {
+        let filter_state = &self.imp().filter_option.borrow();
+        let filter_ssh = CustomFilter::new(|obj| {
             let repo_object = obj
                 .downcast_ref::<RepoObject>()
                 .expect("The object needs to be of type `RepoObject`.");
 
-            !repo_object.repo_data().link.contains("gitlab.com")
-        });
-
-        let filter_github = CustomFilter::new(|obj| {
-            let repo_object = obj
-                .downcast_ref::<RepoObject>()
-                .expect("The object needs to be of type `RepoObject`.");
-
-            !repo_object.repo_data().link.contains("github.com")
+            repo_object.repo_data().link.contains('@')
         });
 
         match filter_state.as_str() {
-            "All" => None,
-            "GitLab" => Some(filter_gitlab),
-            "GitHub" => Some(filter_github),
+            "" => None,
+            "SSH" => Some(filter_ssh),
             _ => unreachable!(),
         }
     }
