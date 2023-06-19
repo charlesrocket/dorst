@@ -1,13 +1,11 @@
 use adw::{prelude::*, subclass::prelude::*, ActionRow};
-use anyhow::Result;
-use git2::{AutotagOption, FetchOptions, Repository};
 use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection};
 
 use std::{
     cell::RefMut,
     fs,
-    path::{Path, PathBuf},
+    path::PathBuf,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -68,7 +66,8 @@ impl Window {
                     let success_clone = window.imp().success_list.clone();
 
                     thread::spawn(move || {
-                        match mirror_repo(&repo.link, &dest.display().to_string()) {
+                        let destination = format!("{}/{}.dorst", &dest.display().to_string(), util::get_name(&repo.link));
+                        match git::mirror_repo(&destination, &repo.link, None, None) {
                             Ok(()) => {
                                 let success_item = repo.link;
                                 success_clone.lock().unwrap().push(success_item);
@@ -387,73 +386,4 @@ impl Window {
             self.set_default_size(width.try_into().unwrap(), height.try_into().unwrap());
         }
     }
-}
-
-fn clone_repo(
-    target: &str,
-    destination: &str,
-    git_config: &git2::Config,
-) -> Result<Repository, git2::Error> {
-    let callbacks = git::set_callbacks(git_config);
-    let _target_name = util::get_name(target);
-
-    let mut fetch_options = FetchOptions::new();
-    let mut repo_builder = git2::build::RepoBuilder::new();
-    let builder = repo_builder
-        .bare(true)
-        .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
-
-    fetch_options
-        .remote_callbacks(callbacks)
-        .download_tags(AutotagOption::All);
-
-    let mirror = builder
-        .fetch_options(fetch_options)
-        .clone(target, Path::new(&destination))?;
-
-    mirror.config()?.set_bool("remote.origin.mirror", true)?;
-    git::set_default_branch(&mirror)?;
-
-    Ok(mirror)
-}
-
-fn fetch_repo(
-    target: &str,
-    path: &str,
-    git_config: &git2::Config,
-) -> Result<Repository, git2::Error> {
-    let mirror = Repository::open(path)?;
-    let _target_name = util::get_name(target);
-
-    {
-        let callbacks = git::set_callbacks(git_config);
-        let mut fetch_options = FetchOptions::new();
-        let mut remote = mirror
-            .find_remote("origin")
-            .or_else(|_| mirror.remote_anonymous(target))?;
-
-        fetch_options.remote_callbacks(callbacks);
-        remote.download(&[] as &[&str], Some(&mut fetch_options))?;
-
-        let default_branch = remote.default_branch()?;
-
-        mirror.set_head(default_branch.as_str().unwrap())?;
-        remote.disconnect()?;
-        remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
-    }
-
-    Ok(mirror)
-}
-
-fn mirror_repo(target: &str, destination: &str) -> Result<()> {
-    let git_config = git2::Config::open_default().unwrap();
-    let dest = format!("{}/{}.dorst", &destination, util::get_name(target));
-
-    if Path::new(&dest).exists() {
-        fetch_repo(target, &dest, &git_config)?
-    } else {
-        clone_repo(target, &dest, &git_config)?
-    };
-
-    Ok(())
 }

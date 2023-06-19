@@ -1,5 +1,14 @@
 use anyhow::Result;
-use git2::{Cred, RemoteCallbacks, Repository};
+use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
+#[cfg(feature = "cli")]
+use indicatif::{HumanBytes, ProgressBar};
+
+use crate::util::get_name;
+
+use std::{
+    io::{self, Write},
+    path::Path,
+};
 
 pub fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks {
     let mut callbacks = RemoteCallbacks::new();
@@ -31,6 +40,203 @@ pub fn set_default_branch(mirror: &Repository) -> Result<(), git2::Error> {
     let branch = remote_branch_name?.to_owned();
 
     mirror.set_head(&branch)?;
+
+    Ok(())
+}
+
+pub fn clone_repo(
+    target: &str,
+    destination: &str,
+    #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
+    git_config: &git2::Config,
+    #[cfg(feature = "cli")] silent: Option<bool>,
+) -> Result<Repository, git2::Error> {
+    let mut callbacks = set_callbacks(git_config);
+    let target_name = get_name(target);
+
+    #[cfg(feature = "cli")]
+    if silent == Some(false) {
+        callbacks.transfer_progress(|stats| {
+            if stats.received_objects() == stats.total_objects() {
+                spinner.unwrap().set_message(format!(
+                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\
+                     \x1b[0m resolving deltas {}/{}",
+                    stats.indexed_deltas(),
+                    stats.total_deltas()
+                ));
+            } else if stats.total_objects() > 0 {
+                spinner.unwrap().set_message(format!(
+                    "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                     \x1b[0m received {}/{} | indexed {} in {}",
+                    stats.received_objects(),
+                    stats.total_objects(),
+                    stats.indexed_objects(),
+                    HumanBytes(stats.received_bytes().try_into().unwrap())
+                ));
+            }
+
+            true
+        });
+    }
+
+    let mut fetch_options = FetchOptions::new();
+    let mut repo_builder = git2::build::RepoBuilder::new();
+    let builder = repo_builder
+        .bare(true)
+        .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
+
+    fetch_options
+        .remote_callbacks(callbacks)
+        .download_tags(AutotagOption::All);
+
+    let mirror = builder
+        .fetch_options(fetch_options)
+        .clone(target, Path::new(&destination))?;
+
+    mirror.config()?.set_bool("remote.origin.mirror", true)?;
+    set_default_branch(&mirror)?;
+
+    Ok(mirror)
+}
+
+pub fn fetch_repo(
+    target: &str,
+    path: &str,
+    #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
+    git_config: &git2::Config,
+    #[cfg(feature = "cli")] silent: Option<bool>,
+) -> Result<Repository, git2::Error> {
+    let mirror = Repository::open(path)?;
+    let target_name = get_name(target);
+
+    {
+        let mut callbacks = set_callbacks(git_config);
+        let mut fetch_options = FetchOptions::new();
+        let mut remote = mirror
+            .find_remote("origin")
+            .or_else(|_| mirror.remote_anonymous(target))?;
+
+        #[cfg(feature = "cli")]
+        if silent == Some(false) {
+            callbacks.sideband_progress(|data| {
+                spinner.unwrap().set_message(format!(
+                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\
+                     \x1b[0m remote: {}",
+                    std::str::from_utf8(data).unwrap()
+                ));
+
+                io::stdout().flush().unwrap();
+
+                true
+            });
+
+            callbacks.update_tips(|refname, a, b| {
+                if a.is_zero() {
+                    spinner
+                        .unwrap()
+                        .set_message(format!("[new]     {b:20} {refname}"));
+                } else {
+                    spinner
+                        .unwrap()
+                        .set_message(format!("[updated] {a:10}..{b:10} {refname}"));
+                }
+
+                true
+            });
+
+            callbacks.transfer_progress(|stats| {
+                if stats.received_objects() == stats.total_objects() {
+                    spinner.unwrap().set_message(format!(
+                        "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\
+                         \x1b[0m resolving deltas {}/{}",
+                        stats.indexed_deltas(),
+                        stats.total_deltas()
+                    ));
+                } else if stats.total_objects() > 0 {
+                    spinner.unwrap().set_message(format!(
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                         \x1b[0m received {}/{} | indexed {} in {}",
+                        stats.received_objects(),
+                        stats.total_objects(),
+                        stats.indexed_objects(),
+                        HumanBytes(stats.received_bytes().try_into().unwrap())
+                    ));
+                }
+
+                io::stdout().flush().unwrap();
+
+                true
+            });
+        }
+
+        fetch_options.remote_callbacks(callbacks);
+        remote.download(&[] as &[&str], Some(&mut fetch_options))?;
+
+        {
+            #[cfg(feature = "cli")]
+            if silent == Some(false) {
+                let stats = remote.stats();
+
+                if stats.local_objects() > 0 {
+                    spinner.unwrap().set_message(format!(
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                         \x1b[0m received {}/{} in {} (used {} local objects)",
+                        stats.indexed_objects(),
+                        stats.total_objects(),
+                        HumanBytes(stats.received_bytes().try_into().unwrap()),
+                        stats.local_objects()
+                    ));
+                } else {
+                    spinner.unwrap().set_message(format!(
+                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                         \x1b[0m received {}/{} in {}",
+                        stats.indexed_objects(),
+                        stats.total_objects(),
+                        HumanBytes(stats.received_bytes().try_into().unwrap())
+                    ));
+                }
+            }
+        }
+
+        let default_branch = remote.default_branch()?;
+
+        mirror.set_head(default_branch.as_str().unwrap())?;
+        remote.disconnect()?;
+        remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
+    }
+
+    Ok(mirror)
+}
+
+pub fn mirror_repo(
+    destination: &str,
+    target: &str,
+    #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
+    #[cfg(feature = "cli")] silent: Option<bool>,
+) -> Result<()> {
+    let git_config = git2::Config::open_default()?;
+
+    if Path::new(&destination).exists() {
+        fetch_repo(
+            target,
+            destination,
+            #[cfg(feature = "cli")]
+            spinner,
+            &git_config,
+            #[cfg(feature = "cli")]
+            silent,
+        )?
+    } else {
+        clone_repo(
+            target,
+            destination,
+            #[cfg(feature = "cli")]
+            spinner,
+            &git_config,
+            #[cfg(feature = "cli")]
+            silent,
+        )?
+    };
 
     Ok(())
 }
