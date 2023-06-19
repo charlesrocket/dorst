@@ -57,23 +57,23 @@ impl Window {
                 window.imp().progress_bar.set_fraction(0.0);
                 window.imp().revealer.set_reveal_child(true);
 
-                let links = window.get_links();
-                let total_repos = links.len();
+                let repo_data = window.get_repo_data();
+                let total_repos = repo_data.len();
                 let completed_repos = Arc::new(AtomicUsize::new(0));
 
-                for repo_data in links {
+                for repo in repo_data {
                     let dest = window.get_dest().clone();
                     let completed_repos_clone = completed_repos.clone();
                     let errors_clone = window.imp().errors_list.clone();
                     let success_clone = window.imp().success_list.clone();
 
                     thread::spawn(move || {
-                        match mirror_repo(&repo_data.link, &dest.display().to_string()) {
+                        match mirror_repo(&repo.link, &dest.display().to_string()) {
                             Ok(()) => {
-                                let success_item = repo_data.link;
+                                let success_item = repo.link;
                                 success_clone.lock().unwrap().push(success_item);
                             },
-                            Err(error) => errors_clone.lock().unwrap().push(format!("{}: {}", repo_data.link, error)),
+                            Err(error) => errors_clone.lock().unwrap().push(format!("{}: {}", repo.link, error)),
                         }
                         completed_repos_clone.fetch_add(1, Ordering::Relaxed);
                     });
@@ -232,7 +232,7 @@ impl Window {
         self.imp().directory_output.borrow_mut()
     }
 
-    fn get_links(&self) -> Vec<RepoData> {
+    fn get_repo_data(&self) -> Vec<RepoData> {
         self.repos()
             .snapshot()
             .iter()
