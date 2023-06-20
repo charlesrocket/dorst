@@ -148,7 +148,7 @@ fn bar_chars() -> [&'static str; 3] {
     }
 }
 
-fn cli(matches: ArgMatches) -> Result<()> {
+fn cli(matches: &ArgMatches) -> Result<()> {
     println!("{BANNER}");
 
     let path = matches.get_one::<PathBuf>("path").unwrap();
@@ -241,7 +241,7 @@ fn cli(matches: ArgMatches) -> Result<()> {
 
 pub fn start() {
     let args = args();
-    if let Err(error) = cli(args) {
+    if let Err(error) = cli(&args) {
         eprintln!("\x1b[1;31mError:\x1b[0m {error}");
         std::process::exit(1);
     }
