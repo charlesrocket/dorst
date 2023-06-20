@@ -39,7 +39,7 @@
                   <class name="flat"/>
                 </style>
                 <child type="start">
-                  <object class="GtkButton">
+                  <object class="GtkButton" id="button_start">
                     <property name="action-name">win.mirror-all</property>
                     <property name="icon-name">media-floppy-symbolic</property>
                     <property name="tooltip-text">Start</property>
@@ -86,10 +86,13 @@
                                   <class name="linked"/>
                                 </style>
                                 <child>
-                                  <object class="GtkButton">
+                                  <object class="GtkButton" id="button_destination">
                                     <property name="action-name">win.select-directory</property>
                                     <property name="icon-name">folder-symbolic</property>
                                     <property name="tooltip-text" translatable="yes">Select output directory</property>
+                                    <style>
+                                      <class name="suggested-action"/>
+                                    </style>
                                   </object>
                                 </child>
                                 <child>

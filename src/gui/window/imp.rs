@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*, Banner, ToastOverlay};
 use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
-use gtk::{gio, glib, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer};
+use gtk::{gio, glib, Button, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer};
 use serde_yaml::{Mapping, Sequence, Value};
 
 use std::{
@@ -19,6 +19,10 @@ use crate::util;
 #[derive(CompositeTemplate, Default)]
 #[template(resource = "/org/hellbyte/dorst/window.ui")]
 pub struct Window {
+    #[template_child]
+    pub button_start: TemplateChild<Button>,
+    #[template_child]
+    pub button_destination: TemplateChild<Button>,
     #[template_child]
     pub repo_entry: TemplateChild<Entry>,
     #[template_child]
@@ -55,6 +59,9 @@ impl ObjectSubclass for Window {
             None,
             |win, _action_name, _action_target| async move {
                 let dialog = &win.imp().directory_dialog;
+                win.imp()
+                    .button_destination
+                    .remove_css_class("suggested-action");
                 if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
                     win.set_directory(&folder.path().unwrap());
                 }

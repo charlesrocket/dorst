@@ -49,6 +49,9 @@ impl Window {
 
         rx.attach(None, move |x| match x {
             Message::MirrorRepo(window) => {
+                window.imp().button_start.set_sensitive(false);
+                window.imp().button_destination.set_sensitive(false);
+                window.imp().repo_entry.set_sensitive(false);
                 window.imp().banner.set_revealed(false);
                 window.imp().revealer_banner.set_reveal_child(false);
                 window.imp().errors_list.lock().unwrap().clear();
@@ -100,6 +103,9 @@ impl Window {
 
                             window.imp().progress_bar.set_fraction(1.0);
                             window.imp().revealer.set_reveal_child(false);
+                            window.imp().button_destination.set_sensitive(true);
+                            window.imp().repo_entry.set_sensitive(true);
+                            window.imp().button_start.set_sensitive(true);
                             Continue(false)
                         } else {
                             window.imp().progress_bar.set_fraction(progress);
