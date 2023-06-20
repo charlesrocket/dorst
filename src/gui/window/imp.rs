@@ -64,6 +64,7 @@ impl ObjectSubclass for Window {
                     .remove_css_class("suggested-action");
                 if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
                     win.set_directory(&folder.path().unwrap());
+                    win.show_message(folder.path().unwrap().to_str().unwrap(), 2);
                 }
             },
         );

@@ -285,7 +285,6 @@ impl Window {
 
     fn set_directory(&self, directory: &PathBuf) {
         let mut dir = self.imp().directory_output.borrow_mut();
-        self.show_message(directory.to_str().unwrap(), 2);
         dir.clear();
         dir.push(directory);
     }
@@ -362,9 +361,11 @@ impl Window {
     fn save_settings(&self) {
         let keyfile = KeyFile::new();
         let size = self.default_size();
+        let dest = self.imp().directory_output.borrow();
 
         keyfile.set_int64("window", "width", size.0.into());
         keyfile.set_int64("window", "height", size.1.into());
+        keyfile.set_string("backup", "destination", dest.to_str().unwrap());
 
         let cache_dir = glib::user_cache_dir();
         let settings_path = cache_dir.join("dorst");
@@ -388,10 +389,16 @@ impl Window {
                 .load_from_file(settings, glib::KeyFileFlags::NONE)
                 .expect("Failed to load settings");
 
-            let width = keyfile.int64("window", "width").unwrap();
-            let height = keyfile.int64("window", "height").unwrap();
+            if let (Ok(width), Ok(height)) = (
+                keyfile.int64("window", "width"),
+                keyfile.int64("window", "height"),
+            ) {
+                self.set_default_size(width.try_into().unwrap(), height.try_into().unwrap());
+            }
 
-            self.set_default_size(width.try_into().unwrap(), height.try_into().unwrap());
+            if let Ok(dest) = keyfile.string("backup", "destination") {
+                self.set_directory(&PathBuf::from(dest.as_str()));
+            }
         }
     }
 }
