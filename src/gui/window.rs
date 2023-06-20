@@ -287,7 +287,7 @@ impl Window {
         let mut dir = self.imp().directory_output.borrow_mut();
         self.show_message(directory.to_str().unwrap(), 2);
         dir.clear();
-        dir.push(directory)
+        dir.push(directory);
     }
 
     fn restore_data(&self) {
