@@ -91,7 +91,7 @@ impl Window {
 
                         if completed == total_repos as f64 {
                             let errors_locked = window.imp().errors_list.lock().unwrap().iter()
-                                                                                        .map(|error| error.to_string())
+                                                                                        .map(std::string::ToString::to_string)
                                                                                         .collect::<Vec<_>>()
                                 .join("\n");
 
@@ -180,7 +180,7 @@ impl Window {
                 if window.imp().filter_option.borrow().to_owned().is_empty() {
                     *window.imp().filter_option.borrow_mut() = "SSH".to_owned();
                 } else {
-                    *window.imp().filter_option.borrow_mut() = "".to_owned();
+                    *window.imp().filter_option.borrow_mut() = String::new();
                 }
 
                 filter_model.set_filter(window.filter().as_ref());
