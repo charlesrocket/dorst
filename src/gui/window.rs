@@ -50,6 +50,7 @@ impl Window {
         rx.attach(None, move |x| match x {
             Message::MirrorRepo(window) => {
                 window.imp().banner.set_revealed(false);
+                window.imp().revealer_banner.set_reveal_child(false);
                 window.imp().errors_list.lock().unwrap().clear();
                 window.imp().success_list.lock().unwrap().clear();
                 window.imp().progress_bar.set_fraction(0.0);
@@ -93,6 +94,7 @@ impl Window {
 
                             if !errors_locked.is_empty() {
                                 window.imp().banner.set_title(&errors_locked);
+                                window.imp().revealer_banner.set_reveal_child(true);
                                 window.imp().banner.set_revealed(true);
                             }
 

@@ -33,6 +33,8 @@ pub struct Window {
     #[template_child]
     pub banner: TemplateChild<Banner>,
     #[template_child]
+    pub revealer_banner: TemplateChild<Revealer>,
+    #[template_child]
     pub revealer: TemplateChild<Revealer>,
     pub filter_option: RefCell<String>,
     pub errors_list: Arc<Mutex<Vec<String>>>,
