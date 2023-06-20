@@ -27,7 +27,7 @@ impl ObjectImpl for RepoObject {
     }
 
     fn set_property(&self, id: usize, value: &Value, pspec: &ParamSpec) {
-        self.derived_set_property(id, value, pspec)
+        self.derived_set_property(id, value, pspec);
     }
 
     fn property(&self, id: usize, pspec: &ParamSpec) -> Value {
