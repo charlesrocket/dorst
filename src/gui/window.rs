@@ -385,9 +385,17 @@ impl Window {
         let settings = settings_path.join("gui.ini");
 
         if settings.exists() {
-            keyfile
+            if keyfile
                 .load_from_file(settings, glib::KeyFileFlags::NONE)
-                .expect("Failed to load settings");
+                .is_err()
+            {
+                let error_dialog = gtk::AlertDialog::builder()
+                    .modal(true)
+                    .detail("Failed to load settings")
+                    .build();
+
+                error_dialog.show(Some(self));
+            }
 
             if let (Ok(width), Ok(height)) = (
                 keyfile.int64("window", "width"),
@@ -397,7 +405,12 @@ impl Window {
             }
 
             if let Ok(dest) = keyfile.string("backup", "destination") {
-                self.set_directory(&PathBuf::from(dest.as_str()));
+                if !dest.is_empty() {
+                    self.set_directory(&PathBuf::from(dest.as_str()));
+                    self.imp()
+                        .button_destination
+                        .remove_css_class("suggested-action");
+                }
             }
         }
     }
