@@ -71,7 +71,7 @@ impl Window {
 
                     thread::spawn(move || {
                         let destination = format!("{}/{}.dorst", &dest.display().to_string(), util::get_name(&repo.link));
-                        match git::mirror_repo(&destination, &repo.link, None, None) {
+                        match git::mirror_repo(&destination, &repo.link, #[cfg(feature = "cli")] None, #[cfg(feature = "cli")] None) {
                             Ok(()) => {
                                 let success_item = repo.link;
                                 success_clone.lock().unwrap().push(success_item);
