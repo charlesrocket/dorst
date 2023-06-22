@@ -1,6 +1,9 @@
-use adw::{prelude::*, subclass::prelude::*, ActionRow};
+use adw::{prelude::*, subclass::prelude::*};
 use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
-use gtk::{gio, glib, CustomFilter, FilterListModel, License, NoSelection};
+use gtk::{
+    gio, glib, Align::Start, Box, CustomFilter, FilterListModel, Label, License, ListBoxRow,
+    NoSelection, Orientation::Vertical, ProgressBar, Revealer,
+};
 
 use std::{
     cell::RefMut,
@@ -208,9 +211,22 @@ impl Window {
                     let link = repo_object.repo_data().link.clone();
                     if self.imp().success_list.lock().unwrap().contains(&link) {
                         if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                            row.remove_css_class("warning");
                             row.remove_css_class("error");
                             row.add_css_class("success");
+                            let revealer = row
+                                .child()
+                                .unwrap()
+                                .downcast::<Box>()
+                                .unwrap()
+                                .last_child()
+                                .unwrap()
+                                .downcast::<Revealer>()
+                                .unwrap();
+
+                            let progress_bar =
+                                revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+                            progress_bar.set_fraction(1.0);
+                            revealer.set_reveal_child(false);
                         }
                     } else if self
                         .imp()
@@ -221,14 +237,41 @@ impl Window {
                         .any(|x| x.contains(&link))
                     {
                         if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                            row.remove_css_class("warning");
+                            let revealer = row
+                                .child()
+                                .unwrap()
+                                .downcast::<Box>()
+                                .unwrap()
+                                .last_child()
+                                .unwrap()
+                                .downcast::<Revealer>()
+                                .unwrap();
+
+                            let progress_bar =
+                                revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+                            progress_bar.set_fraction(1.0);
+                            revealer.set_reveal_child(false);
                             row.remove_css_class("success");
                             row.add_css_class("error");
                         }
                     } else if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+                        let revealer = row
+                            .child()
+                            .unwrap()
+                            .downcast::<Box>()
+                            .unwrap()
+                            .last_child()
+                            .unwrap()
+                            .downcast::<Revealer>()
+                            .unwrap();
+
+                        let progress_bar =
+                            revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+                        revealer.set_reveal_child(true);
+                        progress_bar.set_fraction(0.1);
+                        progress_bar.pulse();
                         row.remove_css_class("success");
                         row.remove_css_class("error");
-                        row.add_css_class("warning");
                     }
                 }
             }
@@ -252,20 +295,39 @@ impl Window {
         self.imp().repos_list.set_visible(repos.n_items() > 0);
     }
 
-    fn create_repo_row(&self, repo_object: &RepoObject) -> ActionRow {
-        let row = ActionRow::builder().build();
+    fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
+        let name = Label::builder().halign(Start).build();
+        let link = Label::builder().margin_top(3).build();
+        let pb = ProgressBar::new();
+
+        let revealer = Revealer::builder().margin_top(3).child(&pb).build();
+        let repo_box = Box::builder()
+            .orientation(Vertical)
+            .height_request(36)
+            .halign(Start)
+            .margin_start(6)
+            .margin_end(6)
+            .margin_top(12)
+            .margin_bottom(6)
+            .build();
 
         repo_object
-            .bind_property("name", &row, "title")
+            .bind_property("name", &name, "label")
             .sync_create()
             .build();
 
         repo_object
-            .bind_property("link", &row, "subtitle")
+            .bind_property("link", &link, "label")
             .sync_create()
             .build();
 
-        row
+        name.add_css_class("heading");
+        link.add_css_class("body");
+        repo_box.append(&name);
+        repo_box.append(&link);
+        repo_box.append(&revealer);
+
+        ListBoxRow::builder().child(&repo_box).build()
     }
 
     fn new_repo(&self) {
