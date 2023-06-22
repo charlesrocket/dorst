@@ -223,9 +223,8 @@ impl Window {
                                 .downcast::<Revealer>()
                                 .unwrap();
 
-                            let progress_bar =
-                                revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
-                            progress_bar.set_fraction(1.0);
+                            let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+                            pb.set_fraction(1.0);
                             revealer.set_reveal_child(false);
                         }
                     } else if self
@@ -247,9 +246,8 @@ impl Window {
                                 .downcast::<Revealer>()
                                 .unwrap();
 
-                            let progress_bar =
-                                revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
-                            progress_bar.set_fraction(1.0);
+                            let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+                            pb.set_fraction(1.0);
                             revealer.set_reveal_child(false);
                             row.remove_css_class("success");
                             row.add_css_class("error");
@@ -265,11 +263,10 @@ impl Window {
                             .downcast::<Revealer>()
                             .unwrap();
 
-                        let progress_bar =
-                            revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+                        let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
                         revealer.set_reveal_child(true);
-                        progress_bar.set_fraction(0.1);
-                        progress_bar.pulse();
+                        pb.set_fraction(0.1);
+                        pb.pulse();
                         row.remove_css_class("success");
                         row.remove_css_class("error");
                     }
