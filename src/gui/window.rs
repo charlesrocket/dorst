@@ -323,6 +323,7 @@ impl Window {
 
         name.add_css_class("heading");
         link.add_css_class("body");
+        link.add_css_class("caption");
         repo_box.append(&name);
         repo_box.append(&link);
         repo_box.append(&revealer);
