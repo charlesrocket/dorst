@@ -294,8 +294,11 @@ impl Window {
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
         let name = Label::builder().halign(Start).build();
-        let link = Label::builder().margin_top(3).build();
-        let pb = ProgressBar::new();
+        let link = Label::builder().halign(Start).margin_top(3).build();
+        let pb = ProgressBar::builder()
+            .halign(Start)
+            .width_request(400)
+            .build();
 
         let revealer = Revealer::builder().margin_top(3).child(&pb).build();
         let repo_box = Box::builder()
