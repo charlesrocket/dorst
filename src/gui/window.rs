@@ -312,7 +312,7 @@ impl Window {
         let revealer = Revealer::builder().margin_top(4).child(&pb).build();
         let repo_box = Box::builder()
             .orientation(Vertical)
-            .height_request(42)
+            .height_request(46)
             .halign(Start)
             .valign(Center)
             .margin_start(6)
