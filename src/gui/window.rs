@@ -1,8 +1,12 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{
-    gio, glib, pango::EllipsizeMode, Align::{Center, Start}, Box, CustomFilter, FilterListModel, Label,
-    License, ListBoxRow, NoSelection, Orientation::Vertical, ProgressBar, Revealer,
+    gio, glib,
+    pango::EllipsizeMode,
+    Align::{Center, Start},
+    Box, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
+    Orientation::Vertical,
+    ProgressBar, Revealer,
 };
 
 use std::{
