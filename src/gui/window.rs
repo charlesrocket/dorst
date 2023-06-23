@@ -3,7 +3,6 @@ use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{
     gio, glib, pango::EllipsizeMode, Align::Start, Box, CustomFilter, FilterListModel, Label,
     License, ListBoxRow, NoSelection, Orientation::Vertical, ProgressBar, Revealer,
-    RevealerTransitionType::SwingRight,
 };
 
 use std::{
@@ -310,12 +309,7 @@ impl Window {
             .width_request(365)
             .build();
 
-        let revealer = Revealer::builder()
-            .transition_type(SwingRight)
-            .margin_top(3)
-            .child(&pb)
-            .build();
-
+        let revealer = Revealer::builder().margin_top(3).child(&pb).build();
         let repo_box = Box::builder()
             .orientation(Vertical)
             .height_request(36)
