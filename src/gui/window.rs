@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{
-    gio, glib, pango::EllipsizeMode, Align::Start, Box, CustomFilter, FilterListModel, Label,
+    gio, glib, pango::EllipsizeMode, Align::{Center, Start}, Box, CustomFilter, FilterListModel, Label,
     License, ListBoxRow, NoSelection, Orientation::Vertical, ProgressBar, Revealer,
 };
 
@@ -314,6 +314,7 @@ impl Window {
             .orientation(Vertical)
             .height_request(42)
             .halign(Start)
+            .valign(Center)
             .margin_start(6)
             .margin_end(6)
             .margin_top(6)
