@@ -1,8 +1,9 @@
 use adw::{prelude::*, subclass::prelude::*};
 use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{
-    gio, glib, Align::Start, Box, CustomFilter, FilterListModel, Label, License, ListBoxRow,
-    NoSelection, Orientation::Vertical, ProgressBar, Revealer, RevealerTransitionType::SwingRight,
+    gio, glib, pango::EllipsizeMode, Align::Start, Box, CustomFilter, FilterListModel, Label,
+    License, ListBoxRow, NoSelection, Orientation::Vertical, ProgressBar, Revealer,
+    RevealerTransitionType::SwingRight,
 };
 
 use std::{
@@ -293,8 +294,17 @@ impl Window {
     }
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
-        let name = Label::builder().halign(Start).build();
-        let link = Label::builder().halign(Start).margin_top(3).build();
+        let name = Label::builder()
+            .halign(Start)
+            .ellipsize(EllipsizeMode::End)
+            .build();
+
+        let link = Label::builder()
+            .halign(Start)
+            .ellipsize(EllipsizeMode::End)
+            .margin_top(3)
+            .build();
+
         let pb = ProgressBar::builder()
             .halign(Start)
             .width_request(365)
