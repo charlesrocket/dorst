@@ -301,7 +301,7 @@ impl Window {
         let link = Label::builder()
             .halign(Start)
             .ellipsize(EllipsizeMode::End)
-            .margin_top(3)
+            .margin_top(4)
             .build();
 
         let pb = ProgressBar::builder()
@@ -309,15 +309,14 @@ impl Window {
             .width_request(365)
             .build();
 
-        let revealer = Revealer::builder().margin_top(3).child(&pb).build();
+        let revealer = Revealer::builder().margin_top(4).child(&pb).build();
         let repo_box = Box::builder()
             .orientation(Vertical)
-            .height_request(36)
+            .height_request(42)
             .halign(Start)
             .margin_start(6)
             .margin_end(6)
-            .margin_top(12)
-            .margin_bottom(6)
+            .margin_top(6)
             .build();
 
         repo_object
