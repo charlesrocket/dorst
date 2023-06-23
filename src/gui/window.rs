@@ -2,7 +2,7 @@ use adw::{prelude::*, subclass::prelude::*};
 use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{
     gio, glib, Align::Start, Box, CustomFilter, FilterListModel, Label, License, ListBoxRow,
-    NoSelection, Orientation::Vertical, ProgressBar, Revealer,
+    NoSelection, Orientation::Vertical, ProgressBar, Revealer, RevealerTransitionType::SwingRight,
 };
 
 use std::{
@@ -265,7 +265,7 @@ impl Window {
 
                         let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
                         revealer.set_reveal_child(true);
-                        pb.set_fraction(0.1);
+                        pb.set_fraction(0.3);
                         pb.pulse();
                         row.remove_css_class("success");
                         row.remove_css_class("error");
@@ -297,10 +297,15 @@ impl Window {
         let link = Label::builder().halign(Start).margin_top(3).build();
         let pb = ProgressBar::builder()
             .halign(Start)
-            .width_request(400)
+            .width_request(365)
             .build();
 
-        let revealer = Revealer::builder().margin_top(3).child(&pb).build();
+        let revealer = Revealer::builder()
+            .transition_type(SwingRight)
+            .margin_top(3)
+            .child(&pb)
+            .build();
+
         let repo_box = Box::builder()
             .orientation(Vertical)
             .height_request(36)
