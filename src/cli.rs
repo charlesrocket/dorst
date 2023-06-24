@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Result};
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
@@ -48,6 +48,12 @@ impl Config {
         let config: Self = serde_yaml::from_str(&config_data)?;
         let config_count = config.targets.len().try_into().unwrap();
 
+        for target in &config.targets {
+            if target.ends_with('/') {
+                return Err(anyhow!("Invalid URL {} (trailing slash)", &target));
+            }
+        }
+
         Ok(Self {
             targets: config.targets,
             count: config_count,
@@ -62,7 +68,17 @@ impl Config {
             let prompt =
                 text_prompt("\x1b[7m Enter backup targets  \n separated by a comma: \x1b[0m ");
 
-            let target: Vec<String> = prompt?.split(',').map(ToString::to_string).collect();
+            let target: Vec<String> = prompt?
+                .split(',')
+                .map(|target| {
+                    let mut target_string = String::from(target);
+                    if target_string.ends_with('/') {
+                        target_string.pop();
+                    }
+
+                    target_string
+                })
+                .collect();
             let config = Self {
                 targets: target,
                 count: 0,
@@ -83,8 +99,7 @@ impl Config {
     }
 
     fn load_config(&mut self, path: &PathBuf) -> Result<()> {
-        let config = Self::read(path).context("Failed to read the configuration file")?;
-
+        let config = Self::read(path)?;
         self.targets = config.targets;
         self.count = config.count;
 

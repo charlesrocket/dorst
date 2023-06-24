@@ -347,13 +347,20 @@ impl Window {
 
     fn new_repo(&self) {
         let buffer = self.imp().repo_entry.buffer();
-        let content = buffer.text().to_string();
+        let mut content = buffer.text().to_string();
+
+        buffer.set_text("");
 
         if content.is_empty() {
             return;
         }
 
-        buffer.set_text("");
+        if content.ends_with('/') {
+            content.pop();
+            if content.is_empty() {
+                return;
+            };
+        }
 
         let name = util::get_name(&content).to_owned();
         let repo = RepoObject::new(name, content);
@@ -374,9 +381,20 @@ impl Window {
                 let repo_objects: Vec<RepoObject> = targets
                     .iter()
                     .filter_map(|target| {
-                        target.as_str().map(|link| RepoData {
-                            name: util::get_name(link).to_owned(),
-                            link: link.to_owned(),
+                        target.as_str().map(|link| {
+                            let mut link_string = String::from(link);
+                            if link_string.ends_with('/') {
+                                link_string.pop();
+                            }
+
+                            if link_string.is_empty() {
+                                link_string.push_str("INVALID");
+                            }
+
+                            RepoData {
+                                name: util::get_name(&link_string).to_owned(),
+                                link: link_string,
+                            }
                         })
                     })
                     .map(RepoObject::from_repo_data)
