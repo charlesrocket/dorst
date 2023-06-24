@@ -334,6 +334,10 @@ impl Window {
             .sync_create()
             .build();
 
+        if &link.label() == "INVALID" {
+            name.add_css_class("error");
+        }
+
         name.add_css_class("heading");
         link.add_css_class("body");
         link.add_css_class("caption");
