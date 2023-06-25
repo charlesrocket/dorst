@@ -5,7 +5,7 @@ use tempfile::NamedTempFile;
 use std::{env, error::Error, fs::remove_dir_all, io::Write, path::Path, thread};
 
 use crate::{
-    files::{CONFIG_EMPTY, CONFIG_LOCAL},
+    files::{CONFIG_EMPTY, CONFIG_INVALID_URL, CONFIG_LOCAL},
     helper::{commit, serve, test_repo},
 };
 
@@ -97,6 +97,21 @@ fn config_empty() -> Result<(), Box<dyn Error>> {
         .assert()
         .failure()
         .stderr(contains("missing field"));
+
+    Ok(())
+}
+
+#[test]
+fn config_invalid_url() -> Result<(), Box<dyn Error>> {
+    let mut cmd = Command::cargo_bin("dorst")?;
+    let mut config = NamedTempFile::new()?;
+
+    config.write_all(CONFIG_INVALID_URL)?;
+    cmd.arg("--config")
+        .arg(config.path())
+        .assert()
+        .failure()
+        .stderr(contains("Invalid URL"));
 
     Ok(())
 }
