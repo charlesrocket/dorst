@@ -5,7 +5,7 @@ use gtk::{
     pango::EllipsizeMode,
     Align::{Center, Start},
     Box, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
-    Orientation::Vertical,
+    Orientation::{Horizontal, Vertical},
     ProgressBar, Revealer,
 };
 
@@ -224,6 +224,10 @@ impl Window {
                                 .unwrap()
                                 .last_child()
                                 .unwrap()
+                                .downcast::<Box>()
+                                .unwrap()
+                                .last_child()
+                                .unwrap()
                                 .downcast::<Revealer>()
                                 .unwrap();
 
@@ -247,6 +251,10 @@ impl Window {
                                 .unwrap()
                                 .last_child()
                                 .unwrap()
+                                .downcast::<Box>()
+                                .unwrap()
+                                .last_child()
+                                .unwrap()
                                 .downcast::<Revealer>()
                                 .unwrap();
 
@@ -259,6 +267,10 @@ impl Window {
                     } else if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
                         let revealer = row
                             .child()
+                            .unwrap()
+                            .downcast::<Box>()
+                            .unwrap()
+                            .last_child()
                             .unwrap()
                             .downcast::<Box>()
                             .unwrap()
@@ -313,10 +325,15 @@ impl Window {
             .width_request(365)
             .build();
 
+        let pb_box = Box::builder()
+            .orientation(Horizontal)
+            .halign(Start)
+            .height_request(6)
+            .build();
+
         let revealer = Revealer::builder().margin_top(4).child(&pb).build();
         let repo_box = Box::builder()
             .orientation(Vertical)
-            .height_request(46)
             .halign(Start)
             .valign(Center)
             .margin_start(6)
@@ -342,9 +359,10 @@ impl Window {
         link.add_css_class("body");
         link.add_css_class("caption");
         pb.add_css_class("osd");
+        pb_box.append(&revealer);
         repo_box.append(&name);
         repo_box.append(&link);
-        repo_box.append(&revealer);
+        repo_box.append(&pb_box);
 
         ListBoxRow::builder().child(&repo_box).build()
     }
