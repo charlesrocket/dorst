@@ -215,8 +215,6 @@ impl Window {
                     let link = repo_object.repo_data().link.clone();
                     if self.imp().success_list.lock().unwrap().contains(&link) {
                         if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                            row.remove_css_class("error");
-                            row.add_css_class("success");
                             let revealer = row
                                 .child()
                                 .unwrap()
@@ -234,6 +232,8 @@ impl Window {
                             let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
                             pb.set_fraction(1.0);
                             revealer.set_reveal_child(false);
+                            row.remove_css_class("error");
+                            row.add_css_class("success");
                         }
                     } else if self
                         .imp()
