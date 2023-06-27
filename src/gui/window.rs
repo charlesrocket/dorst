@@ -4,7 +4,8 @@ use gtk::{
     gio, glib,
     pango::EllipsizeMode,
     Align::{Center, Start},
-    Box, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
+    Box, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label, License,
+    ListBoxRow, NoSelection,
     Orientation::{Horizontal, Vertical},
     ProgressBar, Revealer,
 };
@@ -331,7 +332,6 @@ impl Window {
             .height_request(6)
             .build();
 
-        let revealer = Revealer::builder().margin_top(4).child(&pb).build();
         let repo_box = Box::builder()
             .orientation(Vertical)
             .halign(Start)
@@ -340,6 +340,13 @@ impl Window {
             .margin_end(6)
             .margin_top(6)
             .build();
+
+        let revealer = Revealer::builder().margin_top(4).child(&pb).build();
+        let gesture = GestureClick::new();
+
+        gesture.connect_released(|gesture, _, _, _| {
+            gesture.set_state(EventSequenceState::Claimed);
+        });
 
         repo_object
             .bind_property("name", &name, "label")
@@ -361,6 +368,7 @@ impl Window {
         link.add_css_class("dim-label");
         pb.add_css_class("osd");
         pb_box.append(&revealer);
+        repo_box.add_controller(gesture);
         repo_box.append(&name);
         repo_box.append(&link);
         repo_box.append(&pb_box);
