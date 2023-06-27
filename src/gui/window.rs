@@ -358,6 +358,7 @@ impl Window {
         name.add_css_class("heading");
         link.add_css_class("body");
         link.add_css_class("caption");
+        link.add_css_class("dim-label");
         pb.add_css_class("osd");
         pb_box.append(&revealer);
         repo_box.append(&name);
