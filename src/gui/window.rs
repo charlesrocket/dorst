@@ -120,7 +120,9 @@ impl Window {
                 }
 
                 filter_model.set_filter(window.filter().as_ref());
-                window.update_repos();
+                if window.imp().errors_list.lock().unwrap().len() > 0 || window.imp().success_list.lock().unwrap().len() > 0 {
+                    window.update_repos();
+                }
             }),
         );
 
