@@ -4,10 +4,10 @@ use gtk::{
     gio, glib,
     pango::EllipsizeMode,
     Align::{Center, Start},
-    Box, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label, License,
+    Box, Button, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label, License,
     ListBoxRow, NoSelection,
     Orientation::{Horizontal, Vertical},
-    ProgressBar, Revealer,
+    Popover, ProgressBar, Revealer,
 };
 
 use std::{
@@ -332,6 +332,15 @@ impl Window {
             .height_request(6)
             .build();
 
+        let popover_box = Box::builder().hexpand(true).build();
+        let popover = Popover::builder()
+            .child(&popover_box)
+            .autohide(true)
+            .has_arrow(true)
+            .build();
+
+        let remove_button = Button::builder().label("Remove").build();
+
         let repo_box = Box::builder()
             .orientation(Vertical)
             .halign(Start)
@@ -344,9 +353,10 @@ impl Window {
         let revealer = Revealer::builder().margin_top(4).child(&pb).build();
         let gesture = GestureClick::new();
 
-        gesture.connect_released(|gesture, _, _, _| {
+        gesture.connect_released(clone!(@weak popover => move |gesture, _, _, _,| {
             gesture.set_state(EventSequenceState::Claimed);
-        });
+            popover.popup();
+        }));
 
         repo_object
             .bind_property("name", &name, "label")
@@ -362,16 +372,24 @@ impl Window {
             name.add_css_class("error");
         }
 
+        remove_button.add_css_class("destructive-action");
         name.add_css_class("heading");
         link.add_css_class("body");
         link.add_css_class("caption");
         link.add_css_class("dim-label");
         pb.add_css_class("osd");
         pb_box.append(&revealer);
+        popover_box.append(&remove_button);
+        popover.set_parent(&repo_box);
         repo_box.add_controller(gesture);
         repo_box.append(&name);
         repo_box.append(&link);
         repo_box.append(&pb_box);
+
+        remove_button.connect_clicked(clone!(@weak self as window => move |_| {
+            window.remove_repo(&link.label());
+            popover.popdown();
+        }));
 
         ListBoxRow::builder().child(&repo_box).build()
     }
@@ -396,6 +414,20 @@ impl Window {
         let name = util::get_name(&content).to_owned();
         let repo = RepoObject::new(name, content);
         self.repos().append(&repo);
+    }
+
+    fn remove_repo(&self, repo: &str) {
+        let repos = self.repos();
+        let mut position = 0;
+        while let Some(item) = repos.item(position) {
+            let repo_object = item.downcast_ref::<RepoObject>().unwrap();
+
+            if repo_object.link() == repo {
+                repos.remove(position);
+            } else {
+                position += 1;
+            }
+        }
     }
 
     fn set_directory(&self, directory: &PathBuf) {
