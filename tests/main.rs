@@ -9,8 +9,105 @@ use crate::{
     helper::{commit, serve, test_repo},
 };
 
-mod files;
-mod helper;
+mod files {
+    pub const CONFIG_LOCAL: &[u8; 39] = b"\x2d\x2d\x2d\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x36\x38\x0a";
+
+    pub const CONFIG_EMPTY: &[u8; 4] = b"\x2d\x2d\x2d\x0a";
+
+    pub const CONFIG_INVALID_URL: &[u8] =
+        b"\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x2f";
+}
+
+mod helper {
+    use git2::{Commit, ObjectType, Repository, Signature};
+    use rouille::{cgi::CgiRun, Server};
+    use tempfile::TempDir;
+
+    use std::{fs::File, path::Path, process::Command, thread};
+
+    pub fn test_repo() -> TempDir {
+        let dir = TempDir::new().unwrap();
+        let sig = Signature::now("foo", "bar").unwrap();
+        let repo = Repository::init(&dir).unwrap();
+
+        File::create(dir.path().join(".git").join("git-daemon-export-ok")).unwrap();
+        File::create(dir.path().join("foo")).unwrap();
+        File::create(dir.path().join("bar")).unwrap();
+
+        {
+            let mut index = repo.index().unwrap();
+
+            index.add_path(Path::new("foo")).unwrap();
+            index.write().unwrap();
+
+            let tree_id = index.write_tree().unwrap();
+
+            repo.commit(
+                Some("HEAD"),
+                &sig,
+                &sig,
+                "test1",
+                &repo.find_tree(tree_id).unwrap(),
+                &[],
+            )
+            .unwrap();
+        }
+
+        dir
+    }
+
+    pub fn serve(dir: TempDir) {
+        let server = Server::new("localhost:7868", move |request| {
+            let mut cmd = Command::new("git");
+
+            cmd.arg("http-backend");
+            cmd.env("GIT_PROJECT_ROOT", dir.path());
+            cmd.env("GIT_HTTP_EXPORT_ALL", "");
+            cmd.start_cgi(request).unwrap()
+        })
+        .unwrap();
+
+        let (_handle, sender) = server.stoppable();
+
+        thread::spawn(move || {
+            thread::sleep(std::time::Duration::from_secs(10));
+            sender.send(()).unwrap();
+        });
+    }
+
+    pub fn commit(dir: String) {
+        let repo = Repository::open(dir).unwrap();
+        let mut index = repo.index().unwrap();
+
+        index.add_path(Path::new("bar")).unwrap();
+
+        let oid = index.write_tree().unwrap();
+        let sig = Signature::now("foo", "bar").unwrap();
+        let parent = last_commit(&repo);
+
+        repo.commit(
+            Some("refs/heads/dev"),
+            &sig,
+            &sig,
+            "test2",
+            &repo.find_tree(oid).unwrap(),
+            &[&parent],
+        )
+        .unwrap();
+    }
+
+    fn last_commit(repo: &Repository) -> Commit {
+        let obj = repo
+            .head()
+            .unwrap()
+            .resolve()
+            .unwrap()
+            .peel(ObjectType::Commit)
+            .unwrap();
+
+        obj.into_commit().unwrap()
+    }
+}
 
 #[test]
 fn init() -> Result<(), Box<dyn Error>> {
