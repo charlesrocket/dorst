@@ -205,14 +205,6 @@ impl Window {
         self.add_action(&action_filter);
     }
 
-    fn repos(&self) -> gio::ListStore {
-        self.imp()
-            .repos
-            .borrow()
-            .clone()
-            .expect("Could not get current repositories.")
-    }
-
     fn update_repos(&self) {
         let repos = self.repos();
 
@@ -296,6 +288,14 @@ impl Window {
                 }
             }
         }
+    }
+
+    fn repos(&self) -> gio::ListStore {
+        self.imp()
+            .repos
+            .borrow()
+            .clone()
+            .expect("Could not get current repositories.")
     }
 
     fn get_dest(&self) -> RefMut<PathBuf> {
