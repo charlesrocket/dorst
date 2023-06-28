@@ -142,9 +142,15 @@ impl Window {
             window.toggle_color_scheme();
         }));
 
+        let action_close = gio::SimpleAction::new("close", None);
+        action_close.connect_activate(clone!(@weak self as window => move |_, _| {
+            window.close();
+        }));
+
         self.add_action(&action_about);
         self.add_action(&action_mirror_all);
         self.add_action(&action_style_manager);
+        self.add_action(&action_close);
     }
 
     fn setup_callbacks(&self) {
