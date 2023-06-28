@@ -388,6 +388,7 @@ impl Window {
 
         remove_button.connect_clicked(clone!(@weak self as window => move |_| {
             window.remove_repo(&link.label());
+            window.show_message(format!("Removed: {}", name.label()).as_str(), 3);
             popover.popdown();
         }));
 
