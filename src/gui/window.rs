@@ -1,5 +1,5 @@
 use adw::{prelude::*, subclass::prelude::*};
-use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
+use glib::{clone, KeyFile, Object};
 use gtk::{
     gio, glib,
     pango::EllipsizeMode,
@@ -25,7 +25,7 @@ mod imp;
 
 use crate::{
     git,
-    gui::{repo_object::RepoObject, window, RepoData},
+    gui::{repo_object::RepoObject, RepoData},
     util,
 };
 
@@ -34,10 +34,6 @@ glib::wrapper! {
         @extends adw::ApplicationWindow, gtk::Window, gtk::Widget,
         @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
-}
-
-enum Message {
-    MirrorRepo(window::Window),
 }
 
 impl Window {
@@ -53,79 +49,6 @@ impl Window {
     }
 
     fn setup_actions(&self) {
-        let (tx, rx) = MainContext::channel(PRIORITY_DEFAULT);
-
-        rx.attach(None, move |x| match x {
-            Message::MirrorRepo(window) => {
-                window.imp().button_start.set_sensitive(false);
-                window.imp().button_destination.set_sensitive(false);
-                window.imp().repo_entry.set_sensitive(false);
-                window.imp().banner.set_revealed(false);
-                window.imp().revealer_banner.set_reveal_child(false);
-                window.imp().errors_list.lock().unwrap().clear();
-                window.imp().success_list.lock().unwrap().clear();
-                window.imp().progress_bar.set_fraction(0.0);
-                window.imp().revealer.set_reveal_child(true);
-
-                let repo_data = window.get_repo_data();
-                let total_repos = repo_data.len();
-                let completed_repos = Arc::new(AtomicUsize::new(0));
-
-                for repo in repo_data {
-                    let dest = window.get_dest().clone();
-                    let completed_repos_clone = completed_repos.clone();
-                    let errors_clone = window.imp().errors_list.clone();
-                    let success_clone = window.imp().success_list.clone();
-
-                    thread::spawn(move || {
-                        let destination = format!("{}/{}.dorst", &dest.display().to_string(), util::get_name(&repo.link));
-                        match git::mirror_repo(&destination, &repo.link, #[cfg(feature = "cli")] None, #[cfg(feature = "cli")] None) {
-                            Ok(()) => {
-                                let success_item = repo.link;
-                                success_clone.lock().unwrap().push(success_item);
-                            },
-                            Err(error) => errors_clone.lock().unwrap().push(format!("{}: {}", repo.link, error)),
-                        }
-                        completed_repos_clone.fetch_add(1, Ordering::Relaxed);
-                    });
-                }
-
-                glib::idle_add_local(
-                    clone!(@weak window => @default-return Continue(true), move || {
-                        let completed = completed_repos.load(Ordering::Relaxed) as f64;
-                        let progress = completed / total_repos as f64;
-
-                        window.update_repos();
-
-                        if completed == total_repos as f64 {
-                            let errors_locked = window.imp().errors_list.lock().unwrap().iter()
-                                                                                        .map(std::string::ToString::to_string)
-                                                                                        .collect::<Vec<_>>()
-                                .join("\n");
-
-                            if !errors_locked.is_empty() {
-                                window.imp().banner.set_title(&errors_locked);
-                                window.imp().revealer_banner.set_reveal_child(true);
-                                window.imp().banner.set_revealed(true);
-                            }
-
-                            window.imp().progress_bar.set_fraction(1.0);
-                            window.imp().revealer.set_reveal_child(false);
-                            window.imp().button_destination.set_sensitive(true);
-                            window.imp().repo_entry.set_sensitive(true);
-                            window.imp().button_start.set_sensitive(true);
-                            Continue(false)
-                        } else {
-                            window.imp().progress_bar.set_fraction(progress);
-                            Continue(true)
-                        }
-                    }),
-                );
-
-                Continue(true)
-            }
-        });
-
         let action_about = gio::SimpleAction::new("about", None);
         action_about.connect_activate(clone!(@weak self as window => move |_, _| {
             window.show_about_dialog();
@@ -133,8 +56,7 @@ impl Window {
 
         let action_mirror_all = gio::SimpleAction::new("mirror-all", None);
         action_mirror_all.connect_activate(clone!(@weak self as window => move |_, _| {
-            let _ = tx.send(Message::MirrorRepo(window));
-
+            window.mirror_all();
         }));
 
         let action_style_manager = gio::SimpleAction::new("toggle-color-scheme", None);
@@ -203,6 +125,87 @@ impl Window {
         );
 
         self.add_action(&action_filter);
+    }
+
+    fn mirror_all(&self) {
+        self.imp().button_start.set_sensitive(false);
+        self.imp().button_destination.set_sensitive(false);
+        self.imp().repo_entry.set_sensitive(false);
+        self.imp().banner.set_revealed(false);
+        self.imp().revealer_banner.set_reveal_child(false);
+        self.imp().errors_list.lock().unwrap().clear();
+        self.imp().success_list.lock().unwrap().clear();
+        self.imp().progress_bar.set_fraction(0.0);
+        self.imp().revealer.set_reveal_child(true);
+
+        let repo_data = self.get_repo_data();
+        let total_repos = repo_data.len();
+        let completed_repos = Arc::new(AtomicUsize::new(0));
+
+        for repo in repo_data {
+            let dest = self.get_dest().clone();
+            let completed_repos_clone = completed_repos.clone();
+            let errors_clone = self.imp().errors_list.clone();
+            let success_clone = self.imp().success_list.clone();
+
+            thread::spawn(move || {
+                let destination = format!(
+                    "{}/{}.dorst",
+                    &dest.display().to_string(),
+                    util::get_name(&repo.link)
+                );
+                match git::mirror_repo(
+                    &destination,
+                    &repo.link,
+                    #[cfg(feature = "cli")]
+                    None,
+                    #[cfg(feature = "cli")]
+                    None,
+                ) {
+                    Ok(()) => {
+                        let success_item = repo.link;
+                        success_clone.lock().unwrap().push(success_item);
+                    }
+                    Err(error) => errors_clone
+                        .lock()
+                        .unwrap()
+                        .push(format!("{}: {}", repo.link, error)),
+                }
+                completed_repos_clone.fetch_add(1, Ordering::Relaxed);
+            });
+        }
+
+        glib::idle_add_local(
+            clone!(@weak self as window => @default-return Continue(true), move || {
+                let completed = completed_repos.load(Ordering::Relaxed) as f64;
+                let progress = completed / total_repos as f64;
+
+                window.update_repos();
+
+                if completed == total_repos as f64 {
+                    let errors_locked = window.imp().errors_list.lock().unwrap().iter()
+                                                                                .map(std::string::ToString::to_string)
+                                                                                .collect::<Vec<_>>()
+                        .join("\n");
+
+                    if !errors_locked.is_empty() {
+                        window.imp().banner.set_title(&errors_locked);
+                        window.imp().revealer_banner.set_reveal_child(true);
+                        window.imp().banner.set_revealed(true);
+                    }
+
+                    window.imp().progress_bar.set_fraction(1.0);
+                    window.imp().revealer.set_reveal_child(false);
+                    window.imp().button_destination.set_sensitive(true);
+                    window.imp().repo_entry.set_sensitive(true);
+                    window.imp().button_start.set_sensitive(true);
+                    Continue(false)
+                } else {
+                    window.imp().progress_bar.set_fraction(progress);
+                    Continue(true)
+                }
+            }),
+        );
     }
 
     fn update_repos(&self) {
