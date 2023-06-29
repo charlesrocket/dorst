@@ -12,7 +12,7 @@ use std::{
 
 use crate::{
     git,
-    util::{get_dir, get_name, text_prompt, xdg_path},
+    util::{get_dir, get_name, xdg_path},
 };
 
 const BANNER: &str = "\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\
@@ -105,6 +105,16 @@ impl Config {
 
         Ok(())
     }
+}
+
+fn text_prompt(message: &str) -> Result<String> {
+    let mut line = String::new();
+    print!("{message}");
+
+    std::io::stdout().flush()?;
+    std::io::stdin().read_line(&mut line)?;
+
+    Ok(line.trim().to_owned())
 }
 
 fn args() -> ArgMatches {

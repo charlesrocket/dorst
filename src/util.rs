@@ -2,7 +2,6 @@ use anyhow::Result;
 
 use std::{
     env, fs,
-    io::Write,
     path::{Path, PathBuf},
 };
 
@@ -27,14 +26,4 @@ pub fn xdg_path() -> Result<PathBuf> {
     }
 
     Ok(PathBuf::from(file_path))
-}
-
-pub fn text_prompt(message: &str) -> Result<String> {
-    let mut line = String::new();
-    print!("{message}");
-
-    std::io::stdout().flush()?;
-    std::io::stdin().read_line(&mut line)?;
-
-    Ok(line.trim().to_owned())
 }
