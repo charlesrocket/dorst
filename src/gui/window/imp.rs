@@ -81,12 +81,12 @@ impl ObjectImpl for Window {
         self.parent_constructed();
         let obj = self.obj();
 
-        obj.setup_repos();
-        obj.restore_data();
-        obj.setup_callbacks();
-        obj.setup_actions();
         obj.load_settings();
         obj.setup_theme();
+        obj.setup_repos();
+        obj.setup_actions();
+        obj.setup_callbacks();
+        obj.restore_data();
     }
 }
 
