@@ -1,4 +1,4 @@
-use adw::{prelude::*, subclass::prelude::*, ColorScheme, StyleManager};
+use adw::{prelude::*, subclass::prelude::*, ColorScheme};
 use glib::{clone, KeyFile, Object};
 use gtk::{
     gio, glib,
@@ -46,14 +46,28 @@ impl Window {
     fn setup_theme(&self) {
         #[cfg(debug_assertions)]
         self.add_css_class("devel");
-        let style_manager = StyleManager::default();
 
         match &*self.imp().color_scheme.lock().unwrap().to_string() {
-            "light-force" => style_manager.set_color_scheme(ColorScheme::ForceLight),
-            "light-pref" => style_manager.set_color_scheme(ColorScheme::PreferLight),
-            "dark-pref" => style_manager.set_color_scheme(ColorScheme::PreferDark),
-            "dark-force" => style_manager.set_color_scheme(ColorScheme::ForceDark),
-            _ => style_manager.set_color_scheme(ColorScheme::Default),
+            "light-force" => self
+                .imp()
+                .style_manager
+                .set_color_scheme(ColorScheme::ForceLight),
+            "light-pref" => self
+                .imp()
+                .style_manager
+                .set_color_scheme(ColorScheme::PreferLight),
+            "dark-pref" => self
+                .imp()
+                .style_manager
+                .set_color_scheme(ColorScheme::PreferDark),
+            "dark-force" => self
+                .imp()
+                .style_manager
+                .set_color_scheme(ColorScheme::ForceDark),
+            _ => self
+                .imp()
+                .style_manager
+                .set_color_scheme(ColorScheme::Default),
         }
     }
 
@@ -507,12 +521,14 @@ impl Window {
     }
 
     fn toggle_color_scheme(&self) {
-        let style_manager = StyleManager::default();
-
-        if style_manager.is_dark() {
-            style_manager.set_color_scheme(ColorScheme::ForceLight);
+        if self.imp().style_manager.is_dark() {
+            self.imp()
+                .style_manager
+                .set_color_scheme(ColorScheme::ForceLight);
         } else {
-            style_manager.set_color_scheme(ColorScheme::ForceDark);
+            self.imp()
+                .style_manager
+                .set_color_scheme(ColorScheme::ForceDark);
         }
     }
 
@@ -543,13 +559,12 @@ impl Window {
         let dest = self.imp().directory_output.borrow();
         let mut color_scheme = self.imp().color_scheme.lock().unwrap();
 
-        match StyleManager::default().color_scheme() {
-            ColorScheme::Default => *color_scheme = "default".to_owned(),
+        match self.imp().style_manager.color_scheme() {
             ColorScheme::ForceLight => *color_scheme = "light-force".to_owned(),
             ColorScheme::PreferLight => *color_scheme = "light-pref".to_owned(),
             ColorScheme::PreferDark => *color_scheme = "dark-pref".to_owned(),
             ColorScheme::ForceDark => *color_scheme = "dark-force".to_owned(),
-            _ => unreachable!(),
+            _ => *color_scheme = "default".to_owned(),
         }
 
         keyfile.set_int64("window", "width", size.0.into());

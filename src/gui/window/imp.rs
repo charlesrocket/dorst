@@ -1,4 +1,4 @@
-use adw::{prelude::*, subclass::prelude::*, Banner, ToastOverlay};
+use adw::{prelude::*, subclass::prelude::*, Banner, StyleManager, ToastOverlay};
 use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
 use gtk::{gio, glib, Button, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer};
@@ -42,6 +42,7 @@ pub struct Window {
     pub revealer: TemplateChild<Revealer>,
     pub filter_option: RefCell<String>,
     pub color_scheme: Arc<Mutex<String>>,
+    pub style_manager: StyleManager,
     pub errors_list: Arc<Mutex<Vec<String>>>,
     pub success_list: Arc<Mutex<Vec<String>>>,
 }
@@ -73,6 +74,7 @@ impl ObjectSubclass for Window {
             revealer: TemplateChild::default(),
             filter_option: RefCell::default(),
             color_scheme: Arc::default(),
+            style_manager: StyleManager::default(),
             errors_list: Arc::default(),
             success_list: Arc::default(),
         }
