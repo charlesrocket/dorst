@@ -41,6 +41,7 @@ pub struct Window {
     #[template_child]
     pub revealer: TemplateChild<Revealer>,
     pub filter_option: RefCell<String>,
+    pub color_scheme: Arc<Mutex<String>>,
     pub errors_list: Arc<Mutex<Vec<String>>>,
     pub success_list: Arc<Mutex<Vec<String>>>,
 }
@@ -87,6 +88,7 @@ impl ObjectImpl for Window {
         #[cfg(debug_assertions)]
         obj.setup_debug();
         obj.load_settings();
+        obj.setup_theme();
     }
 }
 

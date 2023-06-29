@@ -1,4 +1,4 @@
-use adw::{prelude::*, subclass::prelude::*};
+use adw::{prelude::*, subclass::prelude::*, ColorScheme, StyleManager};
 use glib::{clone, KeyFile, Object};
 use gtk::{
     gio, glib,
@@ -46,6 +46,18 @@ impl Window {
     #[cfg(debug_assertions)]
     fn setup_debug(&self) {
         self.add_css_class("devel");
+    }
+
+    fn setup_theme(&self) {
+        let style_manager = StyleManager::default();
+
+        match &*self.imp().color_scheme.lock().unwrap().to_string() {
+            "light-force" => style_manager.set_color_scheme(ColorScheme::ForceLight),
+            "light-pref" => style_manager.set_color_scheme(ColorScheme::PreferLight),
+            "dark-pref" => style_manager.set_color_scheme(ColorScheme::PreferDark),
+            "dark-force" => style_manager.set_color_scheme(ColorScheme::ForceDark),
+            _ => style_manager.set_color_scheme(ColorScheme::Default),
+        }
     }
 
     fn setup_actions(&self) {
@@ -498,12 +510,12 @@ impl Window {
     }
 
     fn toggle_color_scheme(&self) {
-        let style_manager = adw::StyleManager::default();
+        let style_manager = StyleManager::default();
 
         if style_manager.is_dark() {
-            style_manager.set_color_scheme(adw::ColorScheme::ForceLight);
+            style_manager.set_color_scheme(ColorScheme::ForceLight);
         } else {
-            style_manager.set_color_scheme(adw::ColorScheme::ForceDark);
+            style_manager.set_color_scheme(ColorScheme::ForceDark);
         }
     }
 
@@ -532,9 +544,20 @@ impl Window {
         let keyfile = KeyFile::new();
         let size = self.default_size();
         let dest = self.imp().directory_output.borrow();
+        let mut color_scheme = self.imp().color_scheme.lock().unwrap();
+
+        match StyleManager::default().color_scheme() {
+            ColorScheme::Default => *color_scheme = "default".to_owned(),
+            ColorScheme::ForceLight => *color_scheme = "light-force".to_owned(),
+            ColorScheme::PreferLight => *color_scheme = "light-pref".to_owned(),
+            ColorScheme::PreferDark => *color_scheme = "dark-pref".to_owned(),
+            ColorScheme::ForceDark => *color_scheme = "dark-force".to_owned(),
+            _ => unreachable!(),
+        }
 
         keyfile.set_int64("window", "width", size.0.into());
         keyfile.set_int64("window", "height", size.1.into());
+        keyfile.set_string("window", "theme", &color_scheme);
         keyfile.set_string("backup", "destination", dest.to_str().unwrap());
 
         let cache_dir = glib::user_cache_dir();
@@ -553,6 +576,7 @@ impl Window {
         let cache_dir = glib::user_cache_dir();
         let settings_path = cache_dir.join("dorst");
         let settings = settings_path.join("gui.ini");
+        let mut theme = self.imp().color_scheme.lock().unwrap();
 
         if settings.exists() {
             if keyfile
@@ -572,6 +596,10 @@ impl Window {
                 keyfile.int64("window", "height"),
             ) {
                 self.set_default_size(width.try_into().unwrap(), height.try_into().unwrap());
+            }
+
+            if let Ok(color_scheme) = keyfile.string("window", "theme") {
+                *theme = color_scheme.to_string();
             }
 
             if let Ok(dest) = keyfile.string("backup", "destination") {
