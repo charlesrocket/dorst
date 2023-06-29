@@ -43,12 +43,9 @@ impl Window {
             .build()
     }
 
-    #[cfg(debug_assertions)]
-    fn setup_debug(&self) {
-        self.add_css_class("devel");
-    }
-
     fn setup_theme(&self) {
+        #[cfg(debug_assertions)]
+        self.add_css_class("devel");
         let style_manager = StyleManager::default();
 
         match &*self.imp().color_scheme.lock().unwrap().to_string() {

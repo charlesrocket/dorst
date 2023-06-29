@@ -85,8 +85,6 @@ impl ObjectImpl for Window {
         obj.restore_data();
         obj.setup_callbacks();
         obj.setup_actions();
-        #[cfg(debug_assertions)]
-        obj.setup_debug();
         obj.load_settings();
         obj.setup_theme();
     }
