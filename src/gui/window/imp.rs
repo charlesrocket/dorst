@@ -16,7 +16,7 @@ use crate::gui::window::RepoObject;
 use crate::gui::RepoData;
 use crate::util;
 
-#[derive(CompositeTemplate, Default)]
+#[derive(CompositeTemplate)]
 #[template(resource = "/org/hellbyte/dorst/window.ui")]
 pub struct Window {
     #[template_child]
@@ -51,6 +51,32 @@ impl ObjectSubclass for Window {
     const NAME: &'static str = "DorstWindow";
     type Type = super::Window;
     type ParentType = adw::ApplicationWindow;
+
+    fn new() -> Self {
+        let directory_dialog = gtk::FileDialog::builder()
+            .title("Select destination")
+            .modal(true)
+            .build();
+
+        Self {
+            button_start: TemplateChild::default(),
+            button_destination: TemplateChild::default(),
+            repo_entry: TemplateChild::default(),
+            repos_list: TemplateChild::default(),
+            repos: RefCell::default(),
+            directory_output: RefCell::new(PathBuf::new()),
+            directory_dialog,
+            progress_bar: TemplateChild::default(),
+            toast_overlay: TemplateChild::default(),
+            banner: TemplateChild::default(),
+            revealer_banner: TemplateChild::default(),
+            revealer: TemplateChild::default(),
+            filter_option: RefCell::default(),
+            color_scheme: Arc::default(),
+            errors_list: Arc::default(),
+            success_list: Arc::default(),
+        }
+    }
 
     fn class_init(klass: &mut Self::Class) {
         klass.bind_template();
