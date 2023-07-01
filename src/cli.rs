@@ -221,7 +221,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
             &target,
             Some(&spinner),
             #[cfg(feature = "gui")]
-            None,
+            &None,
             Some(silent),
         ) {
             Ok(_) => {

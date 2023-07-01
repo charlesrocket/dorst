@@ -38,6 +38,7 @@ glib::wrapper! {
 
 pub enum Message {
     RepoProgress(f64),
+    RepoSpin,
 }
 
 impl Window {
@@ -204,6 +205,10 @@ impl Window {
                             progress_bar.set_fraction(value);
                             Continue(true)
                         }
+                        Message::RepoSpin => {
+                            progress_bar.pulse();
+                            Continue(true)
+                        }
                     });
 
                     thread::spawn(move || {
@@ -218,7 +223,7 @@ impl Window {
                             #[cfg(feature = "cli")]
                             None,
                             #[cfg(feature = "gui")]
-                            Some(tx.clone()),
+                            &Some(tx.clone()),
                             #[cfg(feature = "cli")]
                             None,
                         ) {
@@ -294,6 +299,9 @@ impl Window {
                                 .downcast::<Revealer>()
                                 .unwrap();
 
+                            let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+
+                            pb.set_fraction(1.0);
                             revealer.set_reveal_child(false);
                             row.remove_css_class("error");
                             row.add_css_class("success");
@@ -326,21 +334,6 @@ impl Window {
                             row.add_css_class("error");
                         }
                     } else if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                        let revealer = row
-                            .child()
-                            .unwrap()
-                            .downcast::<Box>()
-                            .unwrap()
-                            .last_child()
-                            .unwrap()
-                            .downcast::<Box>()
-                            .unwrap()
-                            .last_child()
-                            .unwrap()
-                            .downcast::<Revealer>()
-                            .unwrap();
-
-                        revealer.set_reveal_child(true);
                         row.remove_css_class("success");
                         row.remove_css_class("error");
                     }
@@ -389,6 +382,7 @@ impl Window {
         let pb = ProgressBar::builder()
             .halign(Start)
             .width_request(365)
+            .pulse_step(1.0)
             .build();
 
         let pb_box = Box::builder()
