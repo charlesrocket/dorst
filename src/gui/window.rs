@@ -147,6 +147,7 @@ impl Window {
                 }
 
                 filter_model.set_filter(window.filter().as_ref());
+
                 if window.imp().errors_list.lock().unwrap().len() > 0 || window.imp().success_list.lock().unwrap().len() > 0 {
                     window.update_repos();
                 }
@@ -181,7 +182,6 @@ impl Window {
                     let errors_clone = self.imp().errors_list.clone();
                     let success_clone = self.imp().success_list.clone();
                     let repo_link = repo.link();
-
                     let revealer = row
                         .child()
                         .unwrap()
@@ -199,7 +199,6 @@ impl Window {
                     let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
                     revealer.set_reveal_child(true);
-
                     rx.attach(None, move |x| match x {
                         Message::RepoProgress(value) => {
                             progress_bar.set_fraction(value);
@@ -232,6 +231,7 @@ impl Window {
                                 .unwrap()
                                 .push(format!("{}: {}", repo_link, error)),
                         }
+
                         completed_repos_clone.fetch_add(1, Ordering::Relaxed);
                     });
                 }
