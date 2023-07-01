@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1] - 2023-07-01
+
+### Bug Fixes
+
+- Update `constructed()`
+- Add `StyleManager` to `imp`
+
+### Miscellaneous tasks
+
+- Version bump
+
+### Refactor
+
+- Drop `setup_debug()`
+- Add `Window::new()`
+
 ## [0.8.0] - 2023-06-29
 
 ### Bug Fixes
