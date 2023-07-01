@@ -4,7 +4,7 @@ use repo_object::RepoData;
 use window::Window;
 
 mod repo_object;
-mod window;
+pub mod window;
 
 const APP_ID: &str = "org.hellbyte.dorst";
 
