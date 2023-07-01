@@ -86,6 +86,8 @@ pub fn clone_repo(
 
     #[cfg(feature = "gui")]
     if tx.is_some() {
+        let _ = tx.clone().unwrap().send(Message::Clone);
+
         callbacks.transfer_progress(|stats| {
             if stats.received_objects() == stats.total_objects() {
                 let indexed = stats.indexed_deltas() as f64;
@@ -93,7 +95,7 @@ pub fn clone_repo(
 
                 if indexed > 0.0 {
                     let progress = indexed / total;
-                    let _ = tx.clone().unwrap().send(Message::RepoProgress(progress));
+                    let _ = tx.clone().unwrap().send(Message::Progress(progress));
                 }
             } else if stats.total_objects() > 0 {
                 let received = stats.received_objects() as f64;
@@ -101,7 +103,7 @@ pub fn clone_repo(
 
                 if received > 0.0 {
                     let progress = received / total;
-                    let _ = tx.clone().unwrap().send(Message::RepoProgress(progress));
+                    let _ = tx.clone().unwrap().send(Message::Progress(progress));
                 }
             }
 
@@ -202,14 +204,17 @@ pub fn fetch_repo(
 
         #[cfg(feature = "gui")]
         if tx.is_some() {
+            let _ = tx.clone().unwrap().send(Message::Fetch);
+
             callbacks.transfer_progress(|stats| {
                 if stats.received_objects() == stats.total_objects() {
+                    let _ = tx.clone().unwrap().send(Message::Deltas);
                     let indexed = stats.indexed_deltas() as f64;
                     let total = stats.total_deltas() as f64;
 
                     if indexed > 0.0 {
                         let progress = indexed / total;
-                        let _ = tx.clone().unwrap().send(Message::RepoProgress(progress));
+                        let _ = tx.clone().unwrap().send(Message::Progress(progress));
                     }
                 } else if stats.total_objects() > 0 {
                     let received = stats.received_objects() as f64;
@@ -217,7 +222,7 @@ pub fn fetch_repo(
 
                     if received > 0.0 {
                         let progress = received / total;
-                        let _ = tx.clone().unwrap().send(Message::RepoProgress(progress));
+                        let _ = tx.clone().unwrap().send(Message::Progress(progress));
                     }
                 }
 
@@ -263,10 +268,10 @@ pub fn fetch_repo(
 
                     if indexed > 0.0 {
                         let progress = indexed / total;
-                        let _ = tx.clone().unwrap().send(Message::RepoProgress(progress));
+                        let _ = tx.clone().unwrap().send(Message::Progress(progress));
                     }
                 } else {
-                    let _ = tx.clone().unwrap().send(Message::RepoSpin);
+                    let _ = tx.clone().unwrap().send(Message::Spin);
                 }
             }
         }

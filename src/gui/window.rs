@@ -37,8 +37,11 @@ glib::wrapper! {
 }
 
 pub enum Message {
-    RepoProgress(f64),
-    RepoSpin,
+    Progress(f64),
+    Spin,
+    Clone,
+    Fetch,
+    Deltas,
 }
 
 impl Window {
@@ -199,14 +202,33 @@ impl Window {
 
                     let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
+                    progress_bar.set_fraction(0.0);
                     revealer.set_reveal_child(true);
                     rx.attach(None, move |x| match x {
-                        Message::RepoProgress(value) => {
+                        Message::Progress(value) => {
                             progress_bar.set_fraction(value);
                             Continue(true)
                         }
-                        Message::RepoSpin => {
+                        Message::Spin => {
                             progress_bar.pulse();
+                            Continue(true)
+                        }
+                        Message::Clone => {
+                            progress_bar.add_css_class("clone");
+                            progress_bar.remove_css_class("deltas");
+                            progress_bar.remove_css_class("fetch");
+                            Continue(true)
+                        }
+                        Message::Fetch => {
+                            progress_bar.add_css_class("fetch");
+                            progress_bar.remove_css_class("clone");
+                            progress_bar.remove_css_class("deltas");
+                            Continue(true)
+                        }
+                        Message::Deltas => {
+                            progress_bar.add_css_class("deltas");
+                            progress_bar.remove_css_class("clone");
+                            progress_bar.remove_css_class("fetch");
                             Continue(true)
                         }
                     });
@@ -437,6 +459,7 @@ impl Window {
         link.add_css_class("caption");
         link.add_css_class("dim-label");
         pb.add_css_class("osd");
+        pb.add_css_class("row-progress-bar");
         pb_box.append(&revealer);
         popover_box.append(&remove_button);
         popover.set_parent(&repo_box);
