@@ -1,4 +1,5 @@
 use adw::{gio, prelude::*};
+use gtk::{gdk::Display, CssProvider};
 
 use repo_object::RepoData;
 use window::Window;
@@ -13,6 +14,7 @@ pub fn start() {
     let app = adw::Application::builder().application_id(APP_ID).build();
     let args: Vec<String> = vec![];
 
+    app.connect_startup(|_| load_css());
     app.connect_activate(build_ui);
 
     app.set_accels_for_action("win.toggle-color-scheme", &["<Primary>l"]);
@@ -24,4 +26,15 @@ pub fn start() {
 fn build_ui(app: &adw::Application) {
     let window = Window::new(app);
     window.present();
+}
+
+fn load_css() {
+    let provider = CssProvider::new();
+    provider.load_from_data(include_str!("resources/style.css"));
+
+    gtk::style_context_add_provider_for_display(
+        &Display::default().expect("Could not connect to a display."),
+        &provider,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
 }
