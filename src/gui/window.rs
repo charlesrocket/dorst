@@ -3,7 +3,7 @@ use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{
     gio, glib,
     pango::EllipsizeMode,
-    Align::{Center, Start},
+    Align::{Center, Fill, Start},
     Box, Button, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label, License,
     ListBoxRow, NoSelection,
     Orientation::{Horizontal, Vertical},
@@ -403,13 +403,13 @@ impl Window {
 
         let pb = ProgressBar::builder()
             .halign(Start)
-            .width_request(350)
             .pulse_step(1.0)
+            .hexpand(true)
+            .halign(Fill)
             .build();
 
         let pb_box = Box::builder()
             .orientation(Horizontal)
-            .halign(Start)
             .height_request(6)
             .build();
 
@@ -424,7 +424,7 @@ impl Window {
 
         let repo_box = Box::builder()
             .orientation(Vertical)
-            .halign(Start)
+            .halign(Fill)
             .valign(Center)
             .margin_start(6)
             .margin_end(6)
