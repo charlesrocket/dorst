@@ -403,7 +403,7 @@ impl Window {
 
         let pb = ProgressBar::builder()
             .halign(Start)
-            .width_request(365)
+            .width_request(350)
             .pulse_step(1.0)
             .build();
 
