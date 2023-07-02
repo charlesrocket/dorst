@@ -1,13 +1,9 @@
 use adw::{prelude::*, subclass::prelude::*, ColorScheme};
 use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{
-    gio, glib,
-    pango::EllipsizeMode,
-    Align::{Center, Fill, Start},
-    Box, Button, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label, License,
-    ListBoxRow, NoSelection,
-    Orientation::{Horizontal, Vertical},
-    Popover, ProgressBar, Revealer, RevealerTransitionType,
+    gio, glib, pango::EllipsizeMode, Align, Box, Button, CustomFilter, EventSequenceState,
+    FilterListModel, GestureClick, Label, License, ListBoxRow, NoSelection, Orientation, Popover,
+    ProgressBar, Revealer, RevealerTransitionType,
 };
 
 use std::{
@@ -391,25 +387,25 @@ impl Window {
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
         let name = Label::builder()
-            .halign(Start)
+            .halign(Align::Start)
             .ellipsize(EllipsizeMode::End)
             .build();
 
         let link = Label::builder()
-            .halign(Start)
+            .halign(Align::Start)
             .ellipsize(EllipsizeMode::End)
             .margin_top(4)
             .build();
 
         let pb = ProgressBar::builder()
-            .halign(Start)
+            .halign(Align::Start)
             .pulse_step(1.0)
             .hexpand(true)
-            .halign(Fill)
+            .halign(Align::Fill)
             .build();
 
         let pb_box = Box::builder()
-            .orientation(Horizontal)
+            .orientation(Orientation::Horizontal)
             .height_request(6)
             .build();
 
@@ -423,9 +419,9 @@ impl Window {
         let remove_button = Button::builder().label("Remove").build();
 
         let repo_box = Box::builder()
-            .orientation(Vertical)
-            .halign(Fill)
-            .valign(Center)
+            .orientation(Orientation::Vertical)
+            .halign(Align::Fill)
+            .valign(Align::Center)
             .margin_start(6)
             .margin_end(6)
             .margin_top(6)
