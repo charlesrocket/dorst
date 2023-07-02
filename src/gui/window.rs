@@ -404,9 +404,7 @@ impl Window {
             .halign(Align::Fill)
             .build();
 
-        let pb_box = Box::builder()
-            .orientation(Orientation::Horizontal)
-            .build();
+        let pb_box = Box::builder().orientation(Orientation::Horizontal).build();
 
         let popover_box = Box::builder().hexpand(true).build();
         let popover = Popover::builder()
