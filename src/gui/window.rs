@@ -406,7 +406,6 @@ impl Window {
 
         let pb_box = Box::builder()
             .orientation(Orientation::Horizontal)
-            .height_request(6)
             .build();
 
         let popover_box = Box::builder().hexpand(true).build();
