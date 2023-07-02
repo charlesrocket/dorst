@@ -1,0 +1,25 @@
+---
+
+build:
+  - 'build.rs'
+
+cargo:
+  - 'Cargo.toml'
+
+ci:
+  - '.github/**/*'
+  - 'codecov.yml'
+
+cli:
+  - 'src/cli.rs'
+
+git:
+  - 'src/git.rs'
+
+gui:
+  - 'src/gui/**/*'
+  - 'src/resources/**/*'
+  - 'src/gui.rs'
+
+test:
+  - 'tests/**/*'
