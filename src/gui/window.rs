@@ -7,7 +7,7 @@ use gtk::{
     Box, Button, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label, License,
     ListBoxRow, NoSelection,
     Orientation::{Horizontal, Vertical},
-    Popover, ProgressBar, Revealer,
+    Popover, ProgressBar, Revealer, RevealerTransitionType,
 };
 
 use std::{
@@ -453,6 +453,7 @@ impl Window {
             name.add_css_class("error");
         }
 
+        revealer.set_transition_type(RevealerTransitionType::SlideLeft);
         remove_button.add_css_class("destructive-action");
         name.add_css_class("heading");
         link.add_css_class("body");
