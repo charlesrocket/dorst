@@ -1,8 +1,12 @@
 use anyhow::Result;
 use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
+#[cfg(feature = "gui")]
+use glib::Sender;
 #[cfg(feature = "cli")]
 use indicatif::{HumanBytes, ProgressBar};
 
+#[cfg(feature = "gui")]
+use crate::gui::window::Message;
 use crate::util::get_name;
 
 use std::{
@@ -48,6 +52,7 @@ pub fn clone_repo(
     target: &str,
     destination: &str,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
+    #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     git_config: &git2::Config,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<Repository, git2::Error> {
@@ -79,6 +84,34 @@ pub fn clone_repo(
         });
     }
 
+    #[cfg(feature = "gui")]
+    if tx.is_some() {
+        let _ = tx.clone().unwrap().send(Message::Clone);
+
+        callbacks.transfer_progress(|stats| {
+            if stats.received_objects() == stats.total_objects() {
+                let _ = tx.clone().unwrap().send(Message::Deltas);
+                let indexed = stats.indexed_deltas() as f64;
+                let total = stats.total_deltas() as f64;
+
+                if indexed > 0.0 {
+                    let progress = indexed / total;
+                    let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                }
+            } else if stats.total_objects() > 0 {
+                let received = stats.received_objects() as f64;
+                let total = stats.total_objects() as f64;
+
+                if received > 0.0 {
+                    let progress = received / total;
+                    let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                }
+            }
+
+            true
+        });
+    }
+
     let mut fetch_options = FetchOptions::new();
     let mut repo_builder = git2::build::RepoBuilder::new();
     let builder = repo_builder
@@ -103,6 +136,7 @@ pub fn fetch_repo(
     target: &str,
     path: &str,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
+    #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     git_config: &git2::Config,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<Repository, git2::Error> {
@@ -169,6 +203,34 @@ pub fn fetch_repo(
             });
         }
 
+        #[cfg(feature = "gui")]
+        if tx.is_some() {
+            let _ = tx.clone().unwrap().send(Message::Fetch);
+
+            callbacks.transfer_progress(|stats| {
+                if stats.received_objects() == stats.total_objects() {
+                    let _ = tx.clone().unwrap().send(Message::Deltas);
+                    let indexed = stats.indexed_deltas() as f64;
+                    let total = stats.total_deltas() as f64;
+
+                    if indexed > 0.0 {
+                        let progress = indexed / total;
+                        let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                    }
+                } else if stats.total_objects() > 0 {
+                    let received = stats.received_objects() as f64;
+                    let total = stats.total_objects() as f64;
+
+                    if received > 0.0 {
+                        let progress = received / total;
+                        let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                    }
+                }
+
+                true
+            });
+        }
+
         fetch_options.remote_callbacks(callbacks);
         remote.download(&[] as &[&str], Some(&mut fetch_options))?;
 
@@ -196,6 +258,23 @@ pub fn fetch_repo(
                     ));
                 }
             }
+
+            #[cfg(feature = "gui")]
+            if tx.is_some() {
+                let stats = remote.stats();
+
+                if stats.local_objects() > 0 {
+                    let indexed = stats.indexed_objects() as f64;
+                    let total = stats.total_objects() as f64;
+
+                    if indexed > 0.0 {
+                        let progress = indexed / total;
+                        let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                    }
+                } else {
+                    let _ = tx.clone().unwrap().send(Message::Spin);
+                }
+            }
         }
 
         let default_branch = remote.default_branch()?;
@@ -212,6 +291,7 @@ pub fn mirror_repo(
     destination: &str,
     target: &str,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
+    #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<()> {
     let git_config = git2::Config::open_default()?;
@@ -222,6 +302,8 @@ pub fn mirror_repo(
             destination,
             #[cfg(feature = "cli")]
             spinner,
+            #[cfg(feature = "gui")]
+            tx,
             &git_config,
             #[cfg(feature = "cli")]
             silent,
@@ -232,6 +314,8 @@ pub fn mirror_repo(
             destination,
             #[cfg(feature = "cli")]
             spinner,
+            #[cfg(feature = "gui")]
+            tx,
             &git_config,
             #[cfg(feature = "cli")]
             silent,

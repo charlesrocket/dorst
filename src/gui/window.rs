@@ -1,5 +1,5 @@
 use adw::{prelude::*, subclass::prelude::*, ColorScheme};
-use glib::{clone, KeyFile, Object};
+use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
 use gtk::{
     gio, glib,
     pango::EllipsizeMode,
@@ -7,7 +7,7 @@ use gtk::{
     Box, Button, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label, License,
     ListBoxRow, NoSelection,
     Orientation::{Horizontal, Vertical},
-    Popover, ProgressBar, Revealer,
+    Popover, ProgressBar, Revealer, RevealerTransitionType,
 };
 
 use std::{
@@ -34,6 +34,14 @@ glib::wrapper! {
         @extends adw::ApplicationWindow, gtk::Window, gtk::Widget,
         @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
+}
+
+pub enum Message {
+    Progress(f64),
+    Spin,
+    Clone,
+    Fetch,
+    Deltas,
 }
 
 impl Window {
@@ -143,6 +151,7 @@ impl Window {
                 }
 
                 filter_model.set_filter(window.filter().as_ref());
+
                 if window.imp().errors_list.lock().unwrap().len() > 0 || window.imp().success_list.lock().unwrap().len() > 0 {
                     window.update_repos();
                 }
@@ -163,41 +172,97 @@ impl Window {
         self.imp().progress_bar.set_fraction(0.0);
         self.imp().revealer.set_reveal_child(true);
 
-        let repo_data = self.get_repo_data();
-        let total_repos = repo_data.len();
+        let repos = self.repos();
+        let total_repos = self.get_repo_data().len();
         let completed_repos = Arc::new(AtomicUsize::new(0));
 
-        for repo in repo_data {
-            let dest = self.get_dest().clone();
-            let completed_repos_clone = completed_repos.clone();
-            let errors_clone = self.imp().errors_list.clone();
-            let success_clone = self.imp().success_list.clone();
-
-            thread::spawn(move || {
-                let destination = format!(
-                    "{}/{}.dorst",
-                    &dest.display().to_string(),
-                    util::get_name(&repo.link)
-                );
-                match git::mirror_repo(
-                    &destination,
-                    &repo.link,
-                    #[cfg(feature = "cli")]
-                    None,
-                    #[cfg(feature = "cli")]
-                    None,
-                ) {
-                    Ok(()) => {
-                        let success_item = repo.link;
-                        success_clone.lock().unwrap().push(success_item);
-                    }
-                    Err(error) => errors_clone
-                        .lock()
+        for i in 0..repos.n_items() {
+            if let Some(obj) = repos.item(i) {
+                if let Some(repo) = obj.downcast_ref::<RepoObject>() {
+                    let (tx, rx) = MainContext::channel(PRIORITY_DEFAULT);
+                    let row = self.imp().repos_list.row_at_index(i as i32).unwrap();
+                    let dest = self.get_dest().clone();
+                    let completed_repos_clone = completed_repos.clone();
+                    let errors_clone = self.imp().errors_list.clone();
+                    let success_clone = self.imp().success_list.clone();
+                    let repo_link = repo.link();
+                    let revealer = row
+                        .child()
                         .unwrap()
-                        .push(format!("{}: {}", repo.link, error)),
+                        .downcast::<Box>()
+                        .unwrap()
+                        .last_child()
+                        .unwrap()
+                        .downcast::<Box>()
+                        .unwrap()
+                        .last_child()
+                        .unwrap()
+                        .downcast::<Revealer>()
+                        .unwrap();
+
+                    let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+
+                    progress_bar.set_fraction(0.0);
+                    revealer.set_reveal_child(true);
+                    rx.attach(None, move |x| match x {
+                        Message::Progress(value) => {
+                            progress_bar.set_fraction(value);
+                            Continue(true)
+                        }
+                        Message::Spin => {
+                            progress_bar.pulse();
+                            Continue(true)
+                        }
+                        Message::Clone => {
+                            progress_bar.add_css_class("clone");
+                            progress_bar.remove_css_class("deltas");
+                            progress_bar.remove_css_class("fetch");
+                            Continue(true)
+                        }
+                        Message::Fetch => {
+                            progress_bar.add_css_class("fetch");
+                            progress_bar.remove_css_class("clone");
+                            progress_bar.remove_css_class("deltas");
+                            Continue(true)
+                        }
+                        Message::Deltas => {
+                            progress_bar.add_css_class("deltas");
+                            progress_bar.remove_css_class("clone");
+                            progress_bar.remove_css_class("fetch");
+                            Continue(true)
+                        }
+                    });
+
+                    thread::spawn(move || {
+                        let destination = format!(
+                            "{}/{}.dorst",
+                            &dest.display().to_string(),
+                            util::get_name(&repo_link)
+                        );
+                        match git::mirror_repo(
+                            &destination,
+                            &repo_link,
+                            #[cfg(feature = "cli")]
+                            None,
+                            #[cfg(feature = "gui")]
+                            &Some(tx.clone()),
+                            #[cfg(feature = "cli")]
+                            None,
+                        ) {
+                            Ok(()) => {
+                                let success_item = repo_link;
+                                success_clone.lock().unwrap().push(success_item);
+                            }
+                            Err(error) => errors_clone
+                                .lock()
+                                .unwrap()
+                                .push(format!("{}: {}", repo_link, error)),
+                        }
+
+                        completed_repos_clone.fetch_add(1, Ordering::Relaxed);
+                    });
                 }
-                completed_repos_clone.fetch_add(1, Ordering::Relaxed);
-            });
+            }
         }
 
         glib::idle_add_local(
@@ -257,6 +322,7 @@ impl Window {
                                 .unwrap();
 
                             let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+
                             pb.set_fraction(1.0);
                             revealer.set_reveal_child(false);
                             row.remove_css_class("error");
@@ -285,31 +351,11 @@ impl Window {
                                 .downcast::<Revealer>()
                                 .unwrap();
 
-                            let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
-                            pb.set_fraction(1.0);
                             revealer.set_reveal_child(false);
                             row.remove_css_class("success");
                             row.add_css_class("error");
                         }
                     } else if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                        let revealer = row
-                            .child()
-                            .unwrap()
-                            .downcast::<Box>()
-                            .unwrap()
-                            .last_child()
-                            .unwrap()
-                            .downcast::<Box>()
-                            .unwrap()
-                            .last_child()
-                            .unwrap()
-                            .downcast::<Revealer>()
-                            .unwrap();
-
-                        let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
-                        revealer.set_reveal_child(true);
-                        pb.set_fraction(0.3);
-                        pb.pulse();
                         row.remove_css_class("success");
                         row.remove_css_class("error");
                     }
@@ -357,7 +403,8 @@ impl Window {
 
         let pb = ProgressBar::builder()
             .halign(Start)
-            .width_request(365)
+            .width_request(350)
+            .pulse_step(1.0)
             .build();
 
         let pb_box = Box::builder()
@@ -406,12 +453,14 @@ impl Window {
             name.add_css_class("error");
         }
 
+        revealer.set_transition_type(RevealerTransitionType::SlideLeft);
         remove_button.add_css_class("destructive-action");
         name.add_css_class("heading");
         link.add_css_class("body");
         link.add_css_class("caption");
         link.add_css_class("dim-label");
         pb.add_css_class("osd");
+        pb.add_css_class("row-progress-bar");
         pb_box.append(&revealer);
         popover_box.append(&remove_button);
         popover.set_parent(&repo_box);

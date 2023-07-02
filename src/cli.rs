@@ -216,7 +216,14 @@ fn cli(matches: &ArgMatches) -> Result<()> {
             fs::remove_dir_all(&destination)?;
         }
 
-        match git::mirror_repo(&destination, &target, Some(&spinner), Some(silent)) {
+        match git::mirror_repo(
+            &destination,
+            &target,
+            Some(&spinner),
+            #[cfg(feature = "gui")]
+            &None,
+            Some(silent),
+        ) {
             Ok(_) => {
                 compl_count += 1;
                 if !silent {
