@@ -77,33 +77,29 @@
                           </object>
                         </child>
                         <child>
-                          <object class="AdwClamp">
-                            <property name="child">
-                              <object class="GtkBox">
-                                <property name="orientation">horizontal</property>
-                                <property name="margin-bottom">6</property>
+                          <object class="GtkBox">
+                            <property name="orientation">horizontal</property>
+                            <property name="margin-bottom">6</property>
+                            <style>
+                              <class name="linked"/>
+                            </style>
+                            <child>
+                              <object class="GtkButton" id="button_destination">
+                                <property name="action-name">win.select-directory</property>
+                                <property name="icon-name">folder-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Select output directory</property>
                                 <style>
-                                  <class name="linked"/>
+                                  <class name="suggested-action"/>
                                 </style>
-                                <child>
-                                  <object class="GtkButton" id="button_destination">
-                                    <property name="action-name">win.select-directory</property>
-                                    <property name="icon-name">folder-symbolic</property>
-                                    <property name="tooltip-text" translatable="yes">Select output directory</property>
-                                    <style>
-                                      <class name="suggested-action"/>
-                                    </style>
-                                  </object>
-                                </child>
-                                <child>
-                                  <object class="GtkEntry" id="repo_entry">
-                                    <property name="placeholder-text" translatable="yes">Enter repository URL</property>
-                                    <property name="secondary-icon-name">list-add-symbolic</property>
-                                    <property name="hexpand">true</property>
-                                  </object>
-                                </child>
                               </object>
-                            </property>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="repo_entry">
+                                <property name="placeholder-text" translatable="yes">Enter repository URL</property>
+                                <property name="secondary-icon-name">list-add-symbolic</property>
+                                <property name="hexpand">true</property>
+                              </object>
+                            </child>
                           </object>
                         </child>
                         <child>
