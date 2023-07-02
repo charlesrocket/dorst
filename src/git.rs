@@ -90,6 +90,7 @@ pub fn clone_repo(
 
         callbacks.transfer_progress(|stats| {
             if stats.received_objects() == stats.total_objects() {
+                let _ = tx.clone().unwrap().send(Message::Deltas);
                 let indexed = stats.indexed_deltas() as f64;
                 let total = stats.total_deltas() as f64;
 
