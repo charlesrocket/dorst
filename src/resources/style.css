@@ -1,3 +1,7 @@
+progressbar.main-progress trough progress {
+  background-color: @blue_2;
+}
+
 progressbar.row-progress.clone trough progress {
   background-color: @yellow_5;
 }
