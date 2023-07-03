@@ -1,11 +1,11 @@
-progressbar.row-progress-bar.clone trough progress {
+progressbar.row-progress.clone trough progress {
   background-color: @yellow_5;
 }
 
-progressbar.row-progress-bar.fetch trough progress {
+progressbar.row-progress.fetch trough progress {
   background-color: @green_3;
 }
 
-progressbar.row-progress-bar.deltas trough progress {
+progressbar.row-progress.deltas trough progress {
   background-color: @purple_2;
 }

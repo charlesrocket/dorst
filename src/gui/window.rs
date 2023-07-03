@@ -453,7 +453,7 @@ impl Window {
         link.add_css_class("caption");
         link.add_css_class("dim-label");
         pb.add_css_class("osd");
-        pb.add_css_class("row-progress-bar");
+        pb.add_css_class("row-progress");
         pb_box.append(&revealer);
         popover_box.append(&remove_button);
         popover.set_parent(&repo_box);
