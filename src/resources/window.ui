@@ -109,6 +109,8 @@
                               <object class="GtkOverlay">
                                 <child>
                                   <object class="GtkProgressBar" id="progress_bar">
+                                    <property name="margin-start">8</property>
+                                    <property name="margin-end">8</property>
                                     <style>
                                       <class name="osd"/>
                                     </style>
