@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2023-07-04
+
+### Bug Fixes
+
+- Check `tx`
+- Set `clone_repo()` deltas
+- Improve main progress bar
+- Change progress bar width
+- Do not clamp input widgets
+- Drop `width_request()`
+- Drop `height_request()`
+- Align main progress bar
+- Update `progress_bar` container
+
+### CI/CD
+
+- Add pr labeler
+- Add codecov
+- Setup pr labeler (#13)
+
+### Features
+
+- Add `CssProvider`
+- Set progress bar colors
+- Set progress bar transition
+- Track `mirror_repo()` progress (#12)
+- Set `progressbar.main-progress`
+
+### Miscellaneous tasks
+
+- Update categories
+
+### Refactor
+
+- Update `gtk` declarations
+- Rename progress bar classes
+
+### Styling
+
+- Fix `pb_box` formatting
+
 ## [0.8.1] - 2023-07-01
 
 ### Bug Fixes
@@ -9,14 +50,18 @@ All notable changes to this project will be documented in this file.
 - Update `constructed()`
 - Add `StyleManager` to `imp`
 
-### Miscellaneous tasks
+### Features
 
-- Version bump
+- Track `fetch_repo()` progress
 
 ### Refactor
 
 - Drop `setup_debug()`
 - Add `Window::new()`
+
+### Styling
+
+- Fix formatting
 
 ## [0.8.0] - 2023-06-29
 
@@ -40,10 +85,6 @@ All notable changes to this project will be documented in this file.
 - Indicate removed repo
 - Add row popover (#11)
 
-### Miscellaneous tasks
-
-- Version bump
-
 ### Refactor
 
 - Move `repos()`
@@ -61,10 +102,6 @@ All notable changes to this project will be documented in this file.
 - Handle trailing slashes
 - Indicate invalid links
 - Fix scaling
-
-### Miscellaneous tasks
-
-- Version bump
 
 ### Refactor
 
@@ -87,10 +124,6 @@ All notable changes to this project will be documented in this file.
 - Improve row spacing
 - Set `valign`
 - Increase `repo_box` height
-
-### Miscellaneous tasks
-
-- Version bump
 
 ### Styling
 
@@ -118,7 +151,6 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous tasks
 
-- Version bump
 - Update serde_json
 
 ### Refactor
@@ -165,7 +197,6 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous tasks
 
-- Version bump
 - Update dependencies
 
 ### Refactor
