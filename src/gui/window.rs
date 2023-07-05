@@ -446,7 +446,7 @@ impl Window {
             name.add_css_class("error");
         }
 
-        revealer.set_transition_type(RevealerTransitionType::SlideLeft);
+        revealer.set_transition_type(RevealerTransitionType::SwingRight);
         remove_button.add_css_class("destructive-action");
         name.add_css_class("heading");
         link.add_css_class("body");
