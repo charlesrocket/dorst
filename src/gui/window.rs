@@ -34,7 +34,6 @@ glib::wrapper! {
 
 pub enum Message {
     Progress(f64),
-    Spin,
     Clone,
     Fetch,
     Deltas,
@@ -202,11 +201,11 @@ impl Window {
                     revealer.set_reveal_child(true);
                     rx.attach(None, move |x| match x {
                         Message::Progress(value) => {
-                            progress_bar.set_fraction(value);
-                            Continue(true)
-                        }
-                        Message::Spin => {
-                            progress_bar.pulse();
+                            if value.is_nan() {
+                                progress_bar.set_fraction(1.0);
+                            } else {
+                                progress_bar.set_fraction(value);
+                            }
                             Continue(true)
                         }
                         Message::Clone => {
@@ -317,9 +316,6 @@ impl Window {
                                 .downcast::<Revealer>()
                                 .unwrap();
 
-                            let pb = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
-
-                            pb.set_fraction(1.0);
                             revealer.set_reveal_child(false);
                             row.remove_css_class("error");
                             row.add_css_class("success");
