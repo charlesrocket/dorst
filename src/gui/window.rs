@@ -148,7 +148,7 @@ impl Window {
                 filter_model.set_filter(window.filter().as_ref());
 
                 if window.imp().errors_list.lock().unwrap().len() > 0 || window.imp().success_list.lock().unwrap().len() > 0 {
-                    window.update_repos();
+                    window.update_rows();
                 }
             }),
         );
@@ -206,6 +206,11 @@ impl Window {
                             } else {
                                 progress_bar.set_fraction(value);
                             }
+
+                            if progress_bar.fraction() == 1.0 {
+                                revealer.set_reveal_child(false);
+                            }
+
                             Continue(true)
                         }
                         Message::Clone => {
@@ -265,7 +270,7 @@ impl Window {
                 let completed = completed_repos.load(Ordering::Relaxed) as f64;
                 let progress = completed / total_repos as f64;
 
-                window.update_repos();
+                window.update_rows();
 
                 if completed == total_repos as f64 {
                     let errors_locked = window.imp().errors_list.lock().unwrap().iter()
@@ -293,7 +298,7 @@ impl Window {
         );
     }
 
-    fn update_repos(&self) {
+    fn update_rows(&self) {
         let repos = self.repos();
 
         for i in 0..repos.n_items() {
@@ -302,21 +307,6 @@ impl Window {
                     let link = repo_object.repo_data().link.clone();
                     if self.imp().success_list.lock().unwrap().contains(&link) {
                         if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                            let revealer = row
-                                .child()
-                                .unwrap()
-                                .downcast::<Box>()
-                                .unwrap()
-                                .last_child()
-                                .unwrap()
-                                .downcast::<Box>()
-                                .unwrap()
-                                .last_child()
-                                .unwrap()
-                                .downcast::<Revealer>()
-                                .unwrap();
-
-                            revealer.set_reveal_child(false);
                             row.remove_css_class("error");
                             row.add_css_class("success");
                         }
@@ -329,21 +319,6 @@ impl Window {
                         .any(|x| x.contains(&link))
                     {
                         if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                            let revealer = row
-                                .child()
-                                .unwrap()
-                                .downcast::<Box>()
-                                .unwrap()
-                                .last_child()
-                                .unwrap()
-                                .downcast::<Box>()
-                                .unwrap()
-                                .last_child()
-                                .unwrap()
-                                .downcast::<Revealer>()
-                                .unwrap();
-
-                            revealer.set_reveal_child(false);
                             row.remove_css_class("success");
                             row.add_css_class("error");
                         }
