@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.1] - 2023-07-07
+
+### Bug Fixes
+
+- Use `SwingRight`
+- Drop `Message::Spin`
+- Update `Message::Progress`
+
 ## [0.9.0] - 2023-07-04
 
 ### Bug Fixes
