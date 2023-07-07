@@ -417,7 +417,7 @@ impl Window {
             name.add_css_class("error");
         }
 
-        revealer.set_transition_type(RevealerTransitionType::SwingRight);
+        revealer.set_transition_type(RevealerTransitionType::Crossfade);
         remove_button.add_css_class("destructive-action");
         name.add_css_class("heading");
         link.add_css_class("body");

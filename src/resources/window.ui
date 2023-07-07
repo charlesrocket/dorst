@@ -106,8 +106,7 @@
                           <object class="GtkRevealer" id="revealer">
                             <property name="margin-start">8</property>
                             <property name="margin-end">8</property>
-                            <property name="height-request">2</property>
-                            <property name="transition-type">swing-right</property>
+                            <property name="transition-type">crossfade</property>
                             <property name="child">
                               <object class="GtkProgressBar" id="progress_bar">
                                 <style>
