@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.2] - 2023-07-08
+
+### Bug Fixes
+
+- Improve progress bar animations
+
+### Refactor
+
+- Drop `success_item`
+
 ## [0.9.1] - 2023-07-07
 
 ### Bug Fixes
