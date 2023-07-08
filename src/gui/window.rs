@@ -250,8 +250,7 @@ impl Window {
                             None,
                         ) {
                             Ok(()) => {
-                                let success_item = repo_link;
-                                success_clone.lock().unwrap().push(success_item);
+                                success_clone.lock().unwrap().push(repo_link);
                             }
                             Err(error) => errors_clone
                                 .lock()
