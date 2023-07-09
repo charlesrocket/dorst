@@ -61,6 +61,7 @@ jobs:
           bin: dorst
           target: ${{ matrix.target }}
           tar: all
+          checksum: sha256
           token: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
