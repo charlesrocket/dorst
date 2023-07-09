@@ -5,6 +5,23 @@ use std::{
     path::{Path, PathBuf},
 };
 
+mod built_info {
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
+
+pub fn version_string() -> String {
+    let dirty = built_info::GIT_DIRTY
+        .and_then(|x| x.then_some("-dirty"))
+        .unwrap_or("");
+
+    let commit_hash =
+        built_info::GIT_COMMIT_HASH_SHORT.map_or_else(String::new, |hash| format!("-{}", hash));
+
+    let version = env!("CARGO_PKG_VERSION");
+
+    format!("{version}{commit_hash}{dirty}")
+}
+
 pub fn get_name(target: &str) -> &str {
     target.rsplit('/').next().unwrap_or(target)
 }
