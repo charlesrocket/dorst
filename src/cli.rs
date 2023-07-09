@@ -12,7 +12,7 @@ use std::{
 
 use crate::{
     git,
-    util::{get_dir, get_name, xdg_path},
+    util::{get_dir, get_name, version_string, xdg_path},
 };
 
 const BANNER: &str = "\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\
@@ -120,7 +120,7 @@ fn text_prompt(message: &str) -> Result<String> {
 fn args() -> ArgMatches {
     let matches = Command::new(env!("CARGO_PKG_NAME"))
         .about(BANNER)
-        .version(env!("CARGO_PKG_VERSION"))
+        .version(version_string())
         .help_template(
             "{name} v{version} CLI\n{about-with-newline}\
              Codebase backup utility\n\n{usage-heading} \

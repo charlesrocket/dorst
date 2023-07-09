@@ -557,7 +557,7 @@ impl Window {
     fn show_about_dialog(&self) {
         adw::AboutWindow::builder()
             .application_name("DØRST")
-            .version(env!("CARGO_PKG_VERSION"))
+            .version(util::version_string())
             .license_type(License::MitX11)
             .website(env!("CARGO_PKG_REPOSITORY"))
             .comments(env!("CARGO_PKG_DESCRIPTION"))
