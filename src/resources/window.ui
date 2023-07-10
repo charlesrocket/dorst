@@ -107,6 +107,7 @@
                             <property name="margin-start">8</property>
                             <property name="margin-end">8</property>
                             <property name="transition-type">crossfade</property>
+                            <property name="transition-duration">542</property>
                             <property name="child">
                               <object class="GtkProgressBar" id="progress_bar">
                                 <style>

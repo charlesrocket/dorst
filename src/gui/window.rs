@@ -394,7 +394,13 @@ impl Window {
             .margin_top(6)
             .build();
 
-        let revealer = Revealer::builder().margin_top(4).child(&pb).build();
+        let revealer = Revealer::builder()
+            .margin_top(4)
+            .transition_type(RevealerTransitionType::Crossfade)
+            .transition_duration(542)
+            .child(&pb)
+            .build();
+
         let gesture = GestureClick::new();
 
         gesture.connect_released(clone!(@weak popover => move |gesture, _, _, _,| {
@@ -416,7 +422,6 @@ impl Window {
             name.add_css_class("error");
         }
 
-        revealer.set_transition_type(RevealerTransitionType::Crossfade);
         remove_button.add_css_class("destructive-action");
         name.add_css_class("heading");
         link.add_css_class("body");
