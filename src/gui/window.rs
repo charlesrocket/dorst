@@ -21,7 +21,7 @@ mod imp;
 
 use crate::{
     git,
-    gui::{repo_object::RepoObject, RepoData},
+    gui::{repo_object::RepoObject, window, RepoData},
     util,
 };
 
@@ -174,64 +174,18 @@ impl Window {
         for i in 0..repos.n_items() {
             if let Some(obj) = repos.item(i) {
                 if let Some(repo) = obj.downcast_ref::<RepoObject>() {
-                    let (tx, rx) = MainContext::channel(PRIORITY_DEFAULT);
                     let row = self.imp().repos_list.row_at_index(i as i32).unwrap();
+                    let tx = window::Window::set_row_channel(&row);
                     let dest = self.get_dest().clone();
                     let completed_repos_clone = completed_repos.clone();
                     let errors_clone = self.imp().errors_list.clone();
                     let success_clone = self.imp().success_list.clone();
                     let repo_link = repo.link();
-                    let revealer = row
-                        .child()
-                        .unwrap()
-                        .downcast::<Box>()
-                        .unwrap()
-                        .last_child()
-                        .unwrap()
-                        .downcast::<Box>()
-                        .unwrap()
-                        .last_child()
-                        .unwrap()
-                        .downcast::<Revealer>()
-                        .unwrap();
-
+                    let revealer = window::Window::get_row_revealer(&row);
                     let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
                     progress_bar.set_fraction(0.0);
                     revealer.set_reveal_child(true);
-                    rx.attach(None, move |x| match x {
-                        Message::Progress(value) => {
-                            if value.is_nan() {
-                                progress_bar.set_fraction(1.0);
-                            } else {
-                                progress_bar.set_fraction(value);
-                            }
-
-                            if progress_bar.fraction() == 1.0 {
-                                revealer.set_reveal_child(false);
-                            }
-
-                            Continue(true)
-                        }
-                        Message::Clone => {
-                            progress_bar.add_css_class("clone");
-                            progress_bar.remove_css_class("deltas");
-                            progress_bar.remove_css_class("fetch");
-                            Continue(true)
-                        }
-                        Message::Fetch => {
-                            progress_bar.add_css_class("fetch");
-                            progress_bar.remove_css_class("clone");
-                            progress_bar.remove_css_class("deltas");
-                            Continue(true)
-                        }
-                        Message::Deltas => {
-                            progress_bar.add_css_class("deltas");
-                            progress_bar.remove_css_class("clone");
-                            progress_bar.remove_css_class("fetch");
-                            Continue(true)
-                        }
-                    });
 
                     thread::spawn(move || {
                         let destination = format!(
@@ -353,6 +307,63 @@ impl Window {
 
     fn set_repo_list_visible(&self, repos: &gio::ListStore) {
         self.imp().repos_list.set_visible(repos.n_items() > 0);
+    }
+
+    fn set_row_channel(row: &ListBoxRow) -> glib::Sender<Message> {
+        let (tx, rx) = MainContext::channel(PRIORITY_DEFAULT);
+        let revealer = window::Window::get_row_revealer(row);
+        let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+
+        rx.attach(None, move |x| match x {
+            Message::Progress(value) => {
+                if value.is_nan() {
+                    progress_bar.set_fraction(1.0);
+                } else {
+                    progress_bar.set_fraction(value);
+                }
+
+                if progress_bar.fraction() == 1.0 {
+                    revealer.set_reveal_child(false);
+                }
+
+                Continue(true)
+            }
+            Message::Clone => {
+                progress_bar.add_css_class("clone");
+                progress_bar.remove_css_class("deltas");
+                progress_bar.remove_css_class("fetch");
+                Continue(true)
+            }
+            Message::Fetch => {
+                progress_bar.add_css_class("fetch");
+                progress_bar.remove_css_class("clone");
+                progress_bar.remove_css_class("deltas");
+                Continue(true)
+            }
+            Message::Deltas => {
+                progress_bar.add_css_class("deltas");
+                progress_bar.remove_css_class("clone");
+                progress_bar.remove_css_class("fetch");
+                Continue(true)
+            }
+        });
+
+        tx
+    }
+
+    fn get_row_revealer(row: &ListBoxRow) -> Revealer {
+        row.child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .last_child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .last_child()
+            .unwrap()
+            .downcast::<Revealer>()
+            .unwrap()
     }
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
