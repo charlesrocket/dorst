@@ -22,6 +22,7 @@ Example:
 
 ```yaml
 ---
+source_directory: ~/src
 targets:
   - https://github.com/charlesrocket/dotfiles
   - https://github.com/charlesrocket/freebsd-station
