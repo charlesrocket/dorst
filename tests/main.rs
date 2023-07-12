@@ -119,7 +119,7 @@ fn init() -> Result<(), Box<dyn Error>> {
 
     let mut cmd = Command::cargo_bin("dorst")?;
 
-    cmd.write_stdin("init-test-target/\n")
+    cmd.write_stdin("/tmp\ninit-test-target/\n")
         .assert()
         .failure()
         .stderr(contains("init-test-target: unsupported URL protocol;"));
