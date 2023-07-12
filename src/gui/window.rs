@@ -115,6 +115,13 @@ impl Window {
             .connect_icon_release(clone!(@weak self as window => move |_,_| {
                 window.new_repo();
             }));
+
+        self.imp()
+            .button_backup_state
+            .connect_toggled(clone!(@weak self as window => move |_| {
+                let mut state = window.imp().backups_enabled.borrow_mut();
+                *state = window.imp().button_backup_state.is_active();
+            }));
     }
 
     fn setup_repos(&self) {
@@ -160,7 +167,9 @@ impl Window {
 
     fn mirror_all(&self) {
         self.imp().button_start.set_sensitive(false);
+        self.imp().button_source_dest.set_sensitive(false);
         self.imp().button_backup_dest.set_sensitive(false);
+        self.imp().button_backup_state.set_sensitive(false);
         self.imp().repo_entry.set_sensitive(false);
         self.imp().banner.set_revealed(false);
         self.imp().revealer_banner.set_reveal_child(false);
@@ -175,6 +184,7 @@ impl Window {
 
         let dest_clone = self.get_dest_clone();
         let dest_backup = self.get_dest_backup();
+        let backups_enabled = *self.imp().backups_enabled.borrow();
 
         for i in 0..repos.n_items() {
             if let Some(obj) = repos.item(i) {
@@ -206,7 +216,7 @@ impl Window {
                             &destination_clone,
                             &destination_backup,
                             &repo_link,
-                            true,
+                            backups_enabled,
                             #[cfg(feature = "gui")]
                             &Some(tx.clone()),
                         ) {
@@ -246,7 +256,9 @@ impl Window {
 
                     window.imp().progress_bar.set_fraction(1.0);
                     window.imp().revealer.set_reveal_child(false);
+                    window.imp().button_source_dest.set_sensitive(true);
                     window.imp().button_backup_dest.set_sensitive(true);
+                    window.imp().button_backup_state.set_sensitive(true);
                     window.imp().repo_entry.set_sensitive(true);
                     window.imp().button_start.set_sensitive(true);
                     Continue(false)
@@ -659,6 +671,7 @@ impl Window {
         let keyfile = KeyFile::new();
         let size = self.default_size();
         let dest = self.imp().backup_directory.borrow();
+        let backups_enabled = *self.imp().backups_enabled.borrow();
         let mut color_scheme = self.imp().color_scheme.lock().unwrap();
 
         match self.imp().style_manager.color_scheme() {
@@ -673,6 +686,7 @@ impl Window {
         keyfile.set_int64("window", "height", size.1.into());
         keyfile.set_string("window", "theme", &color_scheme);
         keyfile.set_string("backup", "destination", dest.to_str().unwrap());
+        keyfile.set_boolean("backup", "enabled", backups_enabled);
 
         let cache_dir = glib::user_cache_dir();
         let settings_path = cache_dir.join("dorst");
@@ -690,6 +704,7 @@ impl Window {
         let cache_dir = glib::user_cache_dir();
         let settings_path = cache_dir.join("dorst");
         let settings = settings_path.join("gui.ini");
+        let mut backups_enabled = self.imp().backups_enabled.borrow_mut();
         let mut theme = self.imp().color_scheme.lock().unwrap();
 
         if settings.exists() {
@@ -722,6 +737,14 @@ impl Window {
                     self.imp()
                         .button_backup_dest
                         .remove_css_class("suggested-action");
+                }
+            }
+
+            if let Ok(backup_state) = keyfile.boolean("backup", "enabled") {
+                *backups_enabled = backup_state;
+
+                if backup_state {
+                    self.imp().button_backup_state.set_active(true);
                 }
             }
         }

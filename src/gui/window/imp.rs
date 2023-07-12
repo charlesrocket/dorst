@@ -1,7 +1,9 @@
 use adw::{prelude::*, subclass::prelude::*, Banner, StyleManager, ToastOverlay};
 use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
-use gtk::{gio, glib, Button, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer};
+use gtk::{
+    gio, glib, Button, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer, ToggleButton,
+};
 use serde_yaml::{Mapping, Sequence, Value};
 
 use std::{
@@ -26,6 +28,8 @@ pub struct Window {
     #[template_child]
     pub button_backup_dest: TemplateChild<Button>,
     #[template_child]
+    pub button_backup_state: TemplateChild<ToggleButton>,
+    #[template_child]
     pub repo_entry: TemplateChild<Entry>,
     #[template_child]
     pub repos_list: TemplateChild<ListBox>,
@@ -44,6 +48,7 @@ pub struct Window {
     #[template_child]
     pub revealer: TemplateChild<Revealer>,
     pub filter_option: RefCell<String>,
+    pub backups_enabled: RefCell<bool>,
     pub color_scheme: Arc<Mutex<String>>,
     pub style_manager: StyleManager,
     pub errors_list: Arc<Mutex<Vec<String>>>,
@@ -66,6 +71,7 @@ impl ObjectSubclass for Window {
             button_start: TemplateChild::default(),
             button_source_dest: TemplateChild::default(),
             button_backup_dest: TemplateChild::default(),
+            button_backup_state: TemplateChild::default(),
             repo_entry: TemplateChild::default(),
             repos_list: TemplateChild::default(),
             repos: RefCell::default(),
@@ -78,6 +84,7 @@ impl ObjectSubclass for Window {
             revealer_banner: TemplateChild::default(),
             revealer: TemplateChild::default(),
             filter_option: RefCell::default(),
+            backups_enabled: RefCell::new(false),
             color_scheme: Arc::default(),
             style_manager: StyleManager::default(),
             errors_list: Arc::default(),
