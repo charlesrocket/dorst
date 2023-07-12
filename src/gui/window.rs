@@ -572,6 +572,9 @@ impl Window {
 
             if let Some(source_directory) = config["source_directory"].as_str() {
                 *self.imp().source_directory.borrow_mut() = String::from(source_directory);
+                self.imp()
+                    .button_source_dest
+                    .remove_css_class("suggested-action");
             }
 
             if let Some(targets) = config["targets"].as_sequence() {
