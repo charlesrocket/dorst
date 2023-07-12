@@ -84,10 +84,20 @@
                               <class name="linked"/>
                             </style>
                             <child>
-                              <object class="GtkButton" id="button_destination">
-                                <property name="action-name">win.select-directory</property>
+                              <object class="GtkButton" id="button_source_dest">
+                                <property name="action-name">win.select-source-directory</property>
                                 <property name="icon-name">folder-symbolic</property>
-                                <property name="tooltip-text" translatable="yes">Select output directory</property>
+                                <property name="tooltip-text" translatable="yes">Select source directory</property>
+                                <style>
+                                  <class name="suggested-action"/>
+                                </style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="button_backup_dest">
+                                <property name="action-name">win.select-backup-directory</property>
+                                <property name="icon-name">system-file-manager-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Select backup directory</property>
                                 <style>
                                   <class name="suggested-action"/>
                                 </style>

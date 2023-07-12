@@ -22,13 +22,16 @@ pub struct Window {
     #[template_child]
     pub button_start: TemplateChild<Button>,
     #[template_child]
-    pub button_destination: TemplateChild<Button>,
+    pub button_source_dest: TemplateChild<Button>,
+    #[template_child]
+    pub button_backup_dest: TemplateChild<Button>,
     #[template_child]
     pub repo_entry: TemplateChild<Entry>,
     #[template_child]
     pub repos_list: TemplateChild<ListBox>,
     pub repos: RefCell<Option<gio::ListStore>>,
-    pub directory_output: RefCell<PathBuf>,
+    pub source_directory: RefCell<String>,
+    pub backup_directory: RefCell<PathBuf>,
     pub directory_dialog: gtk::FileDialog,
     #[template_child]
     pub progress_bar: TemplateChild<ProgressBar>,
@@ -61,11 +64,13 @@ impl ObjectSubclass for Window {
 
         Self {
             button_start: TemplateChild::default(),
-            button_destination: TemplateChild::default(),
+            button_source_dest: TemplateChild::default(),
+            button_backup_dest: TemplateChild::default(),
             repo_entry: TemplateChild::default(),
             repos_list: TemplateChild::default(),
             repos: RefCell::default(),
-            directory_output: RefCell::new(PathBuf::new()),
+            source_directory: RefCell::new(String::new()),
+            backup_directory: RefCell::new(PathBuf::new()),
             directory_dialog,
             progress_bar: TemplateChild::default(),
             toast_overlay: TemplateChild::default(),
@@ -84,16 +89,32 @@ impl ObjectSubclass for Window {
         klass.bind_template();
         klass.bind_template_callbacks();
         klass.install_action_async(
-            "win.select-directory",
+            "win.select-source-directory",
             None,
             |win, _action_name, _action_target| async move {
                 let dialog = &win.imp().directory_dialog;
-                win.imp()
-                    .button_destination
-                    .remove_css_class("suggested-action");
+
                 if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
-                    win.set_directory(&folder.path().unwrap());
+                    win.set_source_directory(&folder.path().unwrap());
                     win.show_message(folder.path().unwrap().to_str().unwrap(), 2);
+                    win.imp()
+                        .button_source_dest
+                        .remove_css_class("suggested-action");
+                }
+            },
+        );
+
+        klass.install_action_async(
+            "win.select-backup-directory",
+            None,
+            |win, _action_name, _action_target| async move {
+                let dialog = &win.imp().directory_dialog;
+                if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
+                    win.set_backup_directory(&folder.path().unwrap());
+                    win.show_message(folder.path().unwrap().to_str().unwrap(), 2);
+                    win.imp()
+                        .button_backup_dest
+                        .remove_css_class("suggested-action");
                 }
             },
         );
@@ -140,6 +161,11 @@ impl WindowImpl for Window {
         }
 
         let mut yaml_mapping = Mapping::new();
+        yaml_mapping.insert(
+            Value::String("source_directory".to_owned()),
+            Value::String(self.source_directory.borrow().to_string()),
+        );
+
         yaml_mapping.insert(
             Value::String("targets".to_owned()),
             Value::Sequence(target_sequence),
