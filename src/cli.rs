@@ -12,7 +12,7 @@ use std::{
 
 use crate::{
     git,
-    util::{get_dir, get_name, version_string, xdg_path},
+    util::{expand_path, get_dir, get_name, version_string, xdg_path},
 };
 
 const BANNER: &str = "\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\
@@ -36,6 +36,7 @@ const BAR_2: [&str; 3] = ["+", "+", "-"];
 
 #[derive(Default, Serialize, Deserialize)]
 struct Config {
+    source_directory: String,
     targets: Vec<String>,
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -55,6 +56,7 @@ impl Config {
         }
 
         Ok(Self {
+            source_directory: config.source_directory,
             targets: config.targets,
             count: config_count,
         })
@@ -65,10 +67,15 @@ impl Config {
             println!("\x1b[7m DORST: Initialization \x1b[0m");
 
             let dir = file_path.parent().unwrap();
-            let prompt =
+
+            let source_prompt = text_prompt("\x1b[7m Enter source directory (~/src): \x1b[0m ");
+
+            let target_prompt =
                 text_prompt("\x1b[7m Enter backup targets  \n separated by a comma: \x1b[0m ");
 
-            let target: Vec<String> = prompt?
+            let source = source_prompt?;
+
+            let target: Vec<String> = target_prompt?
                 .split(',')
                 .map(|target| {
                     let mut target_string = String::from(target);
@@ -79,7 +86,9 @@ impl Config {
                     target_string
                 })
                 .collect();
+
             let config = Self {
+                source_directory: source,
                 targets: target,
                 count: 0,
             };
@@ -100,6 +109,7 @@ impl Config {
 
     fn load_config(&mut self, path: &PathBuf) -> Result<()> {
         let config = Self::read(path)?;
+        self.source_directory = config.source_directory;
         self.targets = config.targets;
         self.count = config.count;
 
@@ -144,10 +154,17 @@ fn args() -> ArgMatches {
                 .value_parser(value_parser!(PathBuf)),
         )
         .arg(
+            Arg::new("bootstrap")
+                .short('b')
+                .long("bootstrap")
+                .help("Clone only (no backups)")
+                .action(ArgAction::SetFalse),
+        )
+        .arg(
             Arg::new("purge")
                 .short('p')
                 .long("purge")
-                .help("Purge current backups")
+                .help("Purge current data")
                 .action(ArgAction::SetTrue),
         )
         .arg(
@@ -178,6 +195,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
 
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let purge = matches.get_flag("purge");
+    let repo_mirror = matches.get_flag("bootstrap");
     let silent = matches.get_flag("silent");
     let mut config = Config::default();
 
@@ -201,7 +219,13 @@ fn cli(matches: &ArgMatches) -> Result<()> {
 
     for target in config.targets {
         let spinner = indicat.insert_before(&progress_bar, ProgressBar::new_spinner());
-        let destination = format!("{}/{}.dorst", &path.display(), get_name(&target));
+        let destination_clone = format!(
+            "{}/{}",
+            PathBuf::from(expand_path(&config.source_directory)).display(),
+            get_name(&target)
+        );
+
+        let destination_backup = format!("{}/{}.dorst", &path.display(), get_name(&target));
         let target_name = get_name(&target);
 
         if !silent {
@@ -212,16 +236,20 @@ fn cli(matches: &ArgMatches) -> Result<()> {
             ));
         }
 
-        if purge && Path::new(&destination).exists() {
-            fs::remove_dir_all(&destination)?;
+        if purge && Path::new(&destination_clone).exists() {
+            fs::remove_dir_all(&destination_clone)?;
         }
 
-        match git::mirror_repo(
-            &destination,
+        if purge && Path::new(&destination_backup).exists() {
+            fs::remove_dir_all(&destination_backup)?;
+        }
+
+        match process_repo(
+            &destination_clone,
+            &destination_backup,
             &target,
+            repo_mirror,
             Some(&spinner),
-            #[cfg(feature = "gui")]
-            &None,
             Some(silent),
         ) {
             Ok(_) => {
@@ -235,8 +263,8 @@ fn cli(matches: &ArgMatches) -> Result<()> {
 
             Err(error) => {
                 let err = format!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
-                err_count += 1;
 
+                err_count += 1;
                 if !silent {
                     if spinner.is_hidden() {
                         eprintln!("{}", &err);
@@ -266,6 +294,44 @@ fn cli(matches: &ArgMatches) -> Result<()> {
              \x1b[37m(\x1b[0m\x1b[1;92m{compl_count}\
              \x1b[0m\x1b[37m)\x1b[0m"
         );
+    }
+
+    Ok(())
+}
+
+fn process_repo(
+    destination_clone: &str,
+    destination_backup: &str,
+    target: &str,
+    mirror: bool,
+    #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
+    #[cfg(feature = "cli")] silent: Option<bool>,
+) -> Result<()> {
+    git::clone_target(
+        destination_clone,
+        target,
+        false,
+        spinner,
+        #[cfg(feature = "gui")]
+        &None,
+        silent,
+    )?;
+
+    if mirror {
+        spinner.unwrap().set_message(format!(
+            "\x1b[96mbackup \x1b[93m{}\x1b[0m",
+            get_name(target)
+        ));
+
+        git::clone_target(
+            destination_backup,
+            target,
+            true,
+            spinner,
+            #[cfg(feature = "gui")]
+            &None,
+            silent,
+        )?;
     }
 
     Ok(())
