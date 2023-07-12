@@ -22,6 +22,19 @@ pub fn version_string() -> String {
     format!("{version}{commit_hash}{dirty}")
 }
 
+pub fn expand_path(path: &str) -> String {
+    if path.starts_with("~/") || path == "~" {
+        let home_dir = env::var_os("HOME").unwrap();
+        let home_dir_str = home_dir.to_str().unwrap();
+        let mut expanded_path = home_dir_str.to_owned();
+
+        expanded_path.push_str(&path[1..]);
+        return expanded_path;
+    }
+
+    path.to_owned()
+}
+
 pub fn get_name(target: &str) -> &str {
     target.rsplit('/').next().unwrap_or(target)
 }
@@ -43,4 +56,11 @@ pub fn xdg_path() -> Result<PathBuf> {
     }
 
     Ok(PathBuf::from(file_path))
+}
+
+#[test]
+fn test_path() {
+    let path_string = "~/";
+    let path_expanded = expand_path(path_string);
+    assert!(path_expanded.starts_with("/"));
 }

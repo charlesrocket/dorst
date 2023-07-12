@@ -51,6 +51,7 @@ pub fn set_default_branch(mirror: &Repository) -> Result<(), git2::Error> {
 pub fn clone_repo(
     target: &str,
     destination: &str,
+    bare: bool,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
     #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     git_config: &git2::Config,
@@ -106,24 +107,38 @@ pub fn clone_repo(
         });
     }
 
-    let mut fetch_options = FetchOptions::new();
-    let mut repo_builder = git2::build::RepoBuilder::new();
-    let builder = repo_builder
-        .bare(true)
-        .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
+    if bare {
+        let mut fetch_options = FetchOptions::new();
+        let mut repo_builder = git2::build::RepoBuilder::new();
+        let builder = repo_builder
+            .bare(true)
+            .remote_create(|repo, name, url| repo.remote_with_fetch(name, url, "+refs/*:refs/*"));
 
-    fetch_options
-        .remote_callbacks(callbacks)
-        .download_tags(AutotagOption::All);
+        fetch_options
+            .remote_callbacks(callbacks)
+            .download_tags(AutotagOption::All);
 
-    let mirror = builder
-        .fetch_options(fetch_options)
-        .clone(target, Path::new(&destination))?;
+        let mirror = builder
+            .fetch_options(fetch_options)
+            .clone(target, Path::new(&destination))?;
 
-    mirror.config()?.set_bool("remote.origin.mirror", true)?;
-    set_default_branch(&mirror)?;
+        mirror.config()?.set_bool("remote.origin.mirror", true)?;
+        set_default_branch(&mirror)?;
 
-    Ok(mirror)
+        Ok(mirror)
+    } else {
+        let mut fetch_options = FetchOptions::new();
+        let checkout_options = git2::build::CheckoutBuilder::new();
+
+        fetch_options.remote_callbacks(callbacks);
+
+        let repo = git2::build::RepoBuilder::new()
+            .fetch_options(fetch_options)
+            .with_checkout(checkout_options)
+            .clone(target, Path::new(&destination))?;
+
+        Ok(repo)
+    }
 }
 
 pub fn fetch_repo(
@@ -267,9 +282,10 @@ pub fn fetch_repo(
     Ok(mirror)
 }
 
-pub fn mirror_repo(
+pub fn clone_target(
     destination: &str,
     target: &str,
+    mirror: bool,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
     #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     #[cfg(feature = "cli")] silent: Option<bool>,
@@ -292,6 +308,7 @@ pub fn mirror_repo(
         clone_repo(
             target,
             destination,
+            mirror,
             #[cfg(feature = "cli")]
             spinner,
             #[cfg(feature = "gui")]

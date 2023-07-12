@@ -41,7 +41,7 @@
                 <child type="start">
                   <object class="GtkButton" id="button_start">
                     <property name="action-name">win.mirror-all</property>
-                    <property name="icon-name">media-floppy-symbolic</property>
+                    <property name="icon-name">folder-download-symbolic</property>
                     <property name="tooltip-text">Start</property>
                   </object>
                 </child>
@@ -84,10 +84,10 @@
                               <class name="linked"/>
                             </style>
                             <child>
-                              <object class="GtkButton" id="button_destination">
-                                <property name="action-name">win.select-directory</property>
+                              <object class="GtkButton" id="button_source_dest">
+                                <property name="action-name">win.select-source-directory</property>
                                 <property name="icon-name">folder-symbolic</property>
-                                <property name="tooltip-text" translatable="yes">Select output directory</property>
+                                <property name="tooltip-text" translatable="yes">Select source directory</property>
                                 <style>
                                   <class name="suggested-action"/>
                                 </style>
@@ -98,6 +98,22 @@
                                 <property name="placeholder-text" translatable="yes">Enter repository URL</property>
                                 <property name="secondary-icon-name">list-add-symbolic</property>
                                 <property name="hexpand">true</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="button_backup_dest">
+                                <property name="action-name">win.select-backup-directory</property>
+                                <property name="icon-name">system-file-manager-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Select backup directory</property>
+                                <style>
+                                  <class name="suggested-action"/>
+                                </style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkToggleButton" id="button_backup_state">
+                                <property name="icon-name">media-floppy-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Enable backups</property>
                               </object>
                             </child>
                           </object>

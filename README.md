@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/charlesrocket/dorst/branch/trunk/graph/badge.svg)](https://codecov.io/gh/charlesrocket/dorst)
 ### Intro
 
-Backup codebases with Dørst.
+Bootstrap (and backup) codebases with Dørst.
 ## CLI
 ### Compilation
 
@@ -14,7 +14,7 @@ cargo install dorst
 
 ### Usage
 
-To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` and set backup targets (the current directory is the default destination). Dørts can call `ssh-agent` and use `gitconfig`'s credential helper for authentication if needed.
+To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` and set targets (the current directory is the default backup destination). Dørts supports `ssh-agent` and can use `gitconfig`'s credential helper for authentication.
 
 `dorst ~/backups/src`
 
@@ -22,6 +22,7 @@ Example:
 
 ```yaml
 ---
+source_directory: ~/src
 targets:
   - https://github.com/charlesrocket/dotfiles
   - https://github.com/charlesrocket/freebsd-station

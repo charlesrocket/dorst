@@ -1,5 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*, ColorScheme};
-use glib::{clone, KeyFile, MainContext, Object, PRIORITY_DEFAULT};
+use anyhow::Result;
+use glib::{clone, KeyFile, MainContext, Object, Sender, PRIORITY_DEFAULT};
 use gtk::{
     gio, glib, pango::EllipsizeMode, Align, Box, Button, CustomFilter, EventSequenceState,
     FilterListModel, GestureClick, Label, License, ListBoxRow, NoSelection, Orientation, Popover,
@@ -9,7 +10,7 @@ use gtk::{
 use std::{
     cell::RefMut,
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -33,6 +34,7 @@ glib::wrapper! {
 }
 
 pub enum Message {
+    Reset,
     Progress(f64),
     Clone,
     Fetch,
@@ -113,6 +115,13 @@ impl Window {
             .connect_icon_release(clone!(@weak self as window => move |_,_| {
                 window.new_repo();
             }));
+
+        self.imp()
+            .button_backup_state
+            .connect_toggled(clone!(@weak self as window => move |_| {
+                let mut state = window.imp().backups_enabled.borrow_mut();
+                *state = window.imp().button_backup_state.is_active();
+            }));
     }
 
     fn setup_repos(&self) {
@@ -158,7 +167,9 @@ impl Window {
 
     fn mirror_all(&self) {
         self.imp().button_start.set_sensitive(false);
-        self.imp().button_destination.set_sensitive(false);
+        self.imp().button_source_dest.set_sensitive(false);
+        self.imp().button_backup_dest.set_sensitive(false);
+        self.imp().button_backup_state.set_sensitive(false);
         self.imp().repo_entry.set_sensitive(false);
         self.imp().banner.set_revealed(false);
         self.imp().revealer_banner.set_reveal_child(false);
@@ -171,16 +182,29 @@ impl Window {
         let total_repos = self.get_repo_data().len();
         let completed_repos = Arc::new(AtomicUsize::new(0));
 
+        let dest_clone = self.get_dest_clone();
+        let dest_backup = self.get_dest_backup();
+        let backups_enabled = *self.imp().backups_enabled.borrow();
+
         for i in 0..repos.n_items() {
             if let Some(obj) = repos.item(i) {
                 if let Some(repo) = obj.downcast_ref::<RepoObject>() {
                     let row = self.imp().repos_list.row_at_index(i as i32).unwrap();
+                    let repo_link = repo.link();
                     let tx = window::Window::set_row_channel(&row);
-                    let dest = self.get_dest().clone();
+                    let destination_clone = format!(
+                        "{}/{}",
+                        &dest_clone.clone().display().to_string(),
+                        util::get_name(&repo_link)
+                    );
+                    let destination_backup = format!(
+                        "{}/{}.dorst",
+                        &dest_backup.clone().display().to_string(),
+                        util::get_name(&repo_link)
+                    );
                     let completed_repos_clone = completed_repos.clone();
                     let errors_clone = self.imp().errors_list.clone();
                     let success_clone = self.imp().success_list.clone();
-                    let repo_link = repo.link();
                     let revealer = window::Window::get_row_revealer(&row);
                     let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
@@ -188,20 +212,13 @@ impl Window {
                     revealer.set_reveal_child(true);
 
                     thread::spawn(move || {
-                        let destination = format!(
-                            "{}/{}.dorst",
-                            &dest.display().to_string(),
-                            util::get_name(&repo_link)
-                        );
-                        match git::mirror_repo(
-                            &destination,
+                        match window::Window::process_repo(
+                            &destination_clone,
+                            &destination_backup,
                             &repo_link,
-                            #[cfg(feature = "cli")]
-                            None,
+                            backups_enabled,
                             #[cfg(feature = "gui")]
                             &Some(tx.clone()),
-                            #[cfg(feature = "cli")]
-                            None,
                         ) {
                             Ok(()) => {
                                 success_clone.lock().unwrap().push(repo_link);
@@ -239,7 +256,9 @@ impl Window {
 
                     window.imp().progress_bar.set_fraction(1.0);
                     window.imp().revealer.set_reveal_child(false);
-                    window.imp().button_destination.set_sensitive(true);
+                    window.imp().button_source_dest.set_sensitive(true);
+                    window.imp().button_backup_dest.set_sensitive(true);
+                    window.imp().button_backup_state.set_sensitive(true);
                     window.imp().repo_entry.set_sensitive(true);
                     window.imp().button_start.set_sensitive(true);
                     Continue(false)
@@ -249,6 +268,44 @@ impl Window {
                 }
             }),
         );
+    }
+
+    fn process_repo(
+        destination_clone: &str,
+        destination_backup: &str,
+        repo_link: &str,
+        mirror: bool,
+        #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
+    ) -> Result<()> {
+        git::clone_target(
+            destination_clone,
+            repo_link,
+            false,
+            #[cfg(feature = "cli")]
+            None,
+            #[cfg(feature = "gui")]
+            tx,
+            #[cfg(feature = "cli")]
+            None,
+        )?;
+
+        if mirror {
+            let _ = tx.clone().unwrap().send(Message::Reset);
+
+            git::clone_target(
+                destination_backup,
+                repo_link,
+                true,
+                #[cfg(feature = "cli")]
+                None,
+                #[cfg(feature = "gui")]
+                tx,
+                #[cfg(feature = "cli")]
+                None,
+            )?;
+        }
+
+        Ok(())
     }
 
     fn update_rows(&self) {
@@ -292,8 +349,15 @@ impl Window {
             .expect("Could not get current repositories.")
     }
 
-    fn get_dest(&self) -> RefMut<PathBuf> {
-        self.imp().directory_output.borrow_mut()
+    fn get_dest_clone(&self) -> PathBuf {
+        let dest = self.imp().source_directory.borrow();
+        let path = dest.to_string();
+
+        PathBuf::from(util::expand_path(&path))
+    }
+
+    fn get_dest_backup(&self) -> RefMut<PathBuf> {
+        self.imp().backup_directory.borrow_mut()
     }
 
     fn get_repo_data(&self) -> Vec<RepoData> {
@@ -315,6 +379,12 @@ impl Window {
         let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
         rx.attach(None, move |x| match x {
+            Message::Reset => {
+                progress_bar.set_fraction(0.0);
+                revealer.set_reveal_child(true);
+
+                Continue(true)
+            }
             Message::Progress(value) => {
                 if value.is_nan() {
                     progress_bar.set_fraction(1.0);
@@ -493,8 +563,17 @@ impl Window {
         }
     }
 
-    fn set_directory(&self, directory: &PathBuf) {
-        let mut dir = self.imp().directory_output.borrow_mut();
+    fn set_source_directory(&self, directory: &Path) {
+        let mut source_dir = self.imp().source_directory.borrow_mut();
+        *source_dir = directory
+            .to_path_buf()
+            .into_os_string()
+            .into_string()
+            .unwrap();
+    }
+
+    fn set_backup_directory(&self, directory: &PathBuf) {
+        let mut dir = self.imp().backup_directory.borrow_mut();
         dir.clear();
         dir.push(directory);
     }
@@ -502,6 +581,13 @@ impl Window {
     fn restore_data(&self) {
         if let Ok(file) = fs::File::open(util::xdg_path().unwrap()) {
             let config: serde_yaml::Value = serde_yaml::from_reader(file).unwrap();
+
+            if let Some(source_directory) = config["source_directory"].as_str() {
+                *self.imp().source_directory.borrow_mut() = String::from(source_directory);
+                self.imp()
+                    .button_source_dest
+                    .remove_css_class("suggested-action");
+            }
 
             if let Some(targets) = config["targets"].as_sequence() {
                 let repo_objects: Vec<RepoObject> = targets
@@ -584,7 +670,8 @@ impl Window {
     fn save_settings(&self) {
         let keyfile = KeyFile::new();
         let size = self.default_size();
-        let dest = self.imp().directory_output.borrow();
+        let dest = self.imp().backup_directory.borrow();
+        let backups_enabled = *self.imp().backups_enabled.borrow();
         let mut color_scheme = self.imp().color_scheme.lock().unwrap();
 
         match self.imp().style_manager.color_scheme() {
@@ -599,6 +686,7 @@ impl Window {
         keyfile.set_int64("window", "height", size.1.into());
         keyfile.set_string("window", "theme", &color_scheme);
         keyfile.set_string("backup", "destination", dest.to_str().unwrap());
+        keyfile.set_boolean("backup", "enabled", backups_enabled);
 
         let cache_dir = glib::user_cache_dir();
         let settings_path = cache_dir.join("dorst");
@@ -616,6 +704,7 @@ impl Window {
         let cache_dir = glib::user_cache_dir();
         let settings_path = cache_dir.join("dorst");
         let settings = settings_path.join("gui.ini");
+        let mut backups_enabled = self.imp().backups_enabled.borrow_mut();
         let mut theme = self.imp().color_scheme.lock().unwrap();
 
         if settings.exists() {
@@ -644,10 +733,18 @@ impl Window {
 
             if let Ok(dest) = keyfile.string("backup", "destination") {
                 if !dest.is_empty() {
-                    self.set_directory(&PathBuf::from(dest.as_str()));
+                    self.set_backup_directory(&PathBuf::from(dest.as_str()));
                     self.imp()
-                        .button_destination
+                        .button_backup_dest
                         .remove_css_class("suggested-action");
+                }
+            }
+
+            if let Ok(backup_state) = keyfile.boolean("backup", "enabled") {
+                *backups_enabled = backup_state;
+
+                if backup_state {
+                    self.imp().button_backup_state.set_active(true);
                 }
             }
         }
