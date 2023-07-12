@@ -68,7 +68,8 @@ impl Config {
 
             let dir = file_path.parent().unwrap();
 
-            let source_prompt = text_prompt("\x1b[7m Enter source directory (~/src): \x1b[0m ");
+            let source_prompt =
+                text_prompt("\x1b[7m Enter source storage  \n directory (~/src):    \x1b[0m ");
 
             let target_prompt =
                 text_prompt("\x1b[7m Enter backup targets  \n separated by a comma: \x1b[0m ");
