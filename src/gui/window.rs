@@ -1,4 +1,4 @@
-use adw::{prelude::*, subclass::prelude::*, ColorScheme};
+use adw::{prelude::*, subclass::prelude::*, AboutWindow, ColorScheme};
 use anyhow::Result;
 use glib::{clone, KeyFile, MainContext, Object, Sender, PRIORITY_DEFAULT};
 use gtk::{
@@ -657,7 +657,7 @@ impl Window {
     }
 
     fn show_about_dialog(&self) {
-        adw::AboutWindow::builder()
+        let about_window = AboutWindow::builder()
             .application_name("DØRST")
             .version(util::version_string())
             .license_type(License::MitX11)
@@ -666,8 +666,14 @@ impl Window {
             .website(env!("CARGO_PKG_REPOSITORY"))
             .comments(env!("CARGO_PKG_DESCRIPTION"))
             .transient_for(self)
-            .build()
-            .present();
+            .build();
+
+        about_window.add_link(
+            "Release Notes",
+            "https://github.com/charlesrocket/dorst/blob/trunk/CHANGELOG.md",
+        );
+
+        about_window.present();
     }
 
     fn save_settings(&self) {
