@@ -304,7 +304,7 @@ pub fn process_target(
             &git_config,
             #[cfg(feature = "cli")]
             silent,
-        )?
+        )?;
     } else {
         clone_repo(
             target,
@@ -317,7 +317,7 @@ pub fn process_target(
             &git_config,
             #[cfg(feature = "cli")]
             silent,
-        )?
+        )?;
     };
 
     Ok(())
