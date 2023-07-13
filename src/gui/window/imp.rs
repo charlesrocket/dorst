@@ -103,7 +103,14 @@ impl ObjectSubclass for Window {
 
                 if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
                     win.set_source_directory(&folder.path().unwrap());
-                    win.show_message(folder.path().unwrap().to_str().unwrap(), 2);
+                    win.show_message(
+                        format!(
+                            "Source directory: {}",
+                            folder.path().unwrap().to_str().unwrap()
+                        ),
+                        3,
+                    );
+
                     win.imp()
                         .button_source_dest
                         .remove_css_class("suggested-action");
@@ -118,7 +125,14 @@ impl ObjectSubclass for Window {
                 let dialog = &win.imp().directory_dialog;
                 if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
                     win.set_backup_directory(&folder.path().unwrap());
-                    win.show_message(folder.path().unwrap().to_str().unwrap(), 2);
+                    win.show_message(
+                        format!(
+                            "Backup directory: {}",
+                            folder.path().unwrap().to_str().unwrap()
+                        ),
+                        3,
+                    );
+
                     win.imp()
                         .button_backup_dest
                         .remove_css_class("suggested-action");

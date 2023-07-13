@@ -520,7 +520,7 @@ impl Window {
 
         remove_button.connect_clicked(clone!(@weak self as window => move |_| {
             window.remove_repo(&link.label());
-            window.show_message(format!("Removed: {}", name.label()).as_str(), 3);
+            window.show_message(format!("Removed: {}", name.label()), 3);
             popover.popdown();
         }));
 
@@ -650,8 +650,8 @@ impl Window {
         self.imp().toast_overlay.add_toast(toast);
     }
 
-    pub fn show_message(&self, message: &str, timeout: u32) {
-        let toast = adw::Toast::new(message);
+    pub fn show_message(&self, message: String, timeout: u32) {
+        let toast = adw::Toast::new(&message);
         toast.set_timeout(timeout);
         self.add_toast(toast);
     }
