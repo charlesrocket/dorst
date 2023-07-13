@@ -5,16 +5,18 @@ use tempfile::NamedTempFile;
 use std::{env, error::Error, fs::remove_dir_all, io::Write, path::Path, thread};
 
 use crate::{
-    files::{CONFIG_EMPTY, CONFIG_INVALID_URL, CONFIG_LOCAL},
+    files::{CONFIG_BOOTSTRAP, CONFIG_EMPTY, CONFIG_INVALID_URL, CONFIG_MIRROR},
     helper::{commit, serve, test_repo},
 };
 
 mod files {
-    pub const CONFIG_LOCAL: &[u8; 62] = b"\x2d\x2d\x2d\x0a\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x2f\x74\x6d\x70\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x36\x38\x0a";
+    pub const CONFIG_BOOTSTRAP: &[u8; 72] = b"\x2d\x2d\x2d\x0a\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x74\x65\x73\x74\x2d\x62\x6f\x6f\x74\x73\x74\x72\x61\x70\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x36\x38\x0a";
+
+    pub const CONFIG_MIRROR: &[u8; 69] = b"\x2d\x2d\x2d\x0a\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x74\x65\x73\x74\x2d\x6d\x69\x72\x72\x6f\x72\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x36\x38\x0a";
 
     pub const CONFIG_EMPTY: &[u8; 4] = b"\x2d\x2d\x2d\x0a";
 
-    pub const CONFIG_INVALID_URL: &[u8] =
+    pub const CONFIG_INVALID_URL: &[u8; 38] =
         b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x7e\x2f\x73\x72\x63\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x2f";
 }
 
@@ -132,6 +134,47 @@ fn init() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
+fn bootstrap() -> Result<(), Box<dyn Error>> {
+    if Path::new("test-bootstrap").exists() {
+        remove_dir_all("test-bootstrap")?;
+    }
+
+    let repo = test_repo();
+    let mut clone = Command::cargo_bin("dorst")?;
+    let mut config = NamedTempFile::new()?;
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(1)
+        .build()?;
+
+    config.write_all(CONFIG_BOOTSTRAP)?;
+    runtime.spawn(async move {
+        serve(repo);
+    });
+
+    thread::sleep(std::time::Duration::from_millis(300));
+
+    clone
+        .arg("--bootstrap")
+        .arg("--config")
+        .arg(config.path())
+        .assert()
+        .success()
+        .stdout(contains(
+            "COMPLETED\u{1b}[0m \
+             \u{1b}[37m(\u{1b}[0m\u{1b}[1;92m1\u{1b}[0m\u{1b}[37m)\u{1b}[0m",
+        ));
+
+    assert!(Path::new("test-bootstrap/localhost:7868/.git").exists());
+    assert!(Path::new("test-bootstrap/localhost:7868/foo").exists());
+
+    if Path::new("test-bootstrap").exists() {
+        remove_dir_all("test-bootstrap")?;
+    }
+
+    Ok(())
+}
+
+#[test]
 fn mirror() -> Result<(), Box<dyn Error>> {
     if Path::new("test-mirror").exists() {
         remove_dir_all("test-mirror")?;
@@ -146,7 +189,7 @@ fn mirror() -> Result<(), Box<dyn Error>> {
         .worker_threads(1)
         .build()?;
 
-    config.write_all(CONFIG_LOCAL)?;
+    config.write_all(CONFIG_MIRROR)?;
     runtime.spawn(async move {
         serve(repo);
     });
