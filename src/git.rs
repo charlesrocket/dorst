@@ -56,7 +56,7 @@ pub fn clone_repo(
     #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     git_config: &git2::Config,
     #[cfg(feature = "cli")] silent: Option<bool>,
-) -> Result<Repository, git2::Error> {
+) -> Result<(), git2::Error> {
     let mut callbacks = set_callbacks(git_config);
     let target_name = get_name(target);
 
@@ -125,39 +125,38 @@ pub fn clone_repo(
         mirror.config()?.set_bool("remote.origin.mirror", true)?;
         set_default_branch(&mirror)?;
 
-        Ok(mirror)
+        Ok(())
     } else {
         let mut fetch_options = FetchOptions::new();
         let checkout_options = git2::build::CheckoutBuilder::new();
 
         fetch_options.remote_callbacks(callbacks);
 
-        let repo = git2::build::RepoBuilder::new()
+        git2::build::RepoBuilder::new()
             .fetch_options(fetch_options)
             .with_checkout(checkout_options)
             .clone(target, Path::new(&destination))?;
 
-        Ok(repo)
+        Ok(())
     }
 }
 
 pub fn fetch_repo(
     target: &str,
-    path: &str,
+    repo: Repository,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
     #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     git_config: &git2::Config,
     #[cfg(feature = "cli")] silent: Option<bool>,
-) -> Result<Repository, git2::Error> {
-    let mirror = Repository::open(path)?;
+) -> Result<(), git2::Error> {
     let target_name = get_name(target);
 
     {
         let mut callbacks = set_callbacks(git_config);
         let mut fetch_options = FetchOptions::new();
-        let mut remote = mirror
+        let mut remote = repo
             .find_remote("origin")
-            .or_else(|_| mirror.remote_anonymous(target))?;
+            .or_else(|_| repo.remote_anonymous(target))?;
 
         #[cfg(feature = "cli")]
         if silent == Some(false) {
@@ -274,12 +273,12 @@ pub fn fetch_repo(
 
         let default_branch = remote.default_branch()?;
 
-        mirror.set_head(default_branch.as_str().unwrap())?;
+        repo.set_head(default_branch.as_str().unwrap())?;
         remote.disconnect()?;
         remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
     }
 
-    Ok(mirror)
+    Ok(())
 }
 
 pub fn process_target(
@@ -293,9 +292,11 @@ pub fn process_target(
     let git_config = git2::Config::open_default()?;
 
     if Path::new(&destination).exists() {
+        let repo = Repository::open(destination)?;
+
         fetch_repo(
             target,
-            destination,
+            repo,
             #[cfg(feature = "cli")]
             spinner,
             #[cfg(feature = "gui")]
