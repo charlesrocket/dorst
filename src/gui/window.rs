@@ -661,6 +661,8 @@ impl Window {
             .application_name("DØRST")
             .version(util::version_string())
             .license_type(License::MitX11)
+            .support_url("https://github.com/charlesrocket/dorst/discussions")
+            .issue_url("https://github.com/charlesrocket/dorst/issues")
             .website(env!("CARGO_PKG_REPOSITORY"))
             .comments(env!("CARGO_PKG_DESCRIPTION"))
             .transient_for(self)
