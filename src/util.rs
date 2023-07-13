@@ -15,7 +15,7 @@ pub fn version_string() -> String {
         .unwrap_or("");
 
     let commit_hash =
-        built_info::GIT_COMMIT_HASH_SHORT.map_or_else(String::new, |hash| format!("-{}", hash));
+        built_info::GIT_COMMIT_HASH_SHORT.map_or_else(String::new, |hash| format!("-{hash}"));
 
     let version = env!("CARGO_PKG_VERSION");
 

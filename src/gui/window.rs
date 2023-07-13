@@ -226,7 +226,7 @@ impl Window {
                             Err(error) => errors_clone
                                 .lock()
                                 .unwrap()
-                                .push(format!("{}: {}", repo_link, error)),
+                                .push(format!("{repo_link}: {error}")),
                         }
 
                         completed_repos_clone.fetch_add(1, Ordering::Relaxed);
