@@ -663,6 +663,7 @@ impl Window {
             .license_type(License::MitX11)
             .website(env!("CARGO_PKG_REPOSITORY"))
             .comments(env!("CARGO_PKG_DESCRIPTION"))
+            .transient_for(self)
             .build()
             .present();
     }
