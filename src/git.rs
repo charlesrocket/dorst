@@ -282,7 +282,7 @@ pub fn fetch_repo(
     Ok(mirror)
 }
 
-pub fn clone_target(
+pub fn process_target(
     destination: &str,
     target: &str,
     mirror: bool,

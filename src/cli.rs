@@ -308,7 +308,7 @@ fn process_repo(
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<()> {
-    git::clone_target(
+    git::process_target(
         destination_clone,
         target,
         false,
@@ -324,7 +324,7 @@ fn process_repo(
             get_name(target)
         ));
 
-        git::clone_target(
+        git::process_target(
             destination_backup,
             target,
             true,

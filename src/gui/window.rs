@@ -277,7 +277,7 @@ impl Window {
         mirror: bool,
         #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     ) -> Result<()> {
-        git::clone_target(
+        git::process_target(
             destination_clone,
             repo_link,
             false,
@@ -292,7 +292,7 @@ impl Window {
         if mirror {
             let _ = tx.clone().unwrap().send(Message::Reset);
 
-            git::clone_target(
+            git::process_target(
                 destination_backup,
                 repo_link,
                 true,
