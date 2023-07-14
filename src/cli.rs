@@ -319,10 +319,12 @@ fn process_repo(
     )?;
 
     if mirror {
-        spinner.unwrap().set_message(format!(
-            "\x1b[96mbackup \x1b[93m{}\x1b[0m",
-            get_name(target)
-        ));
+        if silent == Some(false) {
+            spinner.unwrap().set_message(format!(
+                "\x1b[96mbackup \x1b[93m{}\x1b[0m",
+                get_name(target)
+            ));
+        }
 
         git::process_target(
             destination_backup,
