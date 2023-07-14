@@ -12,7 +12,7 @@ use crate::{
 mod files {
     pub const CONFIG_BOOTSTRAP: &[u8; 72] = b"\x2d\x2d\x2d\x0a\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x74\x65\x73\x74\x2d\x62\x6f\x6f\x74\x73\x74\x72\x61\x70\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x36\x38\x0a";
 
-    pub const CONFIG_MIRROR: &[u8; 69] = b"\x2d\x2d\x2d\x0a\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x74\x65\x73\x74\x2d\x6d\x69\x72\x72\x6f\x72\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x36\x38\x0a";
+    pub const CONFIG_MIRROR: &[u8; 69] = b"\x2d\x2d\x2d\x0a\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x74\x65\x73\x74\x2d\x6d\x69\x72\x72\x6f\x72\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x36\x39\x0a";
 
     pub const CONFIG_EMPTY: &[u8; 4] = b"\x2d\x2d\x2d\x0a";
 
@@ -58,13 +58,12 @@ mod helper {
         dir
     }
 
-    pub fn serve(dir: TempDir) {
-        let server = Server::new("localhost:7868", move |request| {
+    pub fn serve(dir: TempDir, port: u32) {
+        let server = Server::new(format!("localhost:{port}"), move |request| {
             let mut cmd = Command::new("git");
 
             cmd.arg("http-backend");
             cmd.env("GIT_PROJECT_ROOT", dir.path());
-            cmd.env("GIT_HTTP_EXPORT_ALL", "");
             cmd.start_cgi(request).unwrap()
         })
         .unwrap();
@@ -148,7 +147,7 @@ fn bootstrap() -> Result<(), Box<dyn Error>> {
 
     config.write_all(CONFIG_BOOTSTRAP)?;
     runtime.spawn(async move {
-        serve(repo);
+        serve(repo, 7868);
     });
 
     thread::sleep(std::time::Duration::from_millis(300));
@@ -191,7 +190,7 @@ fn mirror() -> Result<(), Box<dyn Error>> {
 
     config.write_all(CONFIG_MIRROR)?;
     runtime.spawn(async move {
-        serve(repo);
+        serve(repo, 7869);
     });
 
     thread::sleep(std::time::Duration::from_millis(300));
