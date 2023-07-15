@@ -104,7 +104,7 @@ impl ObjectSubclass for Window {
                 if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
                     win.set_source_directory(&folder.path().unwrap());
                     win.show_message(
-                        format!(
+                        &format!(
                             "Source directory: {}",
                             folder.path().unwrap().to_str().unwrap()
                         ),
@@ -126,7 +126,7 @@ impl ObjectSubclass for Window {
                 if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
                     win.set_backup_directory(&folder.path().unwrap());
                     win.show_message(
-                        format!(
+                        &format!(
                             "Backup directory: {}",
                             folder.path().unwrap().to_str().unwrap()
                         ),
