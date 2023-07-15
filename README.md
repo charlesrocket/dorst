@@ -40,4 +40,4 @@ cargo install dorst --features gui
 
 ### Usage
 
-`dorst gui`
+`dorst --gui`
