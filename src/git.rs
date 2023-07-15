@@ -143,7 +143,7 @@ pub fn clone_repo(
 
 pub fn fetch_repo(
     target: &str,
-    repo: Repository,
+    repo: &Repository,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
     #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     git_config: &git2::Config,
@@ -296,7 +296,7 @@ pub fn process_target(
 
         fetch_repo(
             target,
-            repo,
+            &repo,
             #[cfg(feature = "cli")]
             spinner,
             #[cfg(feature = "gui")]
