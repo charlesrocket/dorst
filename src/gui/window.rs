@@ -121,6 +121,7 @@ impl Window {
             .connect_toggled(clone!(@weak self as window => move |_| {
                 let mut state = window.imp().backups_enabled.borrow_mut();
                 *state = window.imp().button_backup_state.is_active();
+                window.imp().button_backup_dest.set_visible(*state);
             }));
     }
 
@@ -751,6 +752,8 @@ impl Window {
 
             if let Ok(backup_state) = keyfile.boolean("backup", "enabled") {
                 *backups_enabled = backup_state;
+
+                self.imp().button_backup_dest.set_visible(backup_state);
 
                 if backup_state {
                     self.imp().button_backup_state.set_active(true);

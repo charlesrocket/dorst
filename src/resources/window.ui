@@ -106,6 +106,7 @@
                                 <property name="action-name">win.select-backup-directory</property>
                                 <property name="icon-name">system-file-manager-symbolic</property>
                                 <property name="tooltip-text" translatable="yes">Select backup directory</property>
+                                <property name="visible">False</property>
                                 <style>
                                   <class name="suggested-action"/>
                                 </style>
