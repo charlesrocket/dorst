@@ -271,9 +271,6 @@ pub fn fetch_repo(
             }
         }
 
-        let default_branch = remote.default_branch()?;
-
-        repo.set_head(default_branch.as_str().unwrap())?;
         remote.disconnect()?;
         remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
     }
