@@ -105,15 +105,27 @@ impl Window {
 
     fn setup_callbacks(&self) {
         self.imp()
+            .repo_entry_empty
+            .connect_activate(clone!(@weak self as window => move |_| {
+                window.new_repo(false);
+            }));
+
+        self.imp().repo_entry_empty.connect_icon_release(
+            clone!(@weak self as window => move |_,_| {
+                window.new_repo(false);
+            }),
+        );
+
+        self.imp()
             .repo_entry
             .connect_activate(clone!(@weak self as window => move |_| {
-                window.new_repo();
+                window.new_repo(true);
             }));
 
         self.imp()
             .repo_entry
             .connect_icon_release(clone!(@weak self as window => move |_,_| {
-                window.new_repo();
+                window.new_repo(true);
             }));
 
         self.imp()
@@ -372,6 +384,12 @@ impl Window {
 
     fn set_repo_list_visible(&self, repos: &gio::ListStore) {
         self.imp().repos_list.set_visible(repos.n_items() > 0);
+
+        if repos.n_items() > 0 {
+            self.imp().stack.set_visible_child_name("main");
+        } else {
+            self.imp().stack.set_visible_child_name("empty");
+        }
     }
 
     fn set_row_channel(row: &ListBoxRow) -> glib::Sender<Message> {
@@ -528,8 +546,13 @@ impl Window {
         ListBoxRow::builder().child(&repo_box).build()
     }
 
-    fn new_repo(&self) {
-        let buffer = self.imp().repo_entry.buffer();
+    fn new_repo(&self, main_view: bool) {
+        let buffer = if main_view {
+            self.imp().repo_entry.buffer()
+        } else {
+            self.imp().repo_entry_empty.buffer()
+        };
+
         let mut content = buffer.text().to_string();
 
         buffer.set_text("");
