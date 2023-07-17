@@ -38,10 +38,11 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Install Cross
-        run: cargo install cross
+      - uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
       - name: Build
-        run: cross build --target ${{ matrix.target }}
+        run: cargo build
 
   cargo:
     name: Test on ${{ matrix.toolchain }}
