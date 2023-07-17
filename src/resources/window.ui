@@ -48,14 +48,15 @@
                     <property name="vexpand">True</property>
                     <property name="child">
                       <object class="AdwStatusPage">
-                        <property name="icon-name">insert-link-symbolic</property>
+                        <property name="icon-name">media-floppy-symbolic</property>
                         <property name="title" translatable="yes">Enter repository URL</property>
                         <property name="child">
-                            <object class="GtkEntry" id="repo_entry_empty">
-                              <property name="placeholder-text" translatable="yes">URL</property>
-                              <property name="secondary-icon-name">list-add-symbolic</property>
-                              <property name="hexpand">False</property>
-                            </object>
+                          <object class="GtkEntry" id="repo_entry_empty">
+                            <property name="placeholder-text" translatable="yes">URL</property>
+                            <property name="secondary-icon-name">list-add-symbolic</property>
+                            <property name="hexpand">False</property>
+                            <property name="halign">center</property>
+                          </object>
                         </property>
                       </object>
                     </property>
