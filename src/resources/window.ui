@@ -54,7 +54,7 @@
                             <object class="GtkEntry" id="repo_entry_empty">
                               <property name="placeholder-text" translatable="yes">URL</property>
                               <property name="secondary-icon-name">list-add-symbolic</property>
-                              <property name="hexpand">true</property>
+                              <property name="hexpand">False</property>
                             </object>
                         </property>
                       </object>
@@ -139,7 +139,7 @@
                                       <object class="GtkEntry" id="repo_entry">
                                         <property name="placeholder-text" translatable="yes">Enter repository URL</property>
                                         <property name="secondary-icon-name">list-add-symbolic</property>
-                                        <property name="hexpand">true</property>
+                                        <property name="hexpand">True</property>
                                       </object>
                                     </child>
                                     <child>
