@@ -146,7 +146,7 @@ jobs:
           fail_ci_if_error: true
 
   release:
-    needs: cargo
+    needs: [build, cargo]
     name: Release
     permissions:
       contents: write
