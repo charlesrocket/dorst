@@ -383,9 +383,10 @@ impl Window {
     }
 
     fn set_repo_list_visible(&self, repos: &gio::ListStore) {
-        self.imp().repos_list.set_visible(repos.n_items() > 0);
+        let repos_list_activated = repos.n_items() > 0;
+        self.imp().repos_list.set_visible(repos_list_activated);
 
-        if repos.n_items() > 0 {
+        if repos_list_activated {
             self.imp().stack.set_visible_child_name("main");
         } else {
             self.imp().stack.set_visible_child_name("empty");
