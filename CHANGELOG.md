@@ -2,6 +2,79 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] - 2023-07-18
+
+### Bug Fixes
+
+- Adjust progress bar transitions
+- Edit `source_prompt`
+- Handle `button_source_dest` css class
+- Fix `show_about_dialog()`
+- Detailed dialog toasts
+- Fix `silent`
+- Update layout
+- Change status page icon
+
+### CI/CD
+
+- Calculate checksums
+- Use `dtolnay/rust-toolchain`
+- Add `cross` builds
+- Update `release` requirements
+- Update `cross` setup
+- Add `build` (#18)
+
+### Documentation
+
+- Update example
+- Update description
+- Fix `Usage`
+
+### Features
+
+- Add commit hash to version string
+- Include commit hash in version strings (#14)
+- Add `clone_target()`
+- Add `bootstrap`
+- Add target clones
+- Add `backups_enabled`
+- Add `clone` (#15)
+- Set application links
+- Add changelog link
+- Change GUI flag
+- Hide `button_backup_dest`
+- Add placeholder
+- Set status page (#17)
+
+### Refactor
+
+- Move channel logic
+- `clone_target` -> `process_target`
+- Use `repo` in `process_target()`
+- Update `format!` strings
+- Fix `fetch_repo()`
+- Update `show_message()`
+- Drop `default_branch`
+- Add `repos_list_activated`
+
+### Styling
+
+- Fix `process_target()` formatting
+- Fix `GtkEntry`
+
+### Testing
+
+- Fix configs
+- Fix `init()`
+- Add `test_path()`
+- Add `bootstrap()`
+- Fix helper
+- Add `features()`
+
+### Build
+
+- Add build-time information
+
 ## [0.9.2] - 2023-07-08
 
 ### Bug Fixes
