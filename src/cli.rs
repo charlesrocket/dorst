@@ -137,7 +137,7 @@ fn args() -> ArgMatches {
              Codebase backup utility\n\n{usage-heading} \
              {usage}\n\n{all-args}{after-help}",
         )
-        .arg(
+        .args([
             Arg::new("path")
                 .action(ArgAction::Set)
                 .value_name("PATH")
@@ -145,36 +145,28 @@ fn args() -> ArgMatches {
                 .value_parser(value_parser!(PathBuf))
                 .hide_default_value(true)
                 .default_value(get_dir()),
-        )
-        .arg(
             Arg::new("config")
                 .short('c')
                 .long("config")
-                .value_name("CONFIG")
+                .value_name("FILE")
                 .help("Use alternative config file")
                 .value_parser(value_parser!(PathBuf)),
-        )
-        .arg(
             Arg::new("bootstrap")
                 .short('b')
                 .long("bootstrap")
                 .help("Clone only (no backups)")
                 .action(ArgAction::SetFalse),
-        )
-        .arg(
             Arg::new("purge")
                 .short('p')
                 .long("purge")
                 .help("Purge current data")
                 .action(ArgAction::SetTrue),
-        )
-        .arg(
             Arg::new("silent")
                 .short('s')
                 .long("silent")
                 .help("Do not output status")
                 .action(ArgAction::SetTrue),
-        );
+        ]);
 
     matches.get_matches()
 }
