@@ -130,11 +130,11 @@ fn text_prompt(message: &str) -> Result<String> {
 
 fn args() -> ArgMatches {
     let matches = Command::new(env!("CARGO_PKG_NAME"))
-        .about(BANNER)
+        .about(format!("{}\n{}", BANNER, env!("CARGO_PKG_DESCRIPTION")))
         .version(version_string())
         .help_template(
             "{name} v{version} CLI\n{about-with-newline}\
-             Codebase backup utility\n\n{usage-heading} \
+             \n{usage-heading} \
              {usage}\n\n{all-args}{after-help}",
         )
         .args([
