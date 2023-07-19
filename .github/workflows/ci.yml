@@ -73,6 +73,26 @@ jobs:
       - name: Test
         run: cargo test --verbose
 
+  features:
+    name: Features
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: features-${{ hashFiles('**/Cargo.lock') }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-hack
+      - run: brew install gtk4 libadwaita
+      - name: Check features
+        run: cargo hack check --feature-powerset --no-dev-deps
+
   format:
     name: Format
     if: "!startsWith(github.ref, 'refs/tags/')"
@@ -147,7 +167,7 @@ jobs:
           fail_ci_if_error: true
 
   release:
-    needs: [build, test]
+    needs: [features, build, test]
     name: Release
     permissions:
       contents: write
