@@ -39,6 +39,7 @@ pub fn get_name(target: &str) -> &str {
     target.rsplit('/').next().unwrap_or(target)
 }
 
+#[cfg(feature = "cli")]
 pub fn get_dir() -> String {
     let current_dir = env::current_dir().unwrap();
     current_dir.to_str().unwrap().to_owned()

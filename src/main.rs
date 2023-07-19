@@ -2,10 +2,11 @@
 
 #[cfg(feature = "cli")]
 mod cli;
+#[cfg(any(feature = "cli", feature = "gui"))]
+mod git;
 #[cfg(feature = "gui")]
 mod gui;
-
-mod git;
+#[cfg(any(feature = "cli", feature = "gui"))]
 mod util;
 
 fn main() {

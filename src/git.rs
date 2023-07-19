@@ -7,12 +7,12 @@ use indicatif::{HumanBytes, ProgressBar};
 
 #[cfg(feature = "gui")]
 use crate::gui::window::Message;
+#[cfg(feature = "cli")]
 use crate::util::get_name;
 
-use std::{
-    io::{self, Write},
-    path::Path,
-};
+#[cfg(feature = "cli")]
+use std::io::{self, Write};
+use std::path::Path;
 
 pub fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks {
     let mut callbacks = RemoteCallbacks::new();
@@ -58,6 +58,7 @@ pub fn clone_repo(
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<(), git2::Error> {
     let mut callbacks = set_callbacks(git_config);
+    #[cfg(feature = "cli")]
     let target_name = get_name(target);
 
     #[cfg(feature = "cli")]
@@ -149,6 +150,7 @@ pub fn fetch_repo(
     git_config: &git2::Config,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<(), git2::Error> {
+    #[cfg(feature = "cli")]
     let target_name = get_name(target);
 
     {
