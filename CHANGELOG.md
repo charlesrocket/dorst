@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.1] - 2023-07-19
+
+### Bug Fixes
+
+- Edit `config` argument
+- Use `CARGO_PKG_DESCRIPTION`
+
+### CI/CD
+
+- Rename jobs
+- Add `features`
+
+### Miscellaneous tasks
+
+- Update description
+
+### Testing
+
+- Add `cli` module
+
+### Build
+
+- Fix feature scopes
+
 ## [0.10.0] - 2023-07-18
 
 ### Bug Fixes
