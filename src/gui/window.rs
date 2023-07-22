@@ -604,7 +604,12 @@ impl Window {
     }
 
     fn restore_data(&self) {
-        if let Ok(file) = fs::File::open(util::xdg_path().unwrap()) {
+        #[cfg(not(test))]
+        let conf_file = util::xdg_path().unwrap();
+        #[cfg(test)]
+        let conf_file = PathBuf::from("/tmp/dorst_test_conf.yaml");
+
+        if let Ok(file) = fs::File::open(conf_file) {
             let config: serde_yaml::Value = serde_yaml::from_reader(file).unwrap();
 
             if let Some(source_directory) = config["source_directory"].as_str() {
