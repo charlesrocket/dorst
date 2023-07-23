@@ -804,7 +804,15 @@ impl Window {
 mod tests {
     use super::*;
     use crate::gui::tests::{helper, wait_ui, window};
-    use std::{fs::remove_dir_all, io::Write, path::Path};
+    use std::{
+        fs::{remove_dir_all, remove_file},
+        io::Write,
+        path::Path,
+    };
+
+    fn entry_buffer_from_str(string: &str) -> gtk::EntryBuffer {
+        gtk::EntryBuffer::builder().text(string).build()
+    }
 
     #[gtk::test]
     fn color_scheme() {
@@ -835,6 +843,23 @@ mod tests {
         window.imp().close_request();
 
         assert!(Path::new("/tmp/dorst/gui.ini").exists());
+    }
+
+    #[gtk::test]
+    fn repo_entry_empty() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("INVALID"));
+        window.imp().repo_entry_empty.emit_activate();
+
+        assert!(window.imp().stack.visible_child_name() == Some("main".into()));
     }
 
     #[gtk::test]
