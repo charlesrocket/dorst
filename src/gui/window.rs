@@ -707,6 +707,11 @@ impl Window {
     }
 
     fn save_settings(&self) {
+        #[cfg(not(test))]
+        let cache_dir = glib::user_cache_dir();
+        #[cfg(test)]
+        let cache_dir = PathBuf::from("/tmp");
+
         let keyfile = KeyFile::new();
         let size = self.default_size();
         let dest = self.imp().backup_directory.borrow();
@@ -727,7 +732,6 @@ impl Window {
         keyfile.set_string("backup", "destination", dest.to_str().unwrap());
         keyfile.set_boolean("backup", "enabled", backups_enabled);
 
-        let cache_dir = glib::user_cache_dir();
         let settings_path = cache_dir.join("dorst");
         std::fs::create_dir_all(&settings_path).expect("Failed to create settings path");
 
@@ -739,8 +743,12 @@ impl Window {
     }
 
     fn load_settings(&self) {
-        let keyfile = KeyFile::new();
+        #[cfg(not(test))]
         let cache_dir = glib::user_cache_dir();
+        #[cfg(test)]
+        let cache_dir = PathBuf::from("/tmp");
+
+        let keyfile = KeyFile::new();
         let settings_path = cache_dir.join("dorst");
         let settings = settings_path.join("gui.ini");
         let mut backups_enabled = self.imp().backups_enabled.borrow_mut();
@@ -809,6 +817,24 @@ mod tests {
         let color_scheme_b = style_manager.color_scheme();
 
         assert!(color_scheme_a != color_scheme_b);
+    }
+
+    #[gtk::test]
+    fn settings() {
+        if Path::new("/tmp/dorst").exists() {
+            remove_dir_all("/tmp/dorst").unwrap();
+        }
+
+        let window = window();
+
+        if !window.imp().button_backup_state.is_active() {
+            window.imp().button_backup_state.emit_clicked();
+        };
+
+        wait_ui(500);
+        window.imp().close_request();
+
+        assert!(Path::new("/tmp/dorst/gui.ini").exists());
     }
 
     #[gtk::test]
