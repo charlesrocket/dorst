@@ -136,17 +136,25 @@ jobs:
       - run: cargo clippy --all-features -- -D clippy::all -D warnings
 
   codecov:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
     needs: test
-    name: Code coverage on ${{ matrix.os }}
+    name: Code coverage
     if: "!startsWith(github.ref, 'refs/tags/')"
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Checkout gtk
+        uses: actions/checkout@v3
+        with:
+          repository: GNOME/gtk
+          ref: 4.10.4
+          path: gtk4
+      - name: Checkout adw
+        uses: actions/checkout@v3
+        with:
+          repository: GNOME/libadwaita
+          ref: 1.3.3
+          path: libadwaita
       - uses: actions/cache@v3
         with:
           path: |
@@ -155,16 +163,51 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-codecov-${{ hashFiles('**/Cargo.lock') }}
+            gtk4/
+            libadwaita/
+          key: codecov-${{ hashFiles('**/Cargo.lock') }}
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: >-
+            build-essential
+            meson
+            ninja-build
+            libxkbcommon-dev
+            wayland-protocols
+            libwayland-dev
+            libxrandr-dev
+            libxi-dev
+            libxcursor-dev
+            libxdamage-dev
+            libxinerama-dev
+            libgstreamer-plugins-bad1.0-dev
+            libunwind-dev
+            libgirepository1.0-dev
+            gettext
+            valac
+          version: 1.0
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
+      - run: |
+          cd gtk4
+          meson _build .
+          cd _build
+          ninja
+          sudo ninja install
+      - run: |
+          cd libadwaita
+          meson . _build -Dintrospection=disabled
+          ninja -C _build
+          sudo ninja -C _build install
       - name: Generate code coverage
-        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+        uses: coactions/setup-xvfb@v1
+        with:
+          run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
           files: lcov.info
-          fail_ci_if_error: true
+          verbose: true
 
   release:
     needs: [features, build, test]

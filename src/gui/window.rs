@@ -604,7 +604,12 @@ impl Window {
     }
 
     fn restore_data(&self) {
-        if let Ok(file) = fs::File::open(util::xdg_path().unwrap()) {
+        #[cfg(not(test))]
+        let conf_file = util::xdg_path().unwrap();
+        #[cfg(test)]
+        let conf_file = PathBuf::from("/tmp/dorst_test_conf.yaml");
+
+        if let Ok(file) = fs::File::open(conf_file) {
             let config: serde_yaml::Value = serde_yaml::from_reader(file).unwrap();
 
             if let Some(source_directory) = config["source_directory"].as_str() {
@@ -702,6 +707,11 @@ impl Window {
     }
 
     fn save_settings(&self) {
+        #[cfg(not(test))]
+        let cache_dir = glib::user_cache_dir();
+        #[cfg(test)]
+        let cache_dir = PathBuf::from("/tmp");
+
         let keyfile = KeyFile::new();
         let size = self.default_size();
         let dest = self.imp().backup_directory.borrow();
@@ -722,7 +732,6 @@ impl Window {
         keyfile.set_string("backup", "destination", dest.to_str().unwrap());
         keyfile.set_boolean("backup", "enabled", backups_enabled);
 
-        let cache_dir = glib::user_cache_dir();
         let settings_path = cache_dir.join("dorst");
         std::fs::create_dir_all(&settings_path).expect("Failed to create settings path");
 
@@ -734,8 +743,12 @@ impl Window {
     }
 
     fn load_settings(&self) {
-        let keyfile = KeyFile::new();
+        #[cfg(not(test))]
         let cache_dir = glib::user_cache_dir();
+        #[cfg(test)]
+        let cache_dir = PathBuf::from("/tmp");
+
+        let keyfile = KeyFile::new();
         let settings_path = cache_dir.join("dorst");
         let settings = settings_path.join("gui.ini");
         let mut backups_enabled = self.imp().backups_enabled.borrow_mut();
@@ -784,5 +797,109 @@ impl Window {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gui::tests::{helper, wait_ui, window};
+    use std::{
+        fs::{remove_dir_all, remove_file},
+        io::Write,
+        path::Path,
+    };
+
+    fn entry_buffer_from_str(string: &str) -> gtk::EntryBuffer {
+        gtk::EntryBuffer::builder().text(string).build()
+    }
+
+    #[gtk::test]
+    fn color_scheme() {
+        let window = window();
+        let style_manager = &window.imp().style_manager;
+        let color_scheme_a = style_manager.color_scheme();
+
+        window.toggle_color_scheme();
+
+        let color_scheme_b = style_manager.color_scheme();
+
+        assert!(color_scheme_a != color_scheme_b);
+    }
+
+    #[gtk::test]
+    fn settings() {
+        if Path::new("/tmp/dorst").exists() {
+            remove_dir_all("/tmp/dorst").unwrap();
+        }
+
+        let window = window();
+
+        if !window.imp().button_backup_state.is_active() {
+            window.imp().button_backup_state.emit_clicked();
+        };
+
+        wait_ui(500);
+        window.imp().close_request();
+
+        assert!(Path::new("/tmp/dorst/gui.ini").exists());
+    }
+
+    #[gtk::test]
+    fn repo_entry_empty() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("INVALID"));
+        window.imp().repo_entry_empty.emit_activate();
+
+        assert!(window.imp().stack.visible_child_name() == Some("main".into()));
+    }
+
+    #[gtk::test]
+    fn backup() {
+        if Path::new("test-gui").exists() {
+            remove_dir_all("test-gui").unwrap();
+        }
+
+        if Path::new("/tmp/dorst_test-gui").exists() {
+            remove_dir_all("/tmp/dorst_test-gui").unwrap();
+        }
+
+        let repo = helper::test_repo();
+        let repo_dir = String::from(repo.path().to_str().unwrap());
+        let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(1)
+            .build()
+            .unwrap();
+
+        config.write_all(b"\x2d\x2d\x2d\x0a\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x74\x65\x73\x74\x2d\x67\x75\x69\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x37\x30").unwrap();
+        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+        runtime.spawn(async move {
+            helper::serve(repo, 7870);
+        });
+
+        let window = window();
+
+        if !window.imp().button_backup_state.is_active() {
+            window.imp().button_backup_state.emit_clicked();
+        };
+
+        window.set_backup_directory(&PathBuf::from("/tmp/dorst_test-gui"));
+        window.imp().button_start.emit_clicked();
+        helper::commit(repo_dir);
+        wait_ui(500);
+        window.imp().button_start.emit_clicked();
+        wait_ui(500);
+
+        assert!(window.imp().success_list.lock().unwrap().len() == 1);
+        assert!(window.imp().errors_list.lock().unwrap().len() == 0);
     }
 }
