@@ -791,3 +791,22 @@ impl Window {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gui::tests::window;
+
+    #[gtk::test]
+    fn color_scheme() {
+        let window = window();
+        let style_manager = &window.imp().style_manager;
+        let color_scheme_a = style_manager.color_scheme();
+
+        window.toggle_color_scheme();
+
+        let color_scheme_b = style_manager.color_scheme();
+
+        assert!(color_scheme_a != color_scheme_b);
+    }
+}

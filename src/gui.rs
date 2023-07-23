@@ -51,7 +51,7 @@ mod tests {
     use glib::subclass::types::ObjectSubclassIsExt;
     use std::io::Write;
 
-    fn wait_ui(ms: u32) {
+    pub(crate) fn wait_ui(ms: u32) {
         let main_loop = glib::MainLoop::new(None, false);
 
         glib::timeout_add(
@@ -65,7 +65,7 @@ mod tests {
         main_loop.run();
     }
 
-    fn window() -> Window {
+    pub(crate) fn window() -> Window {
         let app = builder();
         Window::new(&app)
     }
