@@ -859,6 +859,7 @@ mod tests {
             .imp()
             .repo_entry_empty
             .set_buffer(&entry_buffer_from_str("INVALID"));
+
         window.imp().repo_entry_empty.emit_activate();
 
         assert!(window.imp().stack.visible_child_name() == Some("main".into()));
