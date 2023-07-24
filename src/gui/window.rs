@@ -825,11 +825,22 @@ mod tests {
         window
             .imp()
             .stack
-            .activate_action("win.toggle-color-scheme", None);
+            .activate_action("win.toggle-color-scheme", None)
+            .unwrap();
 
         let color_scheme_b = style_manager.color_scheme();
 
         assert!(color_scheme_a != color_scheme_b);
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.toggle-color-scheme", None)
+            .unwrap();
+
+        let color_scheme_c = style_manager.color_scheme();
+
+        assert!(color_scheme_b != color_scheme_c);
     }
 
     #[gtk::test]
