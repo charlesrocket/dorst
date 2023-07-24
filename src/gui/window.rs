@@ -256,15 +256,17 @@ impl Window {
                 window.update_rows();
 
                 if completed == total_repos as f64 {
-                    let errors_locked = window.imp().errors_list.lock().unwrap().iter()
-                                                                                .map(std::string::ToString::to_string)
-                                                                                .collect::<Vec<_>>()
+                    let errors_list_locked = window.imp().errors_list.lock().unwrap();
+                    let errors_locked = errors_list_locked.iter()
+                                                          .map(std::string::ToString::to_string)
+                                                          .collect::<Vec<_>>()
                         .join("\n");
 
                     if !errors_locked.is_empty() {
                         window.imp().banner.set_title(&errors_locked);
                         window.imp().revealer_banner.set_reveal_child(true);
                         window.imp().banner.set_revealed(true);
+                        window.show_message(&format!("Failures: {}", errors_list_locked.len()), 1);
                     }
 
                     window.imp().progress_bar.set_fraction(1.0);
