@@ -845,9 +845,11 @@ mod tests {
 
     #[gtk::test]
     fn settings() {
-        if Path::new("/tmp/dorst").exists() {
-            remove_dir_all("/tmp/dorst").unwrap();
-        }
+        fs::create_dir_all("/tmp/dorst").unwrap();
+        let mut settings = tempfile::Builder::new().tempfile_in("/tmp/dorst").unwrap();
+
+        settings.write_all(b"\x5b\x77\x69\x6e\x64\x6f\x77\x5d\x0a\x77\x69\x64\x74\x68\x3d\x34\x32\x33\x0a\x68\x65\x69\x67\x68\x74\x3d\x36\x30\x30\x0a\x74\x68\x65\x6d\x65\x3d\x64\x65\x66\x61\x75\x6c\x74\x0a\x0a\x5b\x62\x61\x63\x6b\x75\x70\x5d\x0a\x64\x65\x73\x74\x69\x6e\x61\x74\x69\x6f\x6e\x3d\x74\x65\x73\x74\x2d\x67\x75\x69\x0a\x65\x6e\x61\x62\x6c\x65\x64\x3d\x74\x72\x75\x65").unwrap();
+        settings.persist("/tmp/dorst/gui.ini").unwrap();
 
         let window = window();
 
@@ -859,6 +861,7 @@ mod tests {
         window.imp().close_request();
 
         assert!(Path::new("/tmp/dorst/gui.ini").exists());
+        remove_dir_all("/tmp/dorst").unwrap();
     }
 
     #[gtk::test]
