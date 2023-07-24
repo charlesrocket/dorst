@@ -865,7 +865,7 @@ mod tests {
     }
 
     #[gtk::test]
-    fn repo_entry_empty() {
+    fn entries() {
         if Path::new("/tmp/dorst_test_conf.yaml").exists() {
             remove_file("/tmp/dorst_test_conf.yaml").unwrap();
         }
@@ -875,11 +875,19 @@ mod tests {
         window
             .imp()
             .repo_entry_empty
-            .set_buffer(&entry_buffer_from_str("INVALID"));
+            .set_buffer(&entry_buffer_from_str("test1/"));
 
         window.imp().repo_entry_empty.emit_activate();
 
+        window
+            .imp()
+            .repo_entry
+            .set_buffer(&entry_buffer_from_str("test2"));
+
+        window.imp().repo_entry.emit_activate();
+
         assert!(window.imp().stack.visible_child_name() == Some("main".into()));
+        assert!(window.get_repo_data().len() == 2);
     }
 
     #[gtk::test]
