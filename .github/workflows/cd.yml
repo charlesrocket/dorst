@@ -65,7 +65,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
-    needs: upload-assets
+    needs: create-release
     name: Publish crate
     runs-on: ubuntu-latest
     steps:
