@@ -822,7 +822,10 @@ mod tests {
         let style_manager = &window.imp().style_manager;
         let color_scheme_a = style_manager.color_scheme();
 
-        window.toggle_color_scheme();
+        window
+            .imp()
+            .stack
+            .activate_action("win.toggle-color-scheme", None);
 
         let color_scheme_b = style_manager.color_scheme();
 
