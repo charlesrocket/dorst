@@ -129,7 +129,7 @@ jobs:
         run: cargo test --no-default-features --features ${{ matrix.feature }} --verbose
         if: matrix.feature != 'gui'
       - name: Test gui
-        uses: GabrielBB/xvfb-action@v1
+        uses: coactions/setup-xvfb@v1
         with:
           run: cargo test --no-default-features --features ${{ matrix.feature }} -- --test-threads=1
         if: matrix.feature == 'gui'
