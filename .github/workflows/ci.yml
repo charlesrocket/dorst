@@ -137,6 +137,7 @@ jobs:
         uses: coactions/setup-xvfb@v1
         with:
           run: cargo llvm-cov --workspace --no-default-features --features ${{ matrix.feature }} --lcov --output-path lcov.info
+        if: "!startsWith(github.ref, 'refs/tags/')"
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
