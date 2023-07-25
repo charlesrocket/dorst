@@ -82,7 +82,7 @@
                         </style>
                         <child type="start">
                           <object class="GtkButton" id="button_start">
-                            <property name="action-name">win.mirror-all</property>
+                            <property name="action-name">win.process-targets</property>
                             <property name="icon-name">folder-download-symbolic</property>
                             <property name="tooltip-text">Start</property>
                           </object>

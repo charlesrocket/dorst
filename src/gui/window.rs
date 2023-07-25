@@ -82,9 +82,9 @@ impl Window {
             window.show_about_dialog();
         }));
 
-        let action_mirror_all = gio::SimpleAction::new("mirror-all", None);
-        action_mirror_all.connect_activate(clone!(@weak self as window => move |_, _| {
-            window.mirror_all();
+        let action_process_targets = gio::SimpleAction::new("process-targets", None);
+        action_process_targets.connect_activate(clone!(@weak self as window => move |_, _| {
+            window.process_targets();
         }));
 
         let action_style_manager = gio::SimpleAction::new("toggle-color-scheme", None);
@@ -98,7 +98,7 @@ impl Window {
         }));
 
         self.add_action(&action_about);
-        self.add_action(&action_mirror_all);
+        self.add_action(&action_process_targets);
         self.add_action(&action_style_manager);
         self.add_action(&action_close);
     }
@@ -178,7 +178,7 @@ impl Window {
         self.add_action(&action_filter);
     }
 
-    fn mirror_all(&self) {
+    fn process_targets(&self) {
         self.imp().button_start.set_sensitive(false);
         self.imp().button_source_dest.set_sensitive(false);
         self.imp().button_backup_dest.set_sensitive(false);
