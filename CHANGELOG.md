@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.2] - 2023-07-25
+
+### Bug Fixes
+
+- Properly indicate failures
+
+### CI/CD
+
+- Update `codecov`
+- Update coverage settings
+- Publish after `create-release`
+- Test features
+- Rename `test` job
+- Set `codecov-action` requirements
+- Include features in `test` job (#20)
+- Add `codecov` flags
+- Switch to `setup-xvfb`
+
+### Styling
+
+- Fix `repo_entry_empty()` formatting
+
+### Testing
+
+- Add `tests` module
+- Add `color_scheme()`
+- Add `backup()`
+- Add `settings()`
+- Add `repo_entry_empty()`
+- Add gui tests (#19)
+- Call `toggle-color-scheme` action
+- Update `color_scheme()`
+- Update `settings()`
+- Add `entries()`
+
 ## [0.10.1] - 2023-07-19
 
 ### Bug Fixes
