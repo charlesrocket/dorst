@@ -178,12 +178,24 @@ impl Window {
         self.add_action(&action_filter);
     }
 
+    fn controls_disabled(&self, state: bool) {
+        if state {
+            self.imp().button_start.set_sensitive(false);
+            self.imp().button_source_dest.set_sensitive(false);
+            self.imp().button_backup_dest.set_sensitive(false);
+            self.imp().button_backup_state.set_sensitive(false);
+            self.imp().repo_entry.set_sensitive(false);
+        } else {
+            self.imp().button_start.set_sensitive(true);
+            self.imp().button_source_dest.set_sensitive(true);
+            self.imp().button_backup_dest.set_sensitive(true);
+            self.imp().button_backup_state.set_sensitive(true);
+            self.imp().repo_entry.set_sensitive(true);
+        }
+    }
+
     fn process_targets(&self) {
-        self.imp().button_start.set_sensitive(false);
-        self.imp().button_source_dest.set_sensitive(false);
-        self.imp().button_backup_dest.set_sensitive(false);
-        self.imp().button_backup_state.set_sensitive(false);
-        self.imp().repo_entry.set_sensitive(false);
+        self.controls_disabled(true);
         self.imp().banner.set_revealed(false);
         self.imp().revealer_banner.set_reveal_child(false);
         self.imp().errors_list.lock().unwrap().clear();
@@ -271,11 +283,7 @@ impl Window {
 
                     window.imp().progress_bar.set_fraction(1.0);
                     window.imp().revealer.set_reveal_child(false);
-                    window.imp().button_source_dest.set_sensitive(true);
-                    window.imp().button_backup_dest.set_sensitive(true);
-                    window.imp().button_backup_state.set_sensitive(true);
-                    window.imp().repo_entry.set_sensitive(true);
-                    window.imp().button_start.set_sensitive(true);
+                    window.controls_disabled(false);
                     Continue(false)
                 } else {
                     window.imp().progress_bar.set_fraction(progress);
