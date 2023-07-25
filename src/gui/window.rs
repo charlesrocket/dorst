@@ -929,5 +929,8 @@ mod tests {
 
         assert!(window.imp().success_list.lock().unwrap().len() == 1);
         assert!(window.imp().errors_list.lock().unwrap().len() == 0);
+        assert!(Path::new("/tmp/dorst_test-gui/localhost:7870.dorst/FETCH_HEAD").exists());
+
+        remove_dir_all("/tmp/dorst_test-gui").unwrap();
     }
 }
