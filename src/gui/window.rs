@@ -975,4 +975,47 @@ mod tests {
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 0);
     }
+
+    #[gtk::test]
+    fn remove_target() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("invalid"));
+
+        window.imp().repo_entry_empty.emit_activate();
+
+        assert!(window.repos().n_items() == 1);
+        assert!(window.imp().stack.visible_child_name() == Some("main".into()));
+
+        let row = window.imp().repos_list.row_at_index(0).unwrap();
+        let button = row
+            .child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .first_child()
+            .unwrap()
+            .downcast::<Popover>()
+            .unwrap()
+            .child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .last_child()
+            .unwrap()
+            .downcast::<Button>()
+            .unwrap();
+
+        button.emit_clicked();
+
+        assert!(window.repos().n_items() == 0);
+        assert!(window.imp().stack.visible_child_name() == Some("empty".into()));
+    }
 }
