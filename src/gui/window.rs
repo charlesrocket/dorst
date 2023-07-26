@@ -949,4 +949,30 @@ mod tests {
 
         remove_dir_all("/tmp/dorst_test-gui").unwrap();
     }
+
+    #[gtk::test]
+    fn ssh_filter() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("invalid"));
+
+        window.imp().repo_entry_empty.emit_activate();
+        window
+            .imp()
+            .stack
+            .activate_action("win.toggle-ssh-filter", None)
+            .unwrap();
+
+        window.imp().button_start.emit_clicked();
+        wait_ui(500);
+
+        assert!(window.imp().errors_list.lock().unwrap().len() == 0);
+    }
 }
