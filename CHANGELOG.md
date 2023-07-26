@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.3] - 2023-07-26
+
+### Bug Fixes
+
+- Fix target filter
+
+### CI/CD
+
+- Fix code coverage conditions
+- Add `flag_management`
+
+### Refactor
+
+- `mirror_all` -> `process_targets`
+- Add `controls_disabled()`
+
+### Testing
+
+- Improve `backup()`
+- Add `ssh_filter()`
+- Add `remove_target()`
+- Fix `test_path()`
+- Fix `backup()`
+
 ## [0.10.2] - 2023-07-25
 
 ### Bug Fixes
