@@ -908,8 +908,8 @@ mod tests {
 
     #[gtk::test]
     fn backup() {
-        if Path::new("test-gui").exists() {
-            remove_dir_all("test-gui").unwrap();
+        if Path::new("test-gui-src").exists() {
+            remove_dir_all("test-gui-src").unwrap();
         }
 
         if Path::new("/tmp/dorst_test-gui").exists() {
@@ -924,7 +924,7 @@ mod tests {
             .build()
             .unwrap();
 
-        config.write_all(b"\x2d\x2d\x2d\x0a\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x74\x65\x73\x74\x2d\x67\x75\x69\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x37\x30").unwrap();
+        config.write_all(b"\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x37\x30").unwrap();
         config.persist("/tmp/dorst_test_conf.yaml").unwrap();
         runtime.spawn(async move {
             helper::serve(repo, 7870);
@@ -937,6 +937,7 @@ mod tests {
         };
 
         window.set_backup_directory(&PathBuf::from("/tmp/dorst_test-gui"));
+        window.set_source_directory(&PathBuf::from("test-gui-src"));
         window.imp().button_start.emit_clicked();
         helper::commit(repo_dir);
         wait_ui(500);
@@ -946,8 +947,10 @@ mod tests {
         assert!(window.imp().success_list.lock().unwrap().len() == 1);
         assert!(window.imp().errors_list.lock().unwrap().len() == 0);
         assert!(Path::new("/tmp/dorst_test-gui/localhost:7870.dorst/FETCH_HEAD").exists());
+        assert!(Path::new("test-gui-src/localhost:7870/foo").exists());
 
         remove_dir_all("/tmp/dorst_test-gui").unwrap();
+        remove_dir_all("test-gui-src").unwrap();
     }
 
     #[gtk::test]
