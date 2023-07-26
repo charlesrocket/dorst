@@ -63,5 +63,5 @@ pub fn xdg_path() -> Result<PathBuf> {
 fn test_path() {
     let path_string = "~/";
     let path_expanded = expand_path(path_string);
-    assert!(path_expanded.starts_with("/"));
+    assert!(path_expanded.starts_with('/'));
 }
