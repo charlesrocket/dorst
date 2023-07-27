@@ -977,6 +977,17 @@ mod tests {
         wait_ui(500);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 0);
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.toggle-ssh-filter", None)
+            .unwrap();
+
+        window.imp().button_start.emit_clicked();
+        wait_ui(500);
+
+        assert!(window.imp().errors_list.lock().unwrap().len() == 1);
     }
 
     #[gtk::test]
