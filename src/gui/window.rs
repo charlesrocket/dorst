@@ -967,6 +967,11 @@ mod tests {
             .set_buffer(&entry_buffer_from_str("invalid"));
 
         window.imp().repo_entry_empty.emit_activate();
+        window.imp().button_start.emit_clicked();
+        wait_ui(500);
+
+        assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+
         window
             .imp()
             .stack
