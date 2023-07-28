@@ -97,10 +97,33 @@ impl Window {
             window.close();
         }));
 
+        let task_limiter = gio::SimpleAction::new_stateful(
+            "task-limiter",
+            Some(&String::static_variant_type()),
+            "Disabled".to_variant(),
+        );
+
+        task_limiter.connect_activate(clone!(@weak self as window => move |action, parameter| {
+            let parameter = parameter
+                .unwrap()
+                .get::<String>()
+                .unwrap();
+
+            let value = match parameter.as_str() {
+                "Disabled" => false,
+                "Enabled" => true,
+                _ => unreachable!()
+            };
+
+            *window.imp().task_limiter.lock().unwrap() = value;
+            action.set_state(parameter.to_variant());
+        }));
+
         self.add_action(&action_about);
         self.add_action(&action_process_targets);
         self.add_action(&action_style_manager);
         self.add_action(&action_close);
+        self.add_action(&task_limiter);
     }
 
     fn setup_callbacks(&self) {
@@ -274,19 +297,21 @@ impl Window {
                         progress_bar.set_fraction(0.0);
                         revealer.set_reveal_child(true);
 
-                        while *thread_pool_clone.lock().unwrap() > 6 {
-                            self.update_rows();
-                            let wait_loop = glib::MainLoop::new(None, false);
+                        if *self.imp().task_limiter.lock().unwrap() {
+                            while *thread_pool_clone.lock().unwrap() > 6 {
+                                self.update_rows();
+                                let wait_loop = glib::MainLoop::new(None, false);
 
-                            glib::timeout_add(
-                                std::time::Duration::from_millis(50),
-                                glib::clone!(@strong wait_loop => move || {
-                                    wait_loop.quit();
-                                    glib::Continue(false)
-                                }),
-                            );
+                                glib::timeout_add(
+                                    std::time::Duration::from_millis(50),
+                                    glib::clone!(@strong wait_loop => move || {
+                                        wait_loop.quit();
+                                        glib::Continue(false)
+                                    }),
+                                );
 
-                            wait_loop.run();
+                                wait_loop.run();
+                            }
                         }
 
                         *thread_pool_clone.lock().unwrap() += 1;

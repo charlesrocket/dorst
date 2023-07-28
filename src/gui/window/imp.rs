@@ -58,6 +58,7 @@ pub struct Window {
     pub style_manager: StyleManager,
     pub errors_list: Arc<Mutex<Vec<String>>>,
     pub success_list: Arc<Mutex<Vec<String>>>,
+    pub task_limiter: Arc<Mutex<bool>>,
 }
 
 #[glib::object_subclass]
@@ -96,6 +97,7 @@ impl ObjectSubclass for Window {
             style_manager: StyleManager::default(),
             errors_list: Arc::default(),
             success_list: Arc::default(),
+            task_limiter: Arc::default(),
         }
     }
 
