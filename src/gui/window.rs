@@ -13,7 +13,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     thread,
 };
@@ -207,66 +207,16 @@ impl Window {
         let repos = self.repos();
         let total_repos = self.get_repo_data().len();
         let completed_repos = Arc::new(AtomicUsize::new(0));
-
+        let completed_repos_clone = completed_repos.clone();
         let dest_clone = self.get_dest_clone();
         let dest_backup = self.get_dest_backup();
         let backups_enabled = *self.imp().backups_enabled.borrow();
 
-        for i in 0..repos.n_items() {
-            if let Some(obj) = repos.item(i) {
-                if let Some(repo) = obj.downcast_ref::<RepoObject>() {
-                    if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                        active_task = true;
-                        let repo_link = repo.link();
-                        let tx = window::Window::set_row_channel(&row);
-                        let destination_clone = format!(
-                            "{}/{}",
-                            &dest_clone.clone().display().to_string(),
-                            util::get_name(&repo_link)
-                        );
-                        let destination_backup = format!(
-                            "{}/{}.dorst",
-                            &dest_backup.clone().display().to_string(),
-                            util::get_name(&repo_link)
-                        );
-                        let completed_repos_clone = completed_repos.clone();
-                        let errors_clone = self.imp().errors_list.clone();
-                        let success_clone = self.imp().success_list.clone();
-                        let revealer = window::Window::get_row_revealer(&row);
-                        let progress_bar =
-                            revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
-
-                        progress_bar.set_fraction(0.0);
-                        revealer.set_reveal_child(true);
-
-                        thread::spawn(move || {
-                            match window::Window::process_repo(
-                                &destination_clone,
-                                &destination_backup,
-                                &repo_link,
-                                backups_enabled,
-                                #[cfg(feature = "gui")]
-                                &Some(tx.clone()),
-                            ) {
-                                Ok(()) => {
-                                    success_clone.lock().unwrap().push(repo_link);
-                                }
-                                Err(error) => errors_clone
-                                    .lock()
-                                    .unwrap()
-                                    .push(format!("{repo_link}: {error}")),
-                            }
-
-                            completed_repos_clone.fetch_add(1, Ordering::Relaxed);
-                        });
-                    }
-                }
-            }
-        }
+        let thread_pool = Arc::new(Mutex::new(0));
 
         glib::idle_add_local(
             clone!(@weak self as window => @default-return Continue(true), move || {
-                let completed = completed_repos.load(Ordering::Relaxed) as f64;
+                let completed = completed_repos_clone.load(Ordering::Relaxed) as f64;
                 let progress = completed / total_repos as f64;
 
                 window.update_rows();
@@ -295,6 +245,77 @@ impl Window {
                 }
             }),
         );
+
+        for i in 0..repos.n_items() {
+            if let Some(obj) = repos.item(i) {
+                if let Some(repo) = obj.downcast_ref::<RepoObject>() {
+                    if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+                        active_task = true;
+                        let repo_link = repo.link();
+                        let thread_pool_clone = thread_pool.clone();
+                        let tx = window::Window::set_row_channel(&row);
+                        let destination_clone = format!(
+                            "{}/{}",
+                            &dest_clone.clone().display().to_string(),
+                            util::get_name(&repo_link)
+                        );
+                        let destination_backup = format!(
+                            "{}/{}.dorst",
+                            &dest_backup.clone().display().to_string(),
+                            util::get_name(&repo_link)
+                        );
+                        let completed_repos_clone = completed_repos.clone();
+                        let errors_clone = self.imp().errors_list.clone();
+                        let success_clone = self.imp().success_list.clone();
+                        let revealer = window::Window::get_row_revealer(&row);
+                        let progress_bar =
+                            revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+
+                        progress_bar.set_fraction(0.0);
+                        revealer.set_reveal_child(true);
+
+                        while *thread_pool_clone.lock().unwrap() > 6 {
+                            self.update_rows();
+                            let wait_loop = glib::MainLoop::new(None, false);
+
+                            glib::timeout_add(
+                                std::time::Duration::from_millis(50),
+                                glib::clone!(@strong wait_loop => move || {
+                                    wait_loop.quit();
+                                    glib::Continue(false)
+                                }),
+                            );
+
+                            wait_loop.run();
+                        }
+
+                        *thread_pool_clone.lock().unwrap() += 1;
+
+                        thread::spawn(move || {
+                            match window::Window::process_repo(
+                                &destination_clone,
+                                &destination_backup,
+                                &repo_link,
+                                backups_enabled,
+                                #[cfg(feature = "gui")]
+                                &Some(tx.clone()),
+                            ) {
+                                Ok(()) => {
+                                    success_clone.lock().unwrap().push(repo_link);
+                                }
+                                Err(error) => errors_clone
+                                    .lock()
+                                    .unwrap()
+                                    .push(format!("{repo_link}: {error}")),
+                            }
+
+                            completed_repos_clone.fetch_add(1, Ordering::Relaxed);
+                            *thread_pool_clone.lock().unwrap() -= 1;
+                        });
+                    }
+                }
+            }
+        }
 
         if !active_task {
             self.controls_disabled(false);
