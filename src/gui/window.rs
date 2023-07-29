@@ -298,7 +298,9 @@ impl Window {
                         revealer.set_reveal_child(true);
 
                         if *self.imp().task_limiter.lock().unwrap() {
-                            while *thread_pool_clone.lock().unwrap() > 6 {
+                            while *thread_pool_clone.lock().unwrap()
+                                > *self.imp().thread_pool.lock().unwrap()
+                            {
                                 self.update_rows();
                                 let wait_loop = glib::MainLoop::new(None, false);
 
@@ -667,6 +669,10 @@ impl Window {
         dir.push(directory);
     }
 
+    fn set_task_limiter(&self, value: u64) {
+        *self.imp().thread_pool.lock().unwrap() = value;
+    }
+
     fn restore_data(&self) {
         #[cfg(not(test))]
         let conf_file = util::xdg_path().unwrap();
@@ -780,6 +786,7 @@ impl Window {
         let size = self.default_size();
         let dest = self.imp().backup_directory.borrow();
         let backups_enabled = *self.imp().backups_enabled.borrow();
+        let threads = *self.imp().thread_pool.lock().unwrap();
         let mut color_scheme = self.imp().color_scheme.lock().unwrap();
 
         match self.imp().style_manager.color_scheme() {
@@ -795,6 +802,7 @@ impl Window {
         keyfile.set_string("window", "theme", &color_scheme);
         keyfile.set_string("backup", "destination", dest.to_str().unwrap());
         keyfile.set_boolean("backup", "enabled", backups_enabled);
+        keyfile.set_uint64("core", "threads", threads);
 
         let settings_path = cache_dir.join("dorst");
         std::fs::create_dir_all(&settings_path).expect("Failed to create settings path");
@@ -859,6 +867,10 @@ impl Window {
                 if backup_state {
                     self.imp().button_backup_state.set_active(true);
                 }
+            }
+
+            if let Ok(threads) = keyfile.uint64("core", "threads") {
+                self.set_task_limiter(threads);
             }
         }
     }
@@ -1049,12 +1061,28 @@ mod tests {
 
         let window = window();
 
+        window.set_task_limiter(1);
+
         window
             .imp()
             .repo_entry_empty
-            .set_buffer(&entry_buffer_from_str("invalid"));
+            .set_buffer(&entry_buffer_from_str("invalid1"));
 
         window.imp().repo_entry_empty.emit_activate();
+
+        window
+            .imp()
+            .repo_entry
+            .set_buffer(&entry_buffer_from_str("invalid2"));
+
+        window.imp().repo_entry.emit_activate();
+
+        window
+            .imp()
+            .repo_entry
+            .set_buffer(&entry_buffer_from_str("invalid3"));
+
+        window.imp().repo_entry.emit_activate();
 
         window
             .imp()

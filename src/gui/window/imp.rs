@@ -59,6 +59,7 @@ pub struct Window {
     pub errors_list: Arc<Mutex<Vec<String>>>,
     pub success_list: Arc<Mutex<Vec<String>>>,
     pub task_limiter: Arc<Mutex<bool>>,
+    pub thread_pool: Arc<Mutex<u64>>,
 }
 
 #[glib::object_subclass]
@@ -98,6 +99,7 @@ impl ObjectSubclass for Window {
             errors_list: Arc::default(),
             success_list: Arc::default(),
             task_limiter: Arc::default(),
+            thread_pool: Arc::new(Mutex::new(7)),
         }
     }
 
