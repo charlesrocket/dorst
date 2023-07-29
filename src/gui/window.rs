@@ -13,7 +13,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     thread,
 };
@@ -97,10 +97,33 @@ impl Window {
             window.close();
         }));
 
+        let task_limiter = gio::SimpleAction::new_stateful(
+            "task-limiter",
+            Some(&String::static_variant_type()),
+            "Disabled".to_variant(),
+        );
+
+        task_limiter.connect_activate(clone!(@weak self as window => move |action, parameter| {
+            let parameter = parameter
+                .unwrap()
+                .get::<String>()
+                .unwrap();
+
+            let value = match parameter.as_str() {
+                "Disabled" => false,
+                "Enabled" => true,
+                _ => unreachable!()
+            };
+
+            *window.imp().task_limiter.lock().unwrap() = value;
+            action.set_state(parameter.to_variant());
+        }));
+
         self.add_action(&action_about);
         self.add_action(&action_process_targets);
         self.add_action(&action_style_manager);
         self.add_action(&action_close);
+        self.add_action(&task_limiter);
     }
 
     fn setup_callbacks(&self) {
@@ -207,66 +230,16 @@ impl Window {
         let repos = self.repos();
         let total_repos = self.get_repo_data().len();
         let completed_repos = Arc::new(AtomicUsize::new(0));
-
+        let completed_repos_clone = completed_repos.clone();
         let dest_clone = self.get_dest_clone();
         let dest_backup = self.get_dest_backup();
         let backups_enabled = *self.imp().backups_enabled.borrow();
 
-        for i in 0..repos.n_items() {
-            if let Some(obj) = repos.item(i) {
-                if let Some(repo) = obj.downcast_ref::<RepoObject>() {
-                    if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                        active_task = true;
-                        let repo_link = repo.link();
-                        let tx = window::Window::set_row_channel(&row);
-                        let destination_clone = format!(
-                            "{}/{}",
-                            &dest_clone.clone().display().to_string(),
-                            util::get_name(&repo_link)
-                        );
-                        let destination_backup = format!(
-                            "{}/{}.dorst",
-                            &dest_backup.clone().display().to_string(),
-                            util::get_name(&repo_link)
-                        );
-                        let completed_repos_clone = completed_repos.clone();
-                        let errors_clone = self.imp().errors_list.clone();
-                        let success_clone = self.imp().success_list.clone();
-                        let revealer = window::Window::get_row_revealer(&row);
-                        let progress_bar =
-                            revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
-
-                        progress_bar.set_fraction(0.0);
-                        revealer.set_reveal_child(true);
-
-                        thread::spawn(move || {
-                            match window::Window::process_repo(
-                                &destination_clone,
-                                &destination_backup,
-                                &repo_link,
-                                backups_enabled,
-                                #[cfg(feature = "gui")]
-                                &Some(tx.clone()),
-                            ) {
-                                Ok(()) => {
-                                    success_clone.lock().unwrap().push(repo_link);
-                                }
-                                Err(error) => errors_clone
-                                    .lock()
-                                    .unwrap()
-                                    .push(format!("{repo_link}: {error}")),
-                            }
-
-                            completed_repos_clone.fetch_add(1, Ordering::Relaxed);
-                        });
-                    }
-                }
-            }
-        }
+        let thread_pool = Arc::new(Mutex::new(0));
 
         glib::idle_add_local(
             clone!(@weak self as window => @default-return Continue(true), move || {
-                let completed = completed_repos.load(Ordering::Relaxed) as f64;
+                let completed = completed_repos_clone.load(Ordering::Relaxed) as f64;
                 let progress = completed / total_repos as f64;
 
                 window.update_rows();
@@ -295,6 +268,81 @@ impl Window {
                 }
             }),
         );
+
+        for i in 0..repos.n_items() {
+            if let Some(obj) = repos.item(i) {
+                if let Some(repo) = obj.downcast_ref::<RepoObject>() {
+                    if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+                        active_task = true;
+                        let repo_link = repo.link();
+                        let thread_pool_clone = thread_pool.clone();
+                        let tx = window::Window::set_row_channel(&row);
+                        let destination_clone = format!(
+                            "{}/{}",
+                            &dest_clone.clone().display().to_string(),
+                            util::get_name(&repo_link)
+                        );
+                        let destination_backup = format!(
+                            "{}/{}.dorst",
+                            &dest_backup.clone().display().to_string(),
+                            util::get_name(&repo_link)
+                        );
+                        let completed_repos_clone = completed_repos.clone();
+                        let errors_clone = self.imp().errors_list.clone();
+                        let success_clone = self.imp().success_list.clone();
+                        let revealer = window::Window::get_row_revealer(&row);
+                        let progress_bar =
+                            revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+
+                        progress_bar.set_fraction(0.0);
+                        revealer.set_reveal_child(true);
+
+                        if *self.imp().task_limiter.lock().unwrap() {
+                            while *thread_pool_clone.lock().unwrap()
+                                > *self.imp().thread_pool.lock().unwrap()
+                            {
+                                self.update_rows();
+                                let wait_loop = glib::MainLoop::new(None, false);
+
+                                glib::timeout_add(
+                                    std::time::Duration::from_millis(50),
+                                    glib::clone!(@strong wait_loop => move || {
+                                        wait_loop.quit();
+                                        glib::Continue(false)
+                                    }),
+                                );
+
+                                wait_loop.run();
+                            }
+                        }
+
+                        *thread_pool_clone.lock().unwrap() += 1;
+
+                        thread::spawn(move || {
+                            match window::Window::process_repo(
+                                &destination_clone,
+                                &destination_backup,
+                                &repo_link,
+                                backups_enabled,
+                                #[cfg(feature = "gui")]
+                                &Some(tx.clone()),
+                            ) {
+                                Ok(()) => {
+                                    success_clone.lock().unwrap().push(repo_link);
+                                }
+                                Err(error) => errors_clone
+                                    .lock()
+                                    .unwrap()
+                                    .push(format!("{repo_link}: {error}")),
+                            }
+
+                            completed_repos_clone.fetch_add(1, Ordering::Relaxed);
+                            *thread_pool_clone.lock().unwrap() -= 1;
+                        });
+                    }
+                }
+            }
+        }
 
         if !active_task {
             self.controls_disabled(false);
@@ -621,6 +669,10 @@ impl Window {
         dir.push(directory);
     }
 
+    fn set_task_limiter(&self, value: u64) {
+        *self.imp().thread_pool.lock().unwrap() = value;
+    }
+
     fn restore_data(&self) {
         #[cfg(not(test))]
         let conf_file = util::xdg_path().unwrap();
@@ -734,6 +786,7 @@ impl Window {
         let size = self.default_size();
         let dest = self.imp().backup_directory.borrow();
         let backups_enabled = *self.imp().backups_enabled.borrow();
+        let threads = *self.imp().thread_pool.lock().unwrap();
         let mut color_scheme = self.imp().color_scheme.lock().unwrap();
 
         match self.imp().style_manager.color_scheme() {
@@ -749,6 +802,7 @@ impl Window {
         keyfile.set_string("window", "theme", &color_scheme);
         keyfile.set_string("backup", "destination", dest.to_str().unwrap());
         keyfile.set_boolean("backup", "enabled", backups_enabled);
+        keyfile.set_uint64("core", "threads", threads);
 
         let settings_path = cache_dir.join("dorst");
         std::fs::create_dir_all(&settings_path).expect("Failed to create settings path");
@@ -813,6 +867,10 @@ impl Window {
                 if backup_state {
                     self.imp().button_backup_state.set_active(true);
                 }
+            }
+
+            if let Ok(threads) = keyfile.uint64("core", "threads") {
+                self.set_task_limiter(threads);
             }
         }
     }
@@ -993,6 +1051,57 @@ mod tests {
         wait_ui(500);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+    }
+
+    #[gtk::test]
+    fn task_limiter() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window.set_task_limiter(1);
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("invalid1"));
+
+        window.imp().repo_entry_empty.emit_activate();
+
+        window
+            .imp()
+            .repo_entry
+            .set_buffer(&entry_buffer_from_str("invalid2"));
+
+        window.imp().repo_entry.emit_activate();
+
+        window
+            .imp()
+            .repo_entry
+            .set_buffer(&entry_buffer_from_str("invalid3"));
+
+        window.imp().repo_entry.emit_activate();
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.task-limiter", Some(&"Enabled".to_variant()))
+            .unwrap();
+
+        window.imp().button_start.emit_clicked();
+        wait_ui(100);
+
+        assert!(*window.imp().task_limiter.lock().unwrap());
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.task-limiter", Some(&"Disabled".to_variant()))
+            .unwrap();
+
+        assert!(!*window.imp().task_limiter.lock().unwrap())
     }
 
     #[gtk::test]
