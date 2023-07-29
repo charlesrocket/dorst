@@ -1042,6 +1042,41 @@ mod tests {
     }
 
     #[gtk::test]
+    fn task_limiter() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("invalid"));
+
+        window.imp().repo_entry_empty.emit_activate();
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.task-limiter", Some(&"Enabled".to_variant()))
+            .unwrap();
+
+        window.imp().button_start.emit_clicked();
+        wait_ui(100);
+
+        assert!(*window.imp().task_limiter.lock().unwrap());
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.task-limiter", Some(&"Disabled".to_variant()))
+            .unwrap();
+
+        assert!(!*window.imp().task_limiter.lock().unwrap())
+    }
+
+    #[gtk::test]
     fn remove_target() {
         if Path::new("/tmp/dorst_test_conf.yaml").exists() {
             remove_file("/tmp/dorst_test_conf.yaml").unwrap();
