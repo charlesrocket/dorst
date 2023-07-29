@@ -110,6 +110,78 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkRevealer" id="revealer_banner">
+                        <property name="child">
+                          <object class="AdwBanner" id="banner">
+                            <property name="margin-bottom">6</property>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">horizontal</property>
+                        <property name="margin-top">6</property>
+                        <property name="margin-bottom">6</property>
+                        <property name="margin-start">12</property>
+                        <property name="margin-end">12</property>
+                        <style>
+                          <class name="linked"/>
+                        </style>
+                        <child>
+                          <object class="GtkButton" id="button_source_dest">
+                            <property name="action-name">win.select-source-directory</property>
+                            <property name="icon-name">folder-symbolic</property>
+                            <property name="tooltip-text" translatable="yes">Select source directory</property>
+                            <style>
+                              <class name="suggested-action"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkEntry" id="repo_entry">
+                            <property name="placeholder-text" translatable="yes">Enter repository URL</property>
+                            <property name="secondary-icon-name">list-add-symbolic</property>
+                            <property name="hexpand">True</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="button_backup_dest">
+                            <property name="action-name">win.select-backup-directory</property>
+                            <property name="icon-name">system-file-manager-symbolic</property>
+                            <property name="tooltip-text" translatable="yes">Select backup directory</property>
+                            <property name="visible">False</property>
+                            <style>
+                              <class name="suggested-action"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkToggleButton" id="button_backup_state">
+                            <property name="icon-name">media-floppy-symbolic</property>
+                            <property name="tooltip-text" translatable="yes">Enable backups</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkRevealer" id="revealer">
+                        <property name="margin-bottom">6</property>
+                        <property name="margin-start">20</property>
+                        <property name="margin-end">20</property>
+                        <property name="transition-type">crossfade</property>
+                        <property name="transition-duration">542</property>
+                        <property name="child">
+                          <object class="GtkProgressBar" id="progress_bar">
+                            <style>
+                              <class name="osd"/>
+                              <class name="main-progress"/>
+                            </style>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkScrolledWindow">
                         <property name="hscrollbar-policy">never</property>
                         <property name="min-content-height">360</property>
@@ -123,79 +195,9 @@
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
                                 <child>
-                                  <object class="GtkRevealer" id="revealer_banner">
-                                    <property name="child">
-                                      <object class="AdwBanner" id="banner">
-                                        <property name="margin-bottom">6</property>
-                                      </object>
-                                    </property>
-                                  </object>
-                                </child>
-                                <child>
-                                  <object class="GtkBox">
-                                    <property name="orientation">horizontal</property>
-                                    <property name="margin-top">6</property>
-                                    <property name="margin-bottom">6</property>
-                                    <style>
-                                      <class name="linked"/>
-                                    </style>
-                                    <child>
-                                      <object class="GtkButton" id="button_source_dest">
-                                        <property name="action-name">win.select-source-directory</property>
-                                        <property name="icon-name">folder-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Select source directory</property>
-                                        <style>
-                                          <class name="suggested-action"/>
-                                        </style>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="GtkEntry" id="repo_entry">
-                                        <property name="placeholder-text" translatable="yes">Enter repository URL</property>
-                                        <property name="secondary-icon-name">list-add-symbolic</property>
-                                        <property name="hexpand">True</property>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="GtkButton" id="button_backup_dest">
-                                        <property name="action-name">win.select-backup-directory</property>
-                                        <property name="icon-name">system-file-manager-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Select backup directory</property>
-                                        <property name="visible">False</property>
-                                        <style>
-                                          <class name="suggested-action"/>
-                                        </style>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="GtkToggleButton" id="button_backup_state">
-                                        <property name="icon-name">media-floppy-symbolic</property>
-                                        <property name="tooltip-text" translatable="yes">Enable backups</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child>
-                                  <object class="GtkRevealer" id="revealer">
-                                    <property name="margin-start">8</property>
-                                    <property name="margin-end">8</property>
-                                    <property name="transition-type">crossfade</property>
-                                    <property name="transition-duration">542</property>
-                                    <property name="child">
-                                      <object class="GtkProgressBar" id="progress_bar">
-                                        <style>
-                                          <class name="osd"/>
-                                          <class name="main-progress"/>
-                                        </style>
-                                      </object>
-                                    </property>
-                                  </object>
-                                </child>
-                                <child>
                                   <object class="GtkListBox" id="repos_list">
                                     <property name="visible">False</property>
                                     <property name="selection-mode">none</property>
-                                    <property name="margin-top">6</property>
                                     <style>
                                       <class name="boxed-list"/>
                                     </style>
