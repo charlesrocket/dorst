@@ -98,7 +98,7 @@ impl ObjectSubclass for Window {
             style_manager: StyleManager::default(),
             errors_list: Arc::default(),
             success_list: Arc::default(),
-            task_limiter: Arc::default(),
+            task_limiter: Arc::new(Mutex::new(true)),
             thread_pool: Arc::new(Mutex::new(7)),
         }
     }
