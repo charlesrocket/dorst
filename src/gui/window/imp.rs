@@ -98,7 +98,7 @@ impl ObjectSubclass for Window {
             style_manager: StyleManager::default(),
             errors_list: Arc::default(),
             success_list: Arc::default(),
-            task_limiter: Arc::new(Mutex::new(true)),
+            task_limiter: Arc::default(),
             thread_pool: Arc::new(Mutex::new(7)),
         }
     }
@@ -162,10 +162,10 @@ impl ObjectImpl for Window {
         self.parent_constructed();
         let obj = self.obj();
 
+        obj.setup_actions();
         obj.load_settings();
         obj.setup_theme();
         obj.setup_repos();
-        obj.setup_actions();
         obj.setup_callbacks();
         obj.restore_data();
     }

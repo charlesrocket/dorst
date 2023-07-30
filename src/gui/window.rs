@@ -789,6 +789,7 @@ impl Window {
         let dest = self.imp().backup_directory.borrow();
         let backups_enabled = *self.imp().backups_enabled.borrow();
         let threads = *self.imp().thread_pool.lock().unwrap();
+        let task_limiter = *self.imp().task_limiter.lock().unwrap();
         let mut color_scheme = self.imp().color_scheme.lock().unwrap();
 
         match self.imp().style_manager.color_scheme() {
@@ -805,6 +806,7 @@ impl Window {
         keyfile.set_string("backup", "destination", dest.to_str().unwrap());
         keyfile.set_boolean("backup", "enabled", backups_enabled);
         keyfile.set_uint64("core", "threads", threads);
+        keyfile.set_boolean("core", "task-limiter", task_limiter);
 
         let settings_path = cache_dir.join("dorst");
         std::fs::create_dir_all(&settings_path).expect("Failed to create settings path");
@@ -873,6 +875,16 @@ impl Window {
 
             if let Ok(threads) = keyfile.uint64("core", "threads") {
                 self.set_task_limiter(threads);
+            }
+
+            if let Ok(task_limiter) = keyfile.boolean("core", "task-limiter") {
+                let state = if task_limiter { "Enabled" } else { "Disabled" };
+                let variant = state.to_variant();
+
+                self.imp()
+                    .stack
+                    .activate_action("win.task-limiter", Some(&variant))
+                    .unwrap();
             }
         }
     }
