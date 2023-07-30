@@ -141,11 +141,11 @@ mod tests {
         }
     }
 
-    pub(crate) fn wait_ui(ms: u32) {
+    pub(crate) fn wait_ui(ms: u64) {
         let main_loop = glib::MainLoop::new(None, false);
 
         glib::timeout_add(
-            std::time::Duration::from_millis(ms as u64),
+            std::time::Duration::from_millis(ms),
             glib::clone!(@strong main_loop => move || {
                 main_loop.quit();
                 Continue(false)
