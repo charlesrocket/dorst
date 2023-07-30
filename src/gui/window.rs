@@ -51,29 +51,6 @@ impl Window {
     fn setup_theme(&self) {
         #[cfg(debug_assertions)]
         self.add_css_class("devel");
-
-        match &*self.imp().color_scheme.lock().unwrap().to_string() {
-            "light-force" => self
-                .imp()
-                .style_manager
-                .set_color_scheme(ColorScheme::ForceLight),
-            "light-pref" => self
-                .imp()
-                .style_manager
-                .set_color_scheme(ColorScheme::PreferLight),
-            "dark-pref" => self
-                .imp()
-                .style_manager
-                .set_color_scheme(ColorScheme::PreferDark),
-            "dark-force" => self
-                .imp()
-                .style_manager
-                .set_color_scheme(ColorScheme::ForceDark),
-            _ => self
-                .imp()
-                .style_manager
-                .set_color_scheme(ColorScheme::Default),
-        }
     }
 
     fn setup_actions(&self) {
@@ -87,11 +64,6 @@ impl Window {
             window.process_targets();
         }));
 
-        let action_style_manager = gio::SimpleAction::new("toggle-color-scheme", None);
-        action_style_manager.connect_activate(clone!(@weak self as window => move |_, _| {
-            window.toggle_color_scheme();
-        }));
-
         let action_close = gio::SimpleAction::new("close", None);
         action_close.connect_activate(clone!(@weak self as window => move |_, _| {
             window.close();
@@ -101,6 +73,62 @@ impl Window {
             "task-limiter",
             Some(&String::static_variant_type()),
             "Enabled".to_variant(),
+        );
+
+        let action_color_scheme = gio::SimpleAction::new_stateful(
+            "color-scheme",
+            Some(&String::static_variant_type()),
+            "Default".to_variant(),
+        );
+
+        action_color_scheme.connect_activate(
+            clone!(@weak self as window => move |action, parameter| {
+                let parameter = parameter
+                    .unwrap()
+                    .get::<String>()
+                    .unwrap();
+
+                let value = match parameter.as_str() {
+                    "Force Light" => {
+                        window
+                            .imp()
+                            .style_manager
+                            .set_color_scheme(ColorScheme::ForceLight);
+                        "Force Light"
+                    }
+                    "Force Dark" => {
+                        window
+                            .imp()
+                            .style_manager
+                            .set_color_scheme(ColorScheme::ForceDark);
+                        "Force Dark"
+                    }
+                    "Prefer Light" => {
+                        window
+                            .imp()
+                            .style_manager
+                            .set_color_scheme(ColorScheme::ForceLight);
+                        "Prefer Light"
+                    }
+                    "Prefer Dark" => {
+                        window
+                            .imp()
+                            .style_manager
+                            .set_color_scheme(ColorScheme::ForceDark);
+                        "Prefer Dark"
+                    }
+                    _ => {
+                        window
+                            .imp()
+                            .style_manager
+                            .set_color_scheme(ColorScheme::Default);
+                        "Default"
+                    }
+                };
+
+                *window.imp().color_scheme.lock().unwrap() = String::from(value);
+                action.set_state(value.to_variant());
+            }),
         );
 
         action_task_limiter.connect_activate(
@@ -123,8 +151,8 @@ impl Window {
 
         self.add_action(&action_about);
         self.add_action(&action_process_targets);
-        self.add_action(&action_style_manager);
         self.add_action(&action_close);
+        self.add_action(&action_color_scheme);
         self.add_action(&action_task_limiter);
     }
 
@@ -736,18 +764,6 @@ impl Window {
         }
     }
 
-    fn toggle_color_scheme(&self) {
-        if self.imp().style_manager.is_dark() {
-            self.imp()
-                .style_manager
-                .set_color_scheme(ColorScheme::ForceLight);
-        } else {
-            self.imp()
-                .style_manager
-                .set_color_scheme(ColorScheme::ForceDark);
-        }
-    }
-
     pub fn add_toast(&self, toast: adw::Toast) {
         self.imp().toast_overlay.add_toast(toast);
     }
@@ -790,15 +806,7 @@ impl Window {
         let backups_enabled = *self.imp().backups_enabled.borrow();
         let threads = *self.imp().thread_pool.lock().unwrap();
         let task_limiter = *self.imp().task_limiter.lock().unwrap();
-        let mut color_scheme = self.imp().color_scheme.lock().unwrap();
-
-        match self.imp().style_manager.color_scheme() {
-            ColorScheme::ForceLight => *color_scheme = "light-force".to_owned(),
-            ColorScheme::PreferLight => *color_scheme = "light-pref".to_owned(),
-            ColorScheme::PreferDark => *color_scheme = "dark-pref".to_owned(),
-            ColorScheme::ForceDark => *color_scheme = "dark-force".to_owned(),
-            _ => *color_scheme = "default".to_owned(),
-        }
+        let color_scheme = self.imp().color_scheme.lock().unwrap();
 
         keyfile.set_int64("window", "width", size.0.into());
         keyfile.set_int64("window", "height", size.1.into());
@@ -828,7 +836,6 @@ impl Window {
         let settings_path = cache_dir.join("dorst");
         let settings = settings_path.join("gui.ini");
         let mut backups_enabled = self.imp().backups_enabled.borrow_mut();
-        let mut theme = self.imp().color_scheme.lock().unwrap();
 
         if settings.exists() {
             if keyfile
@@ -851,7 +858,12 @@ impl Window {
             }
 
             if let Ok(color_scheme) = keyfile.string("window", "theme") {
-                *theme = color_scheme.to_string();
+                let variant = color_scheme.to_variant();
+
+                self.imp()
+                    .stack
+                    .activate_action("win.color-scheme", Some(&variant))
+                    .unwrap();
             }
 
             if let Ok(dest) = keyfile.string("backup", "destination") {
@@ -907,28 +919,65 @@ mod tests {
     #[gtk::test]
     fn color_scheme() {
         let window = window();
-        let style_manager = &window.imp().style_manager;
-        let color_scheme_a = style_manager.color_scheme();
+        let default_scheme = "Default";
 
         window
             .imp()
             .stack
-            .activate_action("win.toggle-color-scheme", None)
+            .activate_action("win.color-scheme", Some(&default_scheme.to_variant()))
             .unwrap();
 
-        let color_scheme_b = style_manager.color_scheme();
+        assert!(*window.imp().color_scheme.lock().unwrap() == default_scheme);
 
-        assert!(color_scheme_a != color_scheme_b);
+        let invalid_scheme = "foo";
 
         window
             .imp()
             .stack
-            .activate_action("win.toggle-color-scheme", None)
+            .activate_action("win.color-scheme", Some(&invalid_scheme.to_variant()))
             .unwrap();
 
-        let color_scheme_c = style_manager.color_scheme();
+        assert!(*window.imp().color_scheme.lock().unwrap() == default_scheme);
 
-        assert!(color_scheme_b != color_scheme_c);
+        let force_light_scheme = "Force Light";
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.color-scheme", Some(&force_light_scheme.to_variant()))
+            .unwrap();
+
+        assert!(*window.imp().color_scheme.lock().unwrap() == force_light_scheme);
+
+        let force_dark_scheme = "Force Dark";
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.color-scheme", Some(&force_dark_scheme.to_variant()))
+            .unwrap();
+
+        assert!(*window.imp().color_scheme.lock().unwrap() == force_dark_scheme);
+
+        let prefer_light_scheme = "Prefer Light";
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.color-scheme", Some(&prefer_light_scheme.to_variant()))
+            .unwrap();
+
+        assert!(*window.imp().color_scheme.lock().unwrap() == prefer_light_scheme);
+
+        let prefer_dark_scheme = "Prefer Dark";
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.color-scheme", Some(&prefer_dark_scheme.to_variant()))
+            .unwrap();
+
+        assert!(*window.imp().color_scheme.lock().unwrap() == prefer_dark_scheme);
     }
 
     #[gtk::test]

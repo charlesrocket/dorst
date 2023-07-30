@@ -16,7 +16,6 @@ fn builder() -> Application {
     builder.connect_startup(|_| load_css());
     builder.connect_activate(build_ui);
 
-    builder.set_accels_for_action("win.toggle-color-scheme", &["<Primary>l"]);
     builder.set_accels_for_action("win.close", &["<Primary>q"]);
 
     builder

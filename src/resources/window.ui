@@ -25,12 +25,36 @@
           <attribute name="target">Disabled</attribute>
         </item>
       </submenu>
+      <submenu>
+        <attribute name="label" translatable="yes">_Color scheme</attribute>
+        <item>
+          <attribute name="label" translatable="yes">_Default</attribute>
+          <attribute name="action">win.color-scheme</attribute>
+          <attribute name="target">Default</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">_Force Light</attribute>
+          <attribute name="action">win.color-scheme</attribute>
+          <attribute name="target">Force Light</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">_Force Dark</attribute>
+          <attribute name="action">win.color-scheme</attribute>
+          <attribute name="target">Force Dark</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">_Prefer Light</attribute>
+          <attribute name="action">win.color-scheme</attribute>
+          <attribute name="target">Prefer Light</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">_Prefer Dark</attribute>
+          <attribute name="action">win.color-scheme</attribute>
+          <attribute name="target">Prefer Dark</attribute>
+        </item>
+      </submenu>
     </section>
     <section>
-      <item>
-        <attribute name="label" translatable="yes">_Toggle color scheme</attribute>
-        <attribute name="action">win.toggle-color-scheme</attribute>
-      </item>
       <item>
         <attribute name="label" translatable="yes">_Show keyboard shortcuts</attribute>
         <attribute name="action">win.show-help-overlay</attribute>
