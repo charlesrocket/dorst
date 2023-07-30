@@ -1115,7 +1115,7 @@ mod tests {
             .activate_action("win.task-limiter", Some(&"Disabled".to_variant()))
             .unwrap();
 
-        assert!(!*window.imp().task_limiter.lock().unwrap())
+        assert!(!*window.imp().task_limiter.lock().unwrap());
     }
 
     #[gtk::test]
