@@ -69,12 +69,6 @@ impl Window {
             window.close();
         }));
 
-        let action_task_limiter = gio::SimpleAction::new_stateful(
-            "task-limiter",
-            Some(&String::static_variant_type()),
-            "Enabled".to_variant(),
-        );
-
         let action_color_scheme = gio::SimpleAction::new_stateful(
             "color-scheme",
             Some(&String::static_variant_type()),
@@ -129,6 +123,12 @@ impl Window {
                 *window.imp().color_scheme.lock().unwrap() = String::from(value);
                 action.set_state(value.to_variant());
             }),
+        );
+
+        let action_task_limiter = gio::SimpleAction::new_stateful(
+            "task-limiter",
+            Some(&String::static_variant_type()),
+            "Enabled".to_variant(),
         );
 
         action_task_limiter.connect_activate(
