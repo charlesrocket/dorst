@@ -348,7 +348,7 @@ impl Window {
 
                         *thread_pool_clone.lock().unwrap() += 1;
 
-                        thread::spawn(move || {
+                        gio::spawn_blocking(move || {
                             match window::Window::process_repo(
                                 &destination_clone,
                                 &destination_backup,
