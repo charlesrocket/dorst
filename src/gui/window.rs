@@ -2,9 +2,12 @@ use adw::{prelude::*, subclass::prelude::*, AboutWindow, ColorScheme};
 use anyhow::Result;
 use glib::{clone, KeyFile, MainContext, Object, Sender, PRIORITY_DEFAULT};
 use gtk::{
-    gio, glib, pango::EllipsizeMode, Align, Box, Button, CustomFilter, EventSequenceState,
-    FilterListModel, GestureClick, Label, License, ListBoxRow, NoSelection, Orientation, Popover,
-    ProgressBar, Revealer, RevealerTransitionType,
+    gio::{self, ListStore, SimpleAction},
+    glib,
+    pango::EllipsizeMode,
+    Align, Box, Button, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label,
+    License, ListBoxRow, NoSelection, Orientation, Popover, ProgressBar, Revealer,
+    RevealerTransitionType,
 };
 
 use std::{
@@ -15,7 +18,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc, Mutex,
     },
-    thread,
+    time,
 };
 
 mod imp;
@@ -54,22 +57,22 @@ impl Window {
     }
 
     fn setup_actions(&self) {
-        let action_about = gio::SimpleAction::new("about", None);
+        let action_about = SimpleAction::new("about", None);
         action_about.connect_activate(clone!(@weak self as window => move |_, _| {
             window.show_about_dialog();
         }));
 
-        let action_process_targets = gio::SimpleAction::new("process-targets", None);
+        let action_process_targets = SimpleAction::new("process-targets", None);
         action_process_targets.connect_activate(clone!(@weak self as window => move |_, _| {
             window.process_targets();
         }));
 
-        let action_close = gio::SimpleAction::new("close", None);
+        let action_close = SimpleAction::new("close", None);
         action_close.connect_activate(clone!(@weak self as window => move |_, _| {
             window.close();
         }));
 
-        let action_color_scheme = gio::SimpleAction::new_stateful(
+        let action_color_scheme = SimpleAction::new_stateful(
             "color-scheme",
             Some(&String::static_variant_type()),
             "Default".to_variant(),
@@ -125,7 +128,7 @@ impl Window {
             }),
         );
 
-        let action_task_limiter = gio::SimpleAction::new_stateful(
+        let action_task_limiter = SimpleAction::new_stateful(
             "task-limiter",
             Some(&String::static_variant_type()),
             "Enabled".to_variant(),
@@ -211,7 +214,7 @@ impl Window {
                 window.set_repo_list_visible(repos);
             }));
 
-        let action_filter = gio::SimpleAction::new("toggle-ssh-filter", None);
+        let action_filter = SimpleAction::new("toggle-ssh-filter", None);
         action_filter.connect_activate(
             clone!(@weak self as window, @weak filter_model => move |_, _| {
                 if window.imp().filter_option.borrow().to_owned().is_empty() {
@@ -335,7 +338,7 @@ impl Window {
                                 let wait_loop = glib::MainLoop::new(None, false);
 
                                 glib::timeout_add(
-                                    std::time::Duration::from_millis(50),
+                                    time::Duration::from_millis(50),
                                     glib::clone!(@strong wait_loop => move || {
                                         wait_loop.quit();
                                         glib::Continue(false)
@@ -450,7 +453,7 @@ impl Window {
         }
     }
 
-    fn repos(&self) -> gio::ListStore {
+    fn repos(&self) -> ListStore {
         self.imp()
             .repos
             .borrow()
@@ -478,7 +481,7 @@ impl Window {
             .collect()
     }
 
-    fn set_repo_list_visible(&self, repos: &gio::ListStore) {
+    fn set_repo_list_visible(&self, repos: &ListStore) {
         let repos_list_activated = repos.n_items() > 0;
         self.imp().repos_list.set_visible(repos_list_activated);
 
