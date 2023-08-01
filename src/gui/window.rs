@@ -128,29 +128,7 @@ impl Window {
             }),
         );
 
-        let action_task_limiter = SimpleAction::new_stateful(
-            "task-limiter",
-            Some(&String::static_variant_type()),
-            "Enabled".to_variant(),
-        );
-
-        action_task_limiter.connect_activate(
-            clone!(@weak self as window => move |action, parameter| {
-                let parameter = parameter
-                    .unwrap()
-                    .get::<String>()
-                    .unwrap();
-
-                let value = match parameter.as_str() {
-                    "Disabled" => false,
-                    "Enabled" => true,
-                    _ => unreachable!()
-                };
-
-                *window.imp().task_limiter.lock().unwrap() = value;
-                action.set_state(parameter.to_variant());
-            }),
-        );
+        let action_task_limiter = gio::PropertyAction::new("task-limiter", self, "limiter");
 
         self.add_action(&action_about);
         self.add_action(&action_process_targets);
@@ -338,7 +316,7 @@ impl Window {
                 progress_bar.set_fraction(0.0);
                 revealer.set_reveal_child(true);
 
-                if *self.imp().task_limiter.lock().unwrap() {
+                if self.imp().task_limiter.get() {
                     while *thread_pool_clone.lock().unwrap()
                         > *self.imp().thread_pool.lock().unwrap()
                     {
@@ -710,7 +688,7 @@ impl Window {
         dir.push(directory);
     }
 
-    fn set_task_limiter(&self, value: u64) {
+    fn set_thread_pool_limit(&self, value: u64) {
         *self.imp().thread_pool.lock().unwrap() = value;
     }
 
@@ -826,7 +804,7 @@ impl Window {
         let filter_option = &self.imp().filter_option.borrow();
         let backups_enabled = *self.imp().backups_enabled.borrow();
         let threads = *self.imp().thread_pool.lock().unwrap();
-        let task_limiter = *self.imp().task_limiter.lock().unwrap();
+        let task_limiter = self.imp().task_limiter.get();
         let color_scheme = self.imp().color_scheme.lock().unwrap();
 
         keyfile.set_int64("window", "width", size.0.into());
@@ -917,17 +895,16 @@ impl Window {
             }
 
             if let Ok(threads) = keyfile.uint64("core", "threads") {
-                self.set_task_limiter(threads);
+                self.set_thread_pool_limit(threads);
             }
 
             if let Ok(task_limiter) = keyfile.boolean("core", "task-limiter") {
-                let state = if task_limiter { "Enabled" } else { "Disabled" };
-                let variant = state.to_variant();
-
-                self.imp()
-                    .stack
-                    .activate_action("win.task-limiter", Some(&variant))
-                    .unwrap();
+                if task_limiter {
+                    self.imp()
+                        .stack
+                        .activate_action("win.task-limiter", None)
+                        .unwrap();
+                }
             }
         }
     }
@@ -1028,7 +1005,7 @@ mod tests {
         wait_ui(500);
 
         assert!(*window.imp().thread_pool.lock().unwrap() == 1);
-        assert!(*window.imp().task_limiter.lock().unwrap());
+        assert!(window.imp().task_limiter.get());
 
         window.imp().close_request();
 
@@ -1162,7 +1139,7 @@ mod tests {
 
         let window = window();
 
-        window.set_task_limiter(1);
+        window.set_thread_pool_limit(1);
 
         window
             .imp()
@@ -1188,21 +1165,21 @@ mod tests {
         window
             .imp()
             .stack
-            .activate_action("win.task-limiter", Some(&"Enabled".to_variant()))
+            .activate_action("win.task-limiter", None)
             .unwrap();
 
         window.imp().button_start.emit_clicked();
         wait_ui(100);
 
-        assert!(*window.imp().task_limiter.lock().unwrap());
+        assert!(window.imp().task_limiter.get());
 
         window
             .imp()
             .stack
-            .activate_action("win.task-limiter", Some(&"Disabled".to_variant()))
+            .activate_action("win.task-limiter", None)
             .unwrap();
 
-        assert!(!*window.imp().task_limiter.lock().unwrap());
+        assert!(!window.imp().task_limiter.get());
     }
 
     #[gtk::test]

@@ -26,19 +26,10 @@
           <attribute name="target">HTTPS</attribute>
         </item>
       </submenu>
-      <submenu>
+      <item>
         <attribute name="label" translatable="yes">_Task limiter</attribute>
-        <item>
-          <attribute name="label" translatable="yes">_Enabled</attribute>
-          <attribute name="action">win.task-limiter</attribute>
-          <attribute name="target">Enabled</attribute>
-        </item>
-        <item>
-          <attribute name="label" translatable="yes">_Disabled</attribute>
-          <attribute name="action">win.task-limiter</attribute>
-          <attribute name="target">Disabled</attribute>
-        </item>
-      </submenu>
+        <attribute name="action">win.task-limiter</attribute>
+      </item>
       <submenu>
         <attribute name="label" translatable="yes">_Color scheme</attribute>
         <item>

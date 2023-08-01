@@ -1,14 +1,14 @@
 use adw::{prelude::*, subclass::prelude::*, Banner, StyleManager, ToastOverlay};
-use glib::signal::Inhibit;
-use glib::subclass::InitializingObject;
 use gtk::{
-    gio, glib, Button, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer, Stack,
-    ToggleButton,
+    gio,
+    glib::{signal::Inhibit, subclass::InitializingObject, ParamSpec},
+    Button, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer, Stack, ToggleButton,
 };
-use serde_yaml::{Mapping, Sequence, Value};
 
+use glib::Properties;
+use serde_yaml::{Mapping, Sequence, Value};
 use std::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
     fs::File,
     io::Write,
     path::PathBuf,
@@ -19,7 +19,8 @@ use crate::gui::window::RepoObject;
 use crate::gui::RepoData;
 use crate::util;
 
-#[derive(CompositeTemplate)]
+#[derive(CompositeTemplate, Properties)]
+#[properties(wrapper_type = super::Window)]
 #[template(resource = "/org/hellbyte/dorst/window.ui")]
 pub struct Window {
     #[template_child]
@@ -58,7 +59,8 @@ pub struct Window {
     pub style_manager: StyleManager,
     pub errors_list: Arc<Mutex<Vec<String>>>,
     pub success_list: Arc<Mutex<Vec<String>>>,
-    pub task_limiter: Arc<Mutex<bool>>,
+    #[property(name = "limiter", get, set, type = bool)]
+    pub task_limiter: Cell<bool>,
     pub thread_pool: Arc<Mutex<u64>>,
 }
 
@@ -98,7 +100,7 @@ impl ObjectSubclass for Window {
             style_manager: StyleManager::default(),
             errors_list: Arc::default(),
             success_list: Arc::default(),
-            task_limiter: Arc::default(),
+            task_limiter: Cell::default(),
             thread_pool: Arc::new(Mutex::new(7)),
         }
     }
@@ -168,6 +170,16 @@ impl ObjectImpl for Window {
         obj.setup_theme();
         obj.setup_callbacks();
         obj.restore_data();
+    }
+
+    fn properties() -> &'static [ParamSpec] {
+        Self::derived_properties()
+    }
+    fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+        self.derived_set_property(id, value, pspec);
+    }
+    fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+        self.derived_property(id, pspec)
     }
 }
 
