@@ -147,7 +147,7 @@ mod tests {
             std::time::Duration::from_millis(ms),
             glib::clone!(@strong main_loop => move || {
                 main_loop.quit();
-                Continue(false)
+                glib::ControlFlow::Break
             }),
         );
 

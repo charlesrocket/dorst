@@ -1,6 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*, AboutWindow, ColorScheme};
 use anyhow::Result;
-use glib::{clone, KeyFile, MainContext, Object, Sender, PRIORITY_DEFAULT};
+use glib::{clone, ControlFlow, KeyFile, MainContext, Object, Priority, Sender};
 use gtk::{
     gio::{self, ListStore, SimpleAction},
     glib,
@@ -257,7 +257,7 @@ impl Window {
         let thread_pool = Arc::new(Mutex::new(0));
 
         glib::idle_add_local(
-            clone!(@weak self as window => @default-return Continue(true), move || {
+            clone!(@weak self as window => @default-return ControlFlow::Continue, move || {
                 let completed = completed_repos_clone.load(Ordering::Relaxed) as f64;
                 let progress = completed / total_repos as f64;
 
@@ -280,10 +280,10 @@ impl Window {
                     window.imp().progress_bar.set_fraction(1.0);
                     window.imp().revealer.set_reveal_child(false);
                     window.controls_disabled(false);
-                    Continue(false)
+                    ControlFlow::Break
                 } else {
                     window.imp().progress_bar.set_fraction(progress);
-                    Continue(true)
+                    ControlFlow::Continue
                 }
             }),
         );
@@ -327,7 +327,7 @@ impl Window {
                             time::Duration::from_millis(50),
                             glib::clone!(@strong wait_loop => move || {
                                 wait_loop.quit();
-                                glib::Continue(false)
+                                ControlFlow::Break
                             }),
                         );
 
@@ -479,7 +479,7 @@ impl Window {
     }
 
     fn set_row_channel(row: &ListBoxRow) -> glib::Sender<Message> {
-        let (tx, rx) = MainContext::channel(PRIORITY_DEFAULT);
+        let (tx, rx) = MainContext::channel(Priority::DEFAULT);
         let revealer = window::Window::get_row_revealer(row);
         let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
@@ -488,7 +488,7 @@ impl Window {
                 progress_bar.set_fraction(0.0);
                 revealer.set_reveal_child(true);
 
-                Continue(true)
+                ControlFlow::Continue
             }
             Message::Progress(value) => {
                 if value.is_nan() {
@@ -501,25 +501,25 @@ impl Window {
                     revealer.set_reveal_child(false);
                 }
 
-                Continue(true)
+                ControlFlow::Continue
             }
             Message::Clone => {
                 progress_bar.add_css_class("clone");
                 progress_bar.remove_css_class("deltas");
                 progress_bar.remove_css_class("fetch");
-                Continue(true)
+                ControlFlow::Continue
             }
             Message::Fetch => {
                 progress_bar.add_css_class("fetch");
                 progress_bar.remove_css_class("clone");
                 progress_bar.remove_css_class("deltas");
-                Continue(true)
+                ControlFlow::Continue
             }
             Message::Deltas => {
                 progress_bar.add_css_class("deltas");
                 progress_bar.remove_css_class("clone");
                 progress_bar.remove_css_class("fetch");
-                Continue(true)
+                ControlFlow::Continue
             }
         });
 
