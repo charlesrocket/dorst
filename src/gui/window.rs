@@ -214,20 +214,28 @@ impl Window {
                 window.set_repo_list_visible(repos);
             }));
 
-        let action_filter = SimpleAction::new("toggle-ssh-filter", None);
+        let action_filter = SimpleAction::new_stateful(
+            "filter",
+            Some(&String::static_variant_type()),
+            "All".to_variant(),
+        );
+
         action_filter.connect_activate(
-            clone!(@weak self as window, @weak filter_model => move |_, _| {
-                if window.imp().filter_option.borrow().to_owned().is_empty() {
-                    *window.imp().filter_option.borrow_mut() = "SSH".to_owned();
-                } else {
-                    *window.imp().filter_option.borrow_mut() = String::new();
-                }
+            clone!(@weak self as window => move |action, parameter| {
+                let parameter = parameter
+                    .unwrap()
+                    .get::<String>()
+                    .unwrap();
+
+                *window.imp().filter_option.borrow_mut() = String::from(&parameter);
 
                 filter_model.set_filter(window.filter().as_ref());
 
                 if window.imp().errors_list.lock().unwrap().len() > 0 || window.imp().success_list.lock().unwrap().len() > 0 {
                     window.update_rows();
                 }
+
+                action.set_state(parameter.to_variant());
             }),
         );
 
@@ -303,77 +311,77 @@ impl Window {
         );
 
         for i in 0..repos.n_items() {
-            if let Some(obj) = repos.item(i) {
-                if let Some(repo) = obj.downcast_ref::<RepoObject>() {
-                    if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                        active_task = true;
-                        let repo_link = repo.link();
-                        let thread_pool_clone = thread_pool.clone();
-                        let tx = window::Window::set_row_channel(&row);
-                        let destination_clone = format!(
-                            "{}/{}",
-                            &dest_clone.clone().display().to_string(),
-                            util::get_name(&repo_link)
+            let completed_repos_clone = completed_repos.clone();
+            let obj = repos.item(i).unwrap();
+            let repo = obj.downcast_ref::<RepoObject>().unwrap();
+            if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+                active_task = true;
+                let repo_link = repo.link();
+                let thread_pool_clone = thread_pool.clone();
+                let tx = window::Window::set_row_channel(&row);
+                let destination_clone = format!(
+                    "{}/{}",
+                    &dest_clone.clone().display().to_string(),
+                    util::get_name(&repo_link)
+                );
+                let destination_backup = format!(
+                    "{}/{}.dorst",
+                    &dest_backup.clone().display().to_string(),
+                    util::get_name(&repo_link)
+                );
+
+                let errors_clone = self.imp().errors_list.clone();
+                let success_clone = self.imp().success_list.clone();
+                let revealer = window::Window::get_row_revealer(&row);
+                let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+
+                progress_bar.set_fraction(0.0);
+                revealer.set_reveal_child(true);
+
+                if *self.imp().task_limiter.lock().unwrap() {
+                    while *thread_pool_clone.lock().unwrap()
+                        > *self.imp().thread_pool.lock().unwrap()
+                    {
+                        self.update_rows();
+                        let wait_loop = glib::MainLoop::new(None, false);
+
+                        glib::timeout_add(
+                            time::Duration::from_millis(50),
+                            glib::clone!(@strong wait_loop => move || {
+                                wait_loop.quit();
+                                glib::Continue(false)
+                            }),
                         );
-                        let destination_backup = format!(
-                            "{}/{}.dorst",
-                            &dest_backup.clone().display().to_string(),
-                            util::get_name(&repo_link)
-                        );
-                        let completed_repos_clone = completed_repos.clone();
-                        let errors_clone = self.imp().errors_list.clone();
-                        let success_clone = self.imp().success_list.clone();
-                        let revealer = window::Window::get_row_revealer(&row);
-                        let progress_bar =
-                            revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
-                        progress_bar.set_fraction(0.0);
-                        revealer.set_reveal_child(true);
-
-                        if *self.imp().task_limiter.lock().unwrap() {
-                            while *thread_pool_clone.lock().unwrap()
-                                > *self.imp().thread_pool.lock().unwrap()
-                            {
-                                self.update_rows();
-                                let wait_loop = glib::MainLoop::new(None, false);
-
-                                glib::timeout_add(
-                                    time::Duration::from_millis(50),
-                                    glib::clone!(@strong wait_loop => move || {
-                                        wait_loop.quit();
-                                        glib::Continue(false)
-                                    }),
-                                );
-
-                                wait_loop.run();
-                            }
-                        }
-
-                        *thread_pool_clone.lock().unwrap() += 1;
-
-                        gio::spawn_blocking(move || {
-                            match window::Window::process_repo(
-                                &destination_clone,
-                                &destination_backup,
-                                &repo_link,
-                                backups_enabled,
-                                #[cfg(feature = "gui")]
-                                &Some(tx.clone()),
-                            ) {
-                                Ok(()) => {
-                                    success_clone.lock().unwrap().push(repo_link);
-                                }
-                                Err(error) => errors_clone
-                                    .lock()
-                                    .unwrap()
-                                    .push(format!("{repo_link}: {error}")),
-                            }
-
-                            completed_repos_clone.fetch_add(1, Ordering::Relaxed);
-                            *thread_pool_clone.lock().unwrap() -= 1;
-                        });
+                        wait_loop.run();
                     }
                 }
+
+                *thread_pool_clone.lock().unwrap() += 1;
+
+                gio::spawn_blocking(move || {
+                    match window::Window::process_repo(
+                        &destination_clone,
+                        &destination_backup,
+                        &repo_link,
+                        backups_enabled,
+                        #[cfg(feature = "gui")]
+                        &Some(tx.clone()),
+                    ) {
+                        Ok(()) => {
+                            success_clone.lock().unwrap().push(repo_link);
+                        }
+                        Err(error) => errors_clone
+                            .lock()
+                            .unwrap()
+                            .push(format!("{repo_link}: {error}")),
+                    }
+
+                    completed_repos_clone.fetch_add(1, Ordering::Relaxed);
+                    *thread_pool_clone.lock().unwrap() -= 1;
+                });
+            } else {
+                completed_repos_clone.fetch_add(1, Ordering::Relaxed);
             }
         }
 
@@ -760,9 +768,18 @@ impl Window {
             repo_object.repo_data().link.contains('@')
         });
 
+        let filter_https = CustomFilter::new(|obj| {
+            let repo_object = obj
+                .downcast_ref::<RepoObject>()
+                .expect("The object needs to be of type `RepoObject`.");
+
+            repo_object.repo_data().link.contains("https://")
+        });
+
         match filter_state.as_str() {
-            "" => None,
+            "All" => None,
             "SSH" => Some(filter_ssh),
+            "HTTPS" => Some(filter_https),
             _ => unreachable!(),
         }
     }
@@ -806,6 +823,7 @@ impl Window {
         let keyfile = KeyFile::new();
         let size = self.default_size();
         let dest = self.imp().backup_directory.borrow();
+        let filter_option = &self.imp().filter_option.borrow();
         let backups_enabled = *self.imp().backups_enabled.borrow();
         let threads = *self.imp().thread_pool.lock().unwrap();
         let task_limiter = *self.imp().task_limiter.lock().unwrap();
@@ -814,6 +832,7 @@ impl Window {
         keyfile.set_int64("window", "width", size.0.into());
         keyfile.set_int64("window", "height", size.1.into());
         keyfile.set_string("window", "theme", &color_scheme);
+        keyfile.set_string("window", "filter", filter_option);
         keyfile.set_string("backup", "destination", dest.to_str().unwrap());
         keyfile.set_boolean("backup", "enabled", backups_enabled);
         keyfile.set_uint64("core", "threads", threads);
@@ -866,6 +885,15 @@ impl Window {
                 self.imp()
                     .stack
                     .activate_action("win.color-scheme", Some(&variant))
+                    .unwrap();
+            }
+
+            if let Ok(filter) = keyfile.string("window", "filter") {
+                let variant = filter.to_variant();
+
+                self.imp()
+                    .stack
+                    .activate_action("win.filter", Some(&variant))
                     .unwrap();
             }
 
@@ -1089,6 +1117,9 @@ mod tests {
 
         let window = window();
 
+        let filter_ssh = "SSH".to_variant();
+        let filter_https = "HTTPS".to_variant();
+
         window
             .imp()
             .repo_entry_empty
@@ -1103,7 +1134,7 @@ mod tests {
         window
             .imp()
             .stack
-            .activate_action("win.toggle-ssh-filter", None)
+            .activate_action("win.filter", Some(&filter_ssh))
             .unwrap();
 
         window.imp().button_start.emit_clicked();
@@ -1114,13 +1145,13 @@ mod tests {
         window
             .imp()
             .stack
-            .activate_action("win.toggle-ssh-filter", None)
+            .activate_action("win.filter", Some(&filter_https))
             .unwrap();
 
         window.imp().button_start.emit_clicked();
         wait_ui(500);
 
-        assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+        assert!(window.imp().errors_list.lock().unwrap().len() == 0);
     }
 
     #[gtk::test]

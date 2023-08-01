@@ -92,7 +92,7 @@ impl ObjectSubclass for Window {
             revealer_banner: TemplateChild::default(),
             revealer: TemplateChild::default(),
             stack: TemplateChild::default(),
-            filter_option: RefCell::default(),
+            filter_option: RefCell::new(String::from("All")),
             backups_enabled: RefCell::new(false),
             color_scheme: Arc::default(),
             style_manager: StyleManager::default(),
@@ -163,9 +163,9 @@ impl ObjectImpl for Window {
         let obj = self.obj();
 
         obj.setup_actions();
+        obj.setup_repos();
         obj.load_settings();
         obj.setup_theme();
-        obj.setup_repos();
         obj.setup_callbacks();
         obj.restore_data();
     }
