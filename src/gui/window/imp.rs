@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*, Banner, StyleManager, ToastOverlay};
 use gtk::{
     gio,
-    glib::{signal::Inhibit, subclass::InitializingObject, ParamSpec},
+    glib::{subclass::InitializingObject, ParamSpec},
     Button, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer, Stack, ToggleButton,
 };
 
@@ -189,7 +189,7 @@ impl Window {}
 impl WidgetImpl for Window {}
 
 impl WindowImpl for Window {
-    fn close_request(&self) -> Inhibit {
+    fn close_request(&self) -> glib::Propagation {
         let backup_data: Vec<RepoData> = self
             .obj()
             .repos()

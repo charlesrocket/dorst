@@ -22,12 +22,12 @@ cli = ["dep:clap", "dep:indicatif"]
 gui = ["dep:adw", "dep:glib", "dep:gtk"]
 
 [dependencies]
-adw = { version = "0.4", package = "libadwaita", features = ["v1_3"], optional = true }
+adw = { version = "0.5", package = "libadwaita", features = ["v1_3"], optional = true }
 anyhow = "1.0"
 clap = { version = "4.3", features = ["string"], optional = true }
 git2 = "0.17"
-glib = { version = "0.17", optional = true }
-gtk = { version = "0.6", package = "gtk4", features = ["v4_10"], optional = true }
+glib = { version = "0.18", optional = true }
+gtk = { version = "0.7", package = "gtk4", features = ["v4_10"], optional = true }
 indicatif = { version = "0.17", optional = true }
 openssl-sys = { version = "0.9", features = ["vendored"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -42,4 +42,4 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 
 [build-dependencies]
 built = { version = "0.6", features = ["git2"] }
-glib-build-tools = "0.17"
+glib-build-tools = "0.18"
