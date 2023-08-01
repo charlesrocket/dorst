@@ -75,7 +75,7 @@ impl Window {
         let action_color_scheme = SimpleAction::new_stateful(
             "color-scheme",
             Some(&String::static_variant_type()),
-            "Default".to_variant(),
+            &"Default".to_variant(),
         );
 
         action_color_scheme.connect_activate(
@@ -124,7 +124,7 @@ impl Window {
                 };
 
                 *window.imp().color_scheme.lock().unwrap() = String::from(value);
-                action.set_state(value.to_variant());
+                action.set_state(&value.to_variant());
             }),
         );
 
@@ -195,7 +195,7 @@ impl Window {
         let action_filter = SimpleAction::new_stateful(
             "filter",
             Some(&String::static_variant_type()),
-            "All".to_variant(),
+            &"All".to_variant(),
         );
 
         action_filter.connect_activate(
@@ -213,7 +213,7 @@ impl Window {
                     window.update_rows();
                 }
 
-                action.set_state(parameter.to_variant());
+                action.set_state(&parameter.to_variant());
             }),
         );
 
