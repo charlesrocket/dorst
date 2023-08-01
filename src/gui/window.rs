@@ -172,7 +172,7 @@ impl Window {
     }
 
     fn setup_repos(&self) {
-        let model = gio::ListStore::new(RepoObject::static_type());
+        let model = gio::ListStore::new::<RepoObject>();
         self.imp().repos.replace(Some(model));
 
         let filter_model = FilterListModel::new(Some(self.repos()), self.filter());
