@@ -172,11 +172,20 @@ impl Window {
     }
 
     fn setup_repos(&self) {
+        let placeholder = Label::builder()
+            .label("no repositories")
+            .margin_top(6)
+            .margin_bottom(6)
+            .css_classes(["dim-label"])
+            .build();
+
         let model = gio::ListStore::new::<RepoObject>();
         self.imp().repos.replace(Some(model));
 
         let filter_model = FilterListModel::new(Some(self.repos()), self.filter());
         let selection_model = NoSelection::new(Some(filter_model.clone()));
+
+        self.imp().repos_list.set_placeholder(Some(&placeholder));
         self.imp().repos_list.bind_model(
             Some(&selection_model),
             clone!(@weak self as window => @default-panic, move |obj| {
