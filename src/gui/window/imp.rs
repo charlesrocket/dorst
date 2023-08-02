@@ -1,8 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*, Banner, StyleManager, ToastOverlay};
 use gtk::{
-    gio,
-    glib::{subclass::InitializingObject, ParamSpec},
-    Button, CompositeTemplate, Entry, ListBox, ProgressBar, Revealer, Stack, ToggleButton,
+    gio, glib::subclass::InitializingObject, Button, CompositeTemplate, Entry, ListBox,
+    ProgressBar, Revealer, Stack, ToggleButton,
 };
 
 use glib::Properties;
@@ -159,6 +158,7 @@ impl ObjectSubclass for Window {
     }
 }
 
+#[glib::derived_properties]
 impl ObjectImpl for Window {
     fn constructed(&self) {
         self.parent_constructed();
@@ -170,16 +170,6 @@ impl ObjectImpl for Window {
         obj.setup_theme();
         obj.setup_callbacks();
         obj.restore_data();
-    }
-
-    fn properties() -> &'static [ParamSpec] {
-        Self::derived_properties()
-    }
-    fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
-        self.derived_set_property(id, value, pspec);
-    }
-    fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
-        self.derived_property(id, pspec)
     }
 }
 
