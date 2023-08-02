@@ -50,7 +50,10 @@ pub fn xdg_path() -> Result<PathBuf> {
         env::var("XDG_CONFIG_HOME").unwrap_or(format!("{}/.config", std::env::var("HOME")?));
 
     let config_path = format!("{xdg_config_home}/dorst");
+    #[cfg(not(test))]
     let file_path = format!("{config_path}/config.yaml");
+    #[cfg(test)]
+    let file_path = "/tmp/dorst_test_conf.yaml";
 
     if !Path::new(&config_path).exists() {
         fs::create_dir_all(config_path)?;
