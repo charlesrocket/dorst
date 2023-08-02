@@ -155,9 +155,8 @@
                             <property name="hexpand">True</property>
                             <child>
                               <object class="GtkRevealer" id="revealer">
-                                <property name="margin-bottom">3</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
+                                <property name="margin-start">16</property>
+                                <property name="margin-end">16</property>
                                 <property name="transition-type">crossfade</property>
                                 <property name="transition-duration">542</property>
                                 <property name="child">

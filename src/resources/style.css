@@ -1,5 +1,6 @@
 progressbar.main-progress trough progress {
   background-color: @blue_2;
+  border-radius: 6px 6px 0px 0px;
 }
 
 progressbar.row-progress.clone trough progress {
