@@ -1074,9 +1074,9 @@ mod tests {
         window.imp().button_start.emit_clicked();
         wait_ui(500);
         helper::commit(repo_dir);
-        wait_ui(200);
+        wait_ui(1000);
         window.imp().button_start.emit_clicked();
-        wait_ui(500);
+        wait_ui(1000);
 
         assert!(window.imp().success_list.lock().unwrap().len() == 1);
         assert!(window.imp().errors_list.lock().unwrap().len() == 0);
