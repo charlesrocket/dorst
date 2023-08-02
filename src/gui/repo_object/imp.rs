@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use glib::{ParamSpec, Properties, Value};
+use glib::Properties;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -21,16 +21,5 @@ impl ObjectSubclass for RepoObject {
     type Type = super::RepoObject;
 }
 
-impl ObjectImpl for RepoObject {
-    fn properties() -> &'static [ParamSpec] {
-        Self::derived_properties()
-    }
-
-    fn set_property(&self, id: usize, value: &Value, pspec: &ParamSpec) {
-        self.derived_set_property(id, value, pspec);
-    }
-
-    fn property(&self, id: usize, pspec: &ParamSpec) -> Value {
-        self.derived_property(id, pspec)
-    }
-}
+#[glib::derived_properties]
+impl ObjectImpl for RepoObject {}
