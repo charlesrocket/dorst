@@ -2,6 +2,61 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.0] - 2023-08-02
+
+### Bug Fixes
+
+- Scroll `GtkListBox` only
+- Fix `GtkScrolledWindow` animation
+- Fix `task-limiter` action
+- `thread::spawn()` -> `gio::spawn_blocking()`
+- Update `Variant`s
+- Fix `ControlFlow`
+- Update `close_request()`
+- Update `setup_repos()`
+
+### Features
+
+- Add thread pool
+- Add `task_limiter`
+- Add `set_task_limiter()`
+- Implement thread pooling (#21)
+- Enable task limiter
+- Handle task limiter setting
+- Improve color scheme handling
+- Add `HTTPS` filter
+- Convert `task-limiter` to `PropertyAction`
+- Update shortcuts
+- Move main progress bar
+- Attach `main-progress` to linked widgets
+- Update `main-menu`
+
+### Miscellaneous tasks
+
+- Update dependencies
+- Update `gui` dependencies (#22)
+
+### Refactor
+
+- Update `gtk`/`std` imports
+- Use `#[glib::derived_properties]`
+- Update `RepoObject`
+
+### Styling
+
+- Fix `task_limiter()` formatting
+- Move `action_task_limiter`
+
+### Testing
+
+- Update `ssh_filter()`
+- More `ssh_filter()` errors
+- Add `task_limiter()`
+- Update `wait_ui()`
+- Add task limiter data
+- Update `settings()` config
+- Fix `backup()` breaks
+
 ## [0.10.3] - 2023-07-26
 
 ### Bug Fixes
