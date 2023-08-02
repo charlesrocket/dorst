@@ -17,6 +17,7 @@ fn builder() -> Application {
     builder.connect_activate(build_ui);
 
     builder.set_accels_for_action("win.close", &["<Primary>q"]);
+    builder.set_accels_for_action("win.task-limiter", &["<Primary>l"]);
 
     builder
 }

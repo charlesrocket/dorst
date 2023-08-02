@@ -27,7 +27,7 @@
         </item>
       </submenu>
       <item>
-        <attribute name="label" translatable="yes">_Task limiter</attribute>
+        <attribute name="label" translatable="yes">_Limit tasks</attribute>
         <attribute name="action">win.task-limiter</attribute>
       </item>
       <submenu>
