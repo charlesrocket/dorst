@@ -1072,8 +1072,9 @@ mod tests {
         window.set_backup_directory(&PathBuf::from("/tmp/dorst_test-gui"));
         window.set_source_directory(&PathBuf::from("test-gui-src"));
         window.imp().button_start.emit_clicked();
-        helper::commit(repo_dir);
         wait_ui(500);
+        helper::commit(repo_dir);
+        wait_ui(200);
         window.imp().button_start.emit_clicked();
         wait_ui(500);
 
