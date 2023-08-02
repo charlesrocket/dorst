@@ -2,12 +2,6 @@
 <interface>
   <menu id="main-menu">
     <section>
-      <item>
-        <attribute name="label" translatable="yes">_About</attribute>
-        <attribute name="action">win.about</attribute>
-      </item>
-    </section>
-    <section>
       <submenu>
         <attribute name="label" translatable="yes">_Filter</attribute>
         <item>
@@ -61,7 +55,11 @@
     </section>
     <section>
       <item>
-        <attribute name="label" translatable="yes">_Show keyboard shortcuts</attribute>
+        <attribute name="label" translatable="yes">_About</attribute>
+        <attribute name="action">win.about</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">_Keyboard shortcuts</attribute>
         <attribute name="action">win.show-help-overlay</attribute>
       </item>
     </section>
