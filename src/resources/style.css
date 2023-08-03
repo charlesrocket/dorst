@@ -3,7 +3,7 @@ progressbar.main-progress trough progress {
   border-radius: 6px 6px 0px 0px;
 }
 
-progressbar.row-progress trough progress{
+progressbar.row-progress trough progress {
   border-radius: 3px;
 }
 
