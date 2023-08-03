@@ -128,7 +128,7 @@ impl Window {
             }),
         );
 
-        let action_task_limiter = gio::PropertyAction::new("task-limiter", self, "limiter");
+        let action_task_limiter = gio::PropertyAction::new("task-limiter", self, "task_limiter");
 
         self.add_action(&action_about);
         self.add_action(&action_process_targets);
@@ -325,7 +325,7 @@ impl Window {
                 progress_bar.set_fraction(0.0);
                 revealer.set_reveal_child(true);
 
-                if self.imp().task_limiter.get() {
+                if self.task_limiter() {
                     while *thread_pool_clone.lock().unwrap()
                         > *self.imp().thread_pool.lock().unwrap()
                     {
@@ -813,7 +813,7 @@ impl Window {
         let filter_option = &self.imp().filter_option.borrow();
         let backups_enabled = *self.imp().backups_enabled.borrow();
         let threads = *self.imp().thread_pool.lock().unwrap();
-        let task_limiter = self.imp().task_limiter.get();
+        let task_limiter = self.task_limiter();
         let color_scheme = self.imp().color_scheme.lock().unwrap();
 
         keyfile.set_int64("window", "width", size.0.into());
@@ -908,12 +908,7 @@ impl Window {
             }
 
             if let Ok(task_limiter) = keyfile.boolean("core", "task-limiter") {
-                if task_limiter {
-                    self.imp()
-                        .stack
-                        .activate_action("win.task-limiter", None)
-                        .unwrap();
-                }
+                self.set_task_limiter(task_limiter);
             }
         }
     }
@@ -1014,7 +1009,7 @@ mod tests {
         wait_ui(500);
 
         assert!(*window.imp().thread_pool.lock().unwrap() == 1);
-        assert!(window.imp().task_limiter.get());
+        assert!(window.task_limiter());
 
         window.imp().close_request();
 
@@ -1171,25 +1166,15 @@ mod tests {
             .set_buffer(&entry_buffer_from_str("invalid3"));
 
         window.imp().repo_entry.emit_activate();
-
-        window
-            .imp()
-            .stack
-            .activate_action("win.task-limiter", None)
-            .unwrap();
-
+        window.set_task_limiter(true);
         window.imp().button_start.emit_clicked();
         wait_ui(100);
 
-        assert!(window.imp().task_limiter.get());
+        assert!(window.task_limiter());
 
-        window
-            .imp()
-            .stack
-            .activate_action("win.task-limiter", None)
-            .unwrap();
+        window.set_task_limiter(false);
 
-        assert!(!window.imp().task_limiter.get());
+        assert!(!window.task_limiter());
     }
 
     #[gtk::test]

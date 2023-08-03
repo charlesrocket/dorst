@@ -58,7 +58,7 @@ pub struct Window {
     pub style_manager: StyleManager,
     pub errors_list: Arc<Mutex<Vec<String>>>,
     pub success_list: Arc<Mutex<Vec<String>>>,
-    #[property(name = "limiter", get, set, type = bool)]
+    #[property(get, set)]
     pub task_limiter: Cell<bool>,
     pub thread_pool: Arc<Mutex<u64>>,
 }
