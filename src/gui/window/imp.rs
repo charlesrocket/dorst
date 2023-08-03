@@ -52,6 +52,8 @@ pub struct Window {
     pub revealer: TemplateChild<Revealer>,
     #[template_child]
     pub stack: TemplateChild<Stack>,
+    #[template_child]
+    pub stack_list: TemplateChild<Stack>,
     pub filter_option: RefCell<String>,
     pub backups_enabled: RefCell<bool>,
     pub color_scheme: Arc<Mutex<String>>,
@@ -93,6 +95,7 @@ impl ObjectSubclass for Window {
             revealer_banner: TemplateChild::default(),
             revealer: TemplateChild::default(),
             stack: TemplateChild::default(),
+            stack_list: TemplateChild::default(),
             filter_option: RefCell::new(String::from("All")),
             backups_enabled: RefCell::new(false),
             color_scheme: Arc::default(),

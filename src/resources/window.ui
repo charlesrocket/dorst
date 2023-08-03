@@ -219,30 +219,55 @@
                     <child>
                       <object class="AdwClamp">
                         <property name="child">
-                          <object class="GtkScrolledWindow">
-                            <property name="hscrollbar-policy">never</property>
-                            <property name="min-content-height">360</property>
-                            <property name="vexpand">True</property>
-                            <property name="child">
-                              <object class="GtkBox">
-                                <property name="orientation">vertical</property>
-                                <property name="halign">fill</property>
-                                <property name="hexpand">True</property>
-                                <property name="margin-top">6</property>
-                                <property name="margin-bottom">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <child>
-                                  <object class="GtkListBox" id="repos_list">
-                                    <property name="visible">False</property>
-                                    <property name="selection-mode">none</property>
+                          <object class="GtkStack" id="stack_list">
+                            <property name="transition-type">slide-down</property>
+                            <child>
+                              <object class="GtkStackPage">
+                                <property name="name">main</property>
+                                <property name="child">
+                                  <object class="GtkScrolledWindow">
+                                    <property name="hscrollbar-policy">never</property>
+                                    <property name="min-content-height">360</property>
+                                    <property name="vexpand">True</property>
+                                    <property name="child">
+                                      <object class="GtkBox">
+                                        <property name="orientation">vertical</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="margin-top">6</property>
+                                        <property name="margin-bottom">12</property>
+                                        <property name="margin-start">12</property>
+                                        <property name="margin-end">12</property>
+                                        <child>
+                                          <object class="GtkListBox" id="repos_list">
+                                            <property name="visible">False</property>
+                                            <property name="selection-mode">none</property>
+                                            <style>
+                                              <class name="boxed-list"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                      </object>
+                                    </property>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkStackPage">
+                                <property name="name">empty</property>
+                                <property name="child">
+                                  <object class="AdwStatusPage">
+                                    <property name="icon-name">computer-fail-symbolic</property>
+                                    <property name="title" translatable="yes">No repositories</property>
+                                    <property name="description" translatable="yes">Select a different filter or add a repository</property>
                                     <style>
-                                      <class name="boxed-list"/>
+                                      <class name="dim-label"/>
                                     </style>
                                   </object>
-                                </child>
+                                </property>
                               </object>
-                            </property>
+                            </child>
                           </object>
                         </property>
                       </object>
