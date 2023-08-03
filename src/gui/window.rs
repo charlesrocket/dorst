@@ -993,6 +993,28 @@ mod tests {
     }
 
     #[gtk::test]
+    fn config() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
+
+        config.write_all(b"\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x66\x6f\x6f\x62\x61\x72\x2f\x0a\x20\x20\x2d\x20\x2f").unwrap();
+        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+
+        let window = window();
+
+        assert!(window.imp().stack.visible_child_name() == Some("main".into()));
+        assert!(window.get_repo_data().len() == 2);
+
+        window.imp().close_request();
+
+        assert!(Path::new("/tmp/dorst_test_conf.yaml").exists());
+        remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+    }
+
+    #[gtk::test]
     fn settings() {
         fs::create_dir_all("/tmp/dorst").unwrap();
         let mut settings = tempfile::Builder::new().tempfile_in("/tmp/dorst").unwrap();
