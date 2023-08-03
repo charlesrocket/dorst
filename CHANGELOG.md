@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.1] - 2023-08-03
+
+### Bug Fixes
+
+- Fix empty `ListBox`
+- Set `row-progress` radius
+- Replace `set_placeholder()` with `stack_list`
+- Animate controls
+
+### Refactor
+
+- Use property methods
+- Update `empty` header bar
+- Do not connect to `revealer`
+
+### Styling
+
+- Fix css formatting
+
+### Testing
+
+- Fix `xdg_path()`
+- Increase `backup()` breaks
+- Add `config()`
+
 ## [0.11.0] - 2023-08-02
 
 ### Bug Fixes
