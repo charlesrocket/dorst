@@ -77,7 +77,7 @@
               <object class="GtkBox">
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkHeaderBar">
+                  <object class="AdwHeaderBar">
                     <style>
                       <class name="flat"/>
                     </style>
