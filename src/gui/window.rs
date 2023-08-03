@@ -169,13 +169,6 @@ impl Window {
                 *state = window.imp().button_backup_state.is_active();
                 window.imp().button_backup_dest.set_visible(*state);
             }));
-
-        self.imp()
-            .revealer
-            .connect_reveal_child_notify(clone!(@weak self as window => move |_| {
-                window.imp().button_source_dest.add_css_class("with_bar");
-                window.imp().button_backup_state.add_css_class("with_bar");
-            }));
     }
 
     fn setup_repos(&self) {
@@ -252,6 +245,8 @@ impl Window {
         self.imp().revealer_banner.set_reveal_child(false);
         self.imp().errors_list.lock().unwrap().clear();
         self.imp().success_list.lock().unwrap().clear();
+        self.imp().button_source_dest.add_css_class("with_bar");
+        self.imp().button_backup_state.add_css_class("with_bar");
         self.imp().progress_bar.set_fraction(0.0);
         self.imp().revealer.set_reveal_child(true);
 
