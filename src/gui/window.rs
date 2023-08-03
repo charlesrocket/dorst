@@ -169,6 +169,13 @@ impl Window {
                 *state = window.imp().button_backup_state.is_active();
                 window.imp().button_backup_dest.set_visible(*state);
             }));
+
+        self.imp()
+            .revealer
+            .connect_reveal_child_notify(clone!(@weak self as window => move |_| {
+                window.imp().button_source_dest.add_css_class("with_bar");
+                window.imp().button_backup_state.add_css_class("with_bar");
+            }));
     }
 
     fn setup_repos(&self) {
@@ -282,6 +289,8 @@ impl Window {
 
                     window.imp().progress_bar.set_fraction(1.0);
                     window.imp().revealer.set_reveal_child(false);
+                    window.imp().button_source_dest.remove_css_class("with_bar");
+                    window.imp().button_backup_state.remove_css_class("with_bar");
                     window.controls_disabled(false);
                     ControlFlow::Break
                 } else {

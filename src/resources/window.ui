@@ -153,10 +153,10 @@
                             <property name="hexpand">True</property>
                             <child>
                               <object class="GtkRevealer" id="revealer">
-                                <property name="margin-start">16</property>
-                                <property name="margin-end">16</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
                                 <property name="transition-type">crossfade</property>
-                                <property name="transition-duration">542</property>
+                                <property name="transition-duration">342</property>
                                 <property name="child">
                                   <object class="GtkProgressBar" id="progress_bar">
                                     <style>
@@ -183,6 +183,7 @@
                                     <property name="tooltip-text" translatable="yes">Select source directory</property>
                                     <style>
                                       <class name="suggested-action"/>
+                                      <class name="controls"/>
                                     </style>
                                   </object>
                                 </child>
@@ -208,6 +209,9 @@
                                   <object class="GtkToggleButton" id="button_backup_state">
                                     <property name="icon-name">media-floppy-symbolic</property>
                                     <property name="tooltip-text" translatable="yes">Enable backups</property>
+                                    <style>
+                                      <class name="controls"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>

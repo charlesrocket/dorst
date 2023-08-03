@@ -1,3 +1,12 @@
+button.controls {
+  transition: border-radius 0.6s ease-out;
+}
+
+button.controls.with_bar {
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+}
+
 progressbar.main-progress trough progress {
   background-color: @blue_2;
   border-radius: 6px 6px 0px 0px;
