@@ -14,10 +14,7 @@ use std::{
     cell::RefMut,
     fs,
     path::{Path, PathBuf},
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc, Mutex,
-    },
+    sync::{Arc, Mutex},
     time,
 };
 
@@ -253,7 +250,7 @@ impl Window {
         let mut active_task = false;
         let repos = self.repos();
         let total_repos = self.get_repo_data().len();
-        let completed_repos = Arc::new(AtomicUsize::new(0));
+        let completed_repos = Arc::new(Mutex::new(0));
         let completed_repos_clone = completed_repos.clone();
         let dest_clone = self.get_dest_clone();
         let dest_backup = self.get_dest_backup();
@@ -263,7 +260,7 @@ impl Window {
 
         glib::idle_add_local(
             clone!(@weak self as window => @default-return ControlFlow::Continue, move || {
-                let completed = completed_repos_clone.load(Ordering::Relaxed) as f64;
+                let completed = *completed_repos_clone.lock().unwrap() as f64;
                 let progress = completed / total_repos as f64;
 
                 window.update_rows();
@@ -362,11 +359,11 @@ impl Window {
                             .push(format!("{repo_link}: {error}")),
                     }
 
-                    completed_repos_clone.fetch_add(1, Ordering::Relaxed);
+                    *completed_repos_clone.lock().unwrap() += 1;
                     *thread_pool_clone.lock().unwrap() -= 1;
                 });
             } else {
-                completed_repos_clone.fetch_add(1, Ordering::Relaxed);
+                *completed_repos.lock().unwrap() += 1;
             }
         }
 
