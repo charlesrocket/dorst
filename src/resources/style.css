@@ -1,5 +1,5 @@
 button.controls {
-  transition: border-radius 0.6s ease-out;
+  transition: border-radius 0.6s linear;
 }
 
 button.controls.with_bar {
