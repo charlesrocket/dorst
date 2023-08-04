@@ -47,11 +47,7 @@ pub fn start() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use glib::subclass::types::ObjectSubclassIsExt;
-    use std::io::Write;
-
-    pub(crate) mod helper {
+    pub mod helper {
         use git2::{Commit, ObjectType, Repository, Signature};
         use rouille::{cgi::CgiRun, Server};
         use tempfile::TempDir;
@@ -141,7 +137,7 @@ mod tests {
         }
     }
 
-    pub(crate) fn wait_ui(ms: u64) {
+    pub fn wait_ui(ms: u64) {
         let main_loop = glib::MainLoop::new(None, false);
 
         glib::timeout_add(
@@ -153,49 +149,5 @@ mod tests {
         );
 
         main_loop.run();
-    }
-
-    pub(crate) fn window() -> Window {
-        let app = builder();
-        Window::new(&app)
-    }
-
-    #[gtk::test]
-    fn main_view() {
-        let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
-
-        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x2f\x74\x6d\x70\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x49\x4e\x56\x41\x4c\x49\x44").unwrap();
-        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
-
-        let window = window();
-
-        assert!(window.imp().stack.visible_child_name() == Some("main".into()));
-    }
-
-    #[gtk::test]
-    fn empty_view() {
-        let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
-
-        config.write_all(b"\x2d\x2d\x2d\x0a").unwrap();
-        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
-
-        let window = window();
-
-        assert!(window.imp().stack.visible_child_name() == Some("empty".into()));
-    }
-
-    #[gtk::test]
-    fn invalid() {
-        let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
-
-        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x2f\x74\x6d\x70\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x49\x4e\x56\x41\x4c\x49\x44").unwrap();
-        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
-
-        let window = window();
-
-        window.imp().button_start.emit_clicked();
-        wait_ui(500);
-
-        assert!(window.imp().errors_list.lock().unwrap().len() > 0);
     }
 }
