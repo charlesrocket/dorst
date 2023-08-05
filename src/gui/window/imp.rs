@@ -1,6 +1,6 @@
 use adw::{prelude::*, subclass::prelude::*, Banner, StyleManager, ToastOverlay};
 use gtk::{
-    gio, glib::subclass::InitializingObject, Button, CompositeTemplate, Entry, ListBox,
+    gio, glib::subclass::InitializingObject, Button, CompositeTemplate, Entry, FileDialog, ListBox,
     ProgressBar, Revealer, Stack, ToggleButton,
 };
 
@@ -39,7 +39,6 @@ pub struct Window {
     pub repos: RefCell<Option<gio::ListStore>>,
     pub source_directory: RefCell<String>,
     pub backup_directory: RefCell<PathBuf>,
-    pub directory_dialog: gtk::FileDialog,
     #[template_child]
     pub progress_bar: TemplateChild<ProgressBar>,
     #[template_child]
@@ -72,11 +71,6 @@ impl ObjectSubclass for Window {
     type ParentType = adw::ApplicationWindow;
 
     fn new() -> Self {
-        let directory_dialog = gtk::FileDialog::builder()
-            .title("Select destination")
-            .modal(true)
-            .build();
-
         Self {
             button_start: TemplateChild::default(),
             button_source_dest: TemplateChild::default(),
@@ -88,7 +82,6 @@ impl ObjectSubclass for Window {
             repos: RefCell::default(),
             source_directory: RefCell::new(String::new()),
             backup_directory: RefCell::new(PathBuf::new()),
-            directory_dialog,
             progress_bar: TemplateChild::default(),
             toast_overlay: TemplateChild::default(),
             banner: TemplateChild::default(),
@@ -114,7 +107,10 @@ impl ObjectSubclass for Window {
             "win.select-source-directory",
             None,
             |win, _action_name, _action_target| async move {
-                let dialog = &win.imp().directory_dialog;
+                let dialog = FileDialog::builder()
+                    .title("Source directory")
+                    .modal(true)
+                    .build();
 
                 if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
                     win.set_source_directory(&folder.path().unwrap());
@@ -137,7 +133,11 @@ impl ObjectSubclass for Window {
             "win.select-backup-directory",
             None,
             |win, _action_name, _action_target| async move {
-                let dialog = &win.imp().directory_dialog;
+                let dialog = FileDialog::builder()
+                    .title("Backup directory")
+                    .modal(true)
+                    .build();
+
                 if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
                     win.set_backup_directory(&folder.path().unwrap());
                     win.show_message(
