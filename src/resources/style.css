@@ -8,7 +8,7 @@ button.controls.with_bar {
 }
 
 progressbar.main-progress trough progress {
-  background-color: @blue_2;
+  background-image: linear-gradient(to right, @blue_3, @blue_2);
   border-radius: 6px 6px 0px 0px;
 }
 
@@ -17,13 +17,13 @@ progressbar.row-progress trough progress {
 }
 
 progressbar.row-progress.clone trough progress {
-  background-color: @yellow_5;
+  background-image: linear-gradient(to right, @yellow_5, @yellow_4);
 }
 
 progressbar.row-progress.fetch trough progress {
-  background-color: @green_3;
+  background-image: linear-gradient(to right, @green_5, @green_4);
 }
 
 progressbar.row-progress.deltas trough progress {
-  background-color: @purple_2;
+  background-image: linear-gradient(to right, @purple_3, @purple_2);
 }
