@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.2] - 2023-08-06
+
+### Bug Fixes
+
+- Fix `button.controls` transition
+- Drop `directory_dialog`
+- Fix `progressbar` colors
+- Set `progressbar.row-progress` transitions
+
+### Refactor
+
+- Drop `AtomicUsize`
+
+### Testing
+
+- Fix window builder
+
 ## [0.11.1] - 2023-08-03
 
 ### Bug Fixes
