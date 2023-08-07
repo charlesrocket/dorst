@@ -504,7 +504,6 @@ impl Window {
             Message::Reset => {
                 progress_bar.set_fraction(0.0);
                 revealer.set_reveal_child(true);
-
                 ControlFlow::Continue
             }
             Message::Progress(value) => {
