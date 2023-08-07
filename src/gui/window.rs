@@ -39,6 +39,7 @@ pub enum Message {
     Clone,
     Fetch,
     Deltas,
+    Finish,
 }
 
 impl Window {
@@ -391,6 +392,8 @@ impl Window {
             None,
         )?;
 
+        let _ = tx.clone().unwrap().send(Message::Finish);
+
         if mirror {
             let _ = tx.clone().unwrap().send(Message::Reset);
 
@@ -405,6 +408,8 @@ impl Window {
                 #[cfg(feature = "cli")]
                 None,
             )?;
+
+            let _ = tx.clone().unwrap().send(Message::Finish);
         }
 
         Ok(())
@@ -509,10 +514,6 @@ impl Window {
                     progress_bar.set_fraction(value);
                 }
 
-                if progress_bar.fraction() == 1.0 {
-                    revealer.set_reveal_child(false);
-                }
-
                 ControlFlow::Continue
             }
             Message::Clone => {
@@ -531,6 +532,11 @@ impl Window {
                 progress_bar.add_css_class("deltas");
                 progress_bar.remove_css_class("clone");
                 progress_bar.remove_css_class("fetch");
+                ControlFlow::Continue
+            }
+            Message::Finish => {
+                progress_bar.set_fraction(1.0);
+                revealer.set_reveal_child(false);
                 ControlFlow::Continue
             }
         });
