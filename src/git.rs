@@ -96,12 +96,18 @@ pub fn clone_repo(
                 let indexed = stats.indexed_deltas() as f64;
                 let total = stats.total_deltas() as f64;
                 let progress = indexed / total;
-                let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                let _ = tx
+                    .clone()
+                    .unwrap()
+                    .send(Message::Progress(progress, Some(true)));
             } else if stats.total_objects() > 0 {
                 let received = stats.received_objects() as f64;
                 let total = stats.total_objects() as f64;
                 let progress = received / total;
-                let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                let _ = tx
+                    .clone()
+                    .unwrap()
+                    .send(Message::Progress(progress, Some(false)));
             }
 
             true
@@ -223,12 +229,18 @@ pub fn fetch_repo(
                     let indexed = stats.indexed_deltas() as f64;
                     let total = stats.total_deltas() as f64;
                     let progress = indexed / total;
-                    let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                    let _ = tx
+                        .clone()
+                        .unwrap()
+                        .send(Message::Progress(progress, Some(true)));
                 } else if stats.total_objects() > 0 {
                     let received = stats.received_objects() as f64;
                     let total = stats.total_objects() as f64;
                     let progress = received / total;
-                    let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                    let _ = tx
+                        .clone()
+                        .unwrap()
+                        .send(Message::Progress(progress, Some(false)));
                 }
 
                 true
@@ -269,7 +281,7 @@ pub fn fetch_repo(
                 let indexed = stats.indexed_objects() as f64;
                 let total = stats.total_objects() as f64;
                 let progress = indexed / total;
-                let _ = tx.clone().unwrap().send(Message::Progress(progress));
+                let _ = tx.clone().unwrap().send(Message::Progress(progress, None));
             }
         }
 
