@@ -6,7 +6,7 @@ use glib::Sender;
 use indicatif::{HumanBytes, ProgressBar};
 
 #[cfg(feature = "gui")]
-use crate::gui::window::Message;
+use crate::gui::window::{Message, Status};
 #[cfg(feature = "cli")]
 use crate::util::get_name;
 
@@ -99,7 +99,7 @@ pub fn clone_repo(
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(Message::Progress(progress, Some(true)));
+                    .send(Message::Progress(progress, Status::Deltas));
             } else if stats.total_objects() > 0 {
                 let received = stats.received_objects() as f64;
                 let total = stats.total_objects() as f64;
@@ -107,7 +107,7 @@ pub fn clone_repo(
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(Message::Progress(progress, Some(false)));
+                    .send(Message::Progress(progress, Status::Data));
             }
 
             true
@@ -232,7 +232,7 @@ pub fn fetch_repo(
                     let _ = tx
                         .clone()
                         .unwrap()
-                        .send(Message::Progress(progress, Some(true)));
+                        .send(Message::Progress(progress, Status::Deltas));
                 } else if stats.total_objects() > 0 {
                     let received = stats.received_objects() as f64;
                     let total = stats.total_objects() as f64;
@@ -240,7 +240,7 @@ pub fn fetch_repo(
                     let _ = tx
                         .clone()
                         .unwrap()
-                        .send(Message::Progress(progress, Some(false)));
+                        .send(Message::Progress(progress, Status::Data));
                 }
 
                 true
@@ -281,7 +281,10 @@ pub fn fetch_repo(
                 let indexed = stats.indexed_objects() as f64;
                 let total = stats.total_objects() as f64;
                 let progress = indexed / total;
-                let _ = tx.clone().unwrap().send(Message::Progress(progress, None));
+                let _ = tx
+                    .clone()
+                    .unwrap()
+                    .send(Message::Progress(progress, Status::Normal));
             }
         }
 
