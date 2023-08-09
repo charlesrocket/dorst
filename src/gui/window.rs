@@ -35,11 +35,17 @@ glib::wrapper! {
 
 pub enum Message {
     Reset,
-    Progress(f64),
+    Progress(f64, Status),
     Clone,
     Fetch,
     Deltas,
     Finish,
+}
+
+pub enum Status {
+    Normal,
+    Data,
+    Deltas,
 }
 
 impl Window {
@@ -506,11 +512,17 @@ impl Window {
                 revealer.set_reveal_child(true);
                 ControlFlow::Continue
             }
-            Message::Progress(value) => {
+            Message::Progress(value, progress) => {
                 if value.is_nan() {
                     progress_bar.set_fraction(1.0);
                 } else {
-                    progress_bar.set_fraction(value);
+                    let fraction = match progress {
+                        Status::Deltas => (value / 2.0) + 0.5,
+                        Status::Data => value / 2.0,
+                        Status::Normal => value,
+                    };
+
+                    progress_bar.set_fraction(fraction);
                 }
 
                 ControlFlow::Continue
