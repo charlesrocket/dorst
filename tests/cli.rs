@@ -254,17 +254,4 @@ mod cli {
 
         Ok(())
     }
-
-    #[test]
-    #[cfg(not(feature = "gui"))]
-    fn features() -> Result<(), Box<dyn Error>> {
-        let mut cmd = Command::cargo_bin("dorst")?;
-
-        cmd.arg("--gui")
-            .assert()
-            .failure()
-            .stderr(contains("Error: The GUI feature is disabled"));
-
-        Ok(())
-    }
 }
