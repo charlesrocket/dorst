@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.3] - 2023-08-09
+
+### Bug Fixes
+
+- Fix deltas
+- Merge objects/deltas feedback
+- Do not reset row feedback (#23)
+
+### Refactor
+
+- Add `window::Status`
+
+### Styling
+
+- Fix `set_row_channel()` formatting
+
+### Testing
+
+- Add `start()`
+
 ## [0.11.2] - 2023-08-06
 
 ### Bug Fixes
