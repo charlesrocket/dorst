@@ -106,25 +106,14 @@ impl ObjectSubclass for Window {
         klass.install_action_async(
             "win.select-source-directory",
             None,
-            |win, _action_name, _action_target| async move {
+            |window, _action_name, _action_target| async move {
                 let dialog = FileDialog::builder()
                     .title("Source directory")
                     .modal(true)
                     .build();
 
-                if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
-                    win.set_source_directory(&folder.path().unwrap());
-                    win.show_message(
-                        &format!(
-                            "Source directory: {}",
-                            folder.path().unwrap().to_str().unwrap()
-                        ),
-                        3,
-                    );
-
-                    win.imp()
-                        .button_source_dest
-                        .remove_css_class("suggested-action");
+                if let Ok(folder) = dialog.select_folder_future(Some(&window)).await {
+                    window.select_source_directory(&folder.path().unwrap());
                 }
             },
         );
@@ -132,25 +121,14 @@ impl ObjectSubclass for Window {
         klass.install_action_async(
             "win.select-backup-directory",
             None,
-            |win, _action_name, _action_target| async move {
+            |window, _action_name, _action_target| async move {
                 let dialog = FileDialog::builder()
                     .title("Backup directory")
                     .modal(true)
                     .build();
 
-                if let Ok(folder) = dialog.select_folder_future(Some(&win)).await {
-                    win.set_backup_directory(&folder.path().unwrap());
-                    win.show_message(
-                        &format!(
-                            "Backup directory: {}",
-                            folder.path().unwrap().to_str().unwrap()
-                        ),
-                        3,
-                    );
-
-                    win.imp()
-                        .button_backup_dest
-                        .remove_css_class("suggested-action");
+                if let Ok(folder) = dialog.select_folder_future(Some(&window)).await {
+                    window.select_backup_directory(&folder.path().unwrap());
                 }
             },
         );

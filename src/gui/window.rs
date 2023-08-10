@@ -11,7 +11,7 @@ use gtk::{
 };
 
 use std::{
-    cell::RefMut,
+    cell::Ref,
     fs,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
@@ -461,8 +461,8 @@ impl Window {
         PathBuf::from(util::expand_path(&path))
     }
 
-    fn get_dest_backup(&self) -> RefMut<PathBuf> {
-        self.imp().backup_directory.borrow_mut()
+    fn get_dest_backup(&self) -> Ref<PathBuf> {
+        self.imp().backup_directory.borrow()
     }
 
     fn get_repo_data(&self) -> Vec<RepoData> {
@@ -703,10 +703,34 @@ impl Window {
             .unwrap();
     }
 
-    fn set_backup_directory(&self, directory: &PathBuf) {
+    fn select_source_directory(&self, directory: &Path) {
+        self.set_source_directory(directory);
+        self.show_message(
+            &format!("Source directory: {}", directory.to_str().unwrap()),
+            3,
+        );
+
+        self.imp()
+            .button_source_dest
+            .remove_css_class("suggested-action");
+    }
+
+    fn set_backup_directory(&self, directory: &Path) {
         let mut dir = self.imp().backup_directory.borrow_mut();
         dir.clear();
         dir.push(directory);
+    }
+
+    fn select_backup_directory(&self, directory: &Path) {
+        self.set_backup_directory(directory);
+        self.show_message(
+            &format!("Backup directory: {}", directory.to_str().unwrap()),
+            3,
+        );
+
+        self.imp()
+            .button_backup_dest
+            .remove_css_class("suggested-action");
     }
 
     fn set_thread_pool_limit(&self, value: u64) {
@@ -1110,8 +1134,8 @@ mod tests {
             window.imp().button_backup_state.emit_clicked();
         };
 
-        window.set_backup_directory(&PathBuf::from("/tmp/dorst_test-gui"));
-        window.set_source_directory(&PathBuf::from("test-gui-src"));
+        window.select_backup_directory(&PathBuf::from("/tmp/dorst_test-gui"));
+        window.select_source_directory(&PathBuf::from("test-gui-src"));
         window.imp().button_start.emit_clicked();
         wait_ui(500);
         helper::commit(repo_dir);
@@ -1294,5 +1318,23 @@ mod tests {
         wait_ui(500);
 
         assert!(window.imp().errors_list.lock().unwrap().len() > 0);
+    }
+
+    #[gtk::test]
+    fn select_source_directory() {
+        let window = window();
+
+        window.select_source_directory(&PathBuf::from("/source_foobar"));
+
+        assert!(*window.imp().source_directory.borrow() == "/source_foobar");
+    }
+
+    #[gtk::test]
+    fn select_backup_directory() {
+        let window = window();
+
+        window.select_backup_directory(&PathBuf::from("/backup_foobar"));
+
+        assert!(*window.imp().backup_directory.borrow() == PathBuf::from("/backup_foobar"));
     }
 }
