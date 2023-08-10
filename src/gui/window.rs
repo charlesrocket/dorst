@@ -165,14 +165,6 @@ impl Window {
             .connect_icon_release(clone!(@weak self as window => move |_,_| {
                 window.new_repo(true);
             }));
-
-        self.imp()
-            .button_backup_state
-            .connect_toggled(clone!(@weak self as window => move |_| {
-                let mut state = window.imp().backups_enabled.borrow_mut();
-                *state = window.imp().button_backup_state.is_active();
-                window.imp().button_backup_dest.set_visible(*state);
-            }));
     }
 
     fn setup_repos(&self) {
@@ -261,7 +253,7 @@ impl Window {
         let completed_repos_clone = completed_repos.clone();
         let dest_clone = self.get_dest_clone();
         let dest_backup = self.get_dest_backup();
-        let backups_enabled = *self.imp().backups_enabled.borrow();
+        let backups_enabled = self.imp().backups_enabled.get();
 
         let thread_pool = Arc::new(Mutex::new(0));
 
@@ -831,7 +823,7 @@ impl Window {
         let size = self.default_size();
         let dest = self.imp().backup_directory.borrow();
         let filter_option = &self.imp().filter_option.borrow();
-        let backups_enabled = *self.imp().backups_enabled.borrow();
+        let backups_enabled = self.imp().backups_enabled.get();
         let threads = *self.imp().thread_pool.lock().unwrap();
         let task_limiter = self.task_limiter();
         let color_scheme = self.imp().color_scheme.lock().unwrap();
@@ -864,7 +856,6 @@ impl Window {
         let keyfile = KeyFile::new();
         let settings_path = cache_dir.join("dorst");
         let settings = settings_path.join("gui.ini");
-        let mut backups_enabled = self.imp().backups_enabled.borrow_mut();
 
         if settings.exists() {
             if keyfile
@@ -914,8 +905,7 @@ impl Window {
             }
 
             if let Ok(backup_state) = keyfile.boolean("backup", "enabled") {
-                *backups_enabled = backup_state;
-
+                self.imp().backups_enabled.set(backup_state);
                 self.imp().button_backup_dest.set_visible(backup_state);
 
                 if backup_state {

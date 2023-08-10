@@ -54,7 +54,7 @@ pub struct Window {
     #[template_child]
     pub stack_list: TemplateChild<Stack>,
     pub filter_option: RefCell<String>,
-    pub backups_enabled: RefCell<bool>,
+    pub backups_enabled: Cell<bool>,
     pub color_scheme: Arc<Mutex<String>>,
     pub style_manager: StyleManager,
     pub errors_list: Arc<Mutex<Vec<String>>>,
@@ -90,7 +90,7 @@ impl ObjectSubclass for Window {
             stack: TemplateChild::default(),
             stack_list: TemplateChild::default(),
             filter_option: RefCell::new(String::from("All")),
-            backups_enabled: RefCell::new(false),
+            backups_enabled: Cell::new(false),
             color_scheme: Arc::default(),
             style_manager: StyleManager::default(),
             errors_list: Arc::default(),
@@ -177,7 +177,18 @@ impl ObjectImpl for Window {
 }
 
 #[gtk::template_callbacks]
-impl Window {}
+impl Window {
+    #[template_callback]
+    fn toggle_backups(&self, button_backup_state: &ToggleButton) {
+        if button_backup_state.is_active() {
+            self.button_backup_dest.set_visible(true);
+            self.backups_enabled.set(true);
+        } else {
+            self.button_backup_dest.set_visible(false);
+            self.backups_enabled.set(false);
+        };
+    }
+}
 
 impl WidgetImpl for Window {}
 

@@ -207,6 +207,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkToggleButton" id="button_backup_state">
+                                    <signal name="toggled" handler="toggle_backups" swapped="true"/>
                                     <property name="icon-name">media-floppy-symbolic</property>
                                     <property name="tooltip-text" translatable="yes">Enable backups</property>
                                     <style>
