@@ -230,3 +230,20 @@ impl WindowImpl for Window {
 impl ApplicationWindowImpl for Window {}
 
 impl AdwApplicationWindowImpl for Window {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gui::window::tests::window;
+
+    #[gtk::test]
+    fn toggle_backups() {
+        let window = window();
+
+        window.imp().button_backup_state.set_active(true);
+        assert!(window.imp().backups_enabled.get());
+
+        window.imp().button_backup_state.set_active(false);
+        assert!(!window.imp().backups_enabled.get());
+    }
+}
