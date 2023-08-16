@@ -39,6 +39,8 @@ pub enum Message {
     Clone,
     Fetch,
     Deltas,
+    Updated,
+    Start,
     Finish,
 }
 
@@ -496,6 +498,7 @@ impl Window {
     fn set_row_channel(row: &ListBoxRow) -> glib::Sender<Message> {
         let (tx, rx) = MainContext::channel(Priority::DEFAULT);
         let revealer = window::Window::get_row_revealer(row);
+        let row_box = window::Window::get_row_box(row);
         let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
         rx.attach(None, move |x| match x {
@@ -537,6 +540,14 @@ impl Window {
                 progress_bar.remove_css_class("fetch");
                 ControlFlow::Continue
             }
+            Message::Updated => {
+                row_box.add_css_class("accent");
+                ControlFlow::Continue
+            }
+            Message::Start => {
+                row_box.remove_css_class("accent");
+                ControlFlow::Continue
+            }
             Message::Finish => {
                 progress_bar.set_fraction(1.0);
                 revealer.set_reveal_child(false);
@@ -560,6 +571,10 @@ impl Window {
             .unwrap()
             .downcast::<Revealer>()
             .unwrap()
+    }
+
+    fn get_row_box(row: &ListBoxRow) -> Box {
+        row.child().unwrap().downcast::<Box>().unwrap()
     }
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {

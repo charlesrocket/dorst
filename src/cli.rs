@@ -248,8 +248,9 @@ fn cli(matches: &ArgMatches) -> Result<()> {
             Ok(_) => {
                 compl_count += 1;
                 if !silent {
+                    let status = spinner.prefix();
                     spinner.finish_with_message(format!(
-                        "\x1b[96mdone\x1b[0m \x1b[93m{target_name}\x1b[0m"
+                        "\x1b[96mdone\x1b[0m \x1b[93m{target_name}\x1b[0m{status}"
                     ));
                 }
             }

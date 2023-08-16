@@ -290,6 +290,18 @@ pub fn fetch_repo(
 
         remote.disconnect()?;
         remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
+
+        let local_oid = repo.refname_to_id("HEAD")?;
+        let remote_oid = repo.refname_to_id("FETCH_HEAD")?;
+
+        if local_oid != remote_oid {
+            #[cfg(feature = "cli")]
+            if silent == Some(false) {
+                spinner.unwrap().set_prefix(" ø");
+            }
+            #[cfg(feature = "gui")]
+            let _ = tx.clone().unwrap().send(Message::Updated);
+        }
     }
 
     Ok(())
@@ -304,6 +316,9 @@ pub fn process_target(
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<()> {
     let git_config = git2::Config::open_default()?;
+
+    #[cfg(feature = "gui")]
+    let _ = tx.clone().unwrap().send(Message::Start);
 
     if Path::new(&destination).exists() {
         let repo = Repository::open(destination)?;
