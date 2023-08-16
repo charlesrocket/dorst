@@ -57,6 +57,7 @@ pub struct Window {
     pub backups_enabled: Cell<bool>,
     pub color_scheme: Arc<Mutex<String>>,
     pub style_manager: StyleManager,
+    pub updated_list: Arc<Mutex<Vec<String>>>,
     pub errors_list: Arc<Mutex<Vec<String>>>,
     pub success_list: Arc<Mutex<Vec<String>>>,
     #[property(get, set)]
@@ -93,6 +94,7 @@ impl ObjectSubclass for Window {
             backups_enabled: Cell::new(false),
             color_scheme: Arc::default(),
             style_manager: StyleManager::default(),
+            updated_list: Arc::default(),
             errors_list: Arc::default(),
             success_list: Arc::default(),
             task_limiter: Cell::default(),

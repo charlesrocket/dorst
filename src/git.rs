@@ -7,7 +7,6 @@ use indicatif::{HumanBytes, ProgressBar};
 
 #[cfg(feature = "gui")]
 use crate::gui::window::{Message, Status};
-#[cfg(feature = "cli")]
 use crate::util::get_name;
 
 #[cfg(feature = "cli")]
@@ -156,7 +155,6 @@ pub fn fetch_repo(
     git_config: &git2::Config,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<(), git2::Error> {
-    #[cfg(feature = "cli")]
     let target_name = get_name(target);
 
     {
@@ -300,7 +298,10 @@ pub fn fetch_repo(
                 spinner.unwrap().set_prefix(" ø");
             }
             #[cfg(feature = "gui")]
-            let _ = tx.clone().unwrap().send(Message::Updated);
+            let _ = tx
+                .clone()
+                .unwrap()
+                .send(Message::Updated(String::from(target_name)));
         }
     }
 
