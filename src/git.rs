@@ -7,6 +7,7 @@ use indicatif::{HumanBytes, ProgressBar};
 
 #[cfg(feature = "gui")]
 use crate::gui::window::{Message, Status};
+#[cfg(feature = "cli")]
 use crate::util::get_name;
 
 #[cfg(feature = "cli")]
@@ -150,11 +151,13 @@ pub fn clone_repo(
 pub fn fetch_repo(
     target: &str,
     repo: &Repository,
+    mirror: bool,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
     #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     git_config: &git2::Config,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<(), git2::Error> {
+    #[cfg(feature = "cli")]
     let target_name = get_name(target);
 
     {
@@ -292,7 +295,7 @@ pub fn fetch_repo(
         let local_oid = repo.refname_to_id("HEAD")?;
         let remote_oid = repo.refname_to_id("FETCH_HEAD")?;
 
-        if local_oid != remote_oid {
+        if local_oid != remote_oid && !mirror {
             #[cfg(feature = "cli")]
             if silent == Some(false) {
                 spinner.unwrap().set_prefix(" ø");
@@ -301,7 +304,7 @@ pub fn fetch_repo(
             let _ = tx
                 .clone()
                 .unwrap()
-                .send(Message::Updated(String::from(target_name)));
+                .send(Message::Updated(String::from(target)));
         }
     }
 
@@ -318,15 +321,13 @@ pub fn process_target(
 ) -> Result<()> {
     let git_config = git2::Config::open_default()?;
 
-    #[cfg(feature = "gui")]
-    let _ = tx.clone().unwrap().send(Message::Start);
-
     if Path::new(&destination).exists() {
         let repo = Repository::open(destination)?;
 
         fetch_repo(
             target,
             &repo,
+            mirror,
             #[cfg(feature = "cli")]
             spinner,
             #[cfg(feature = "gui")]

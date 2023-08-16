@@ -40,7 +40,6 @@ pub enum Message {
     Fetch,
     Deltas,
     Updated(String),
-    Start,
     Finish,
 }
 
@@ -428,9 +427,12 @@ impl Window {
             if let Some(obj) = repos.item(i) {
                 if let Some(repo_object) = obj.downcast_ref::<RepoObject>() {
                     let link = repo_object.repo_data().link.clone();
-                    if self.imp().success_list.lock().unwrap().contains(&link) {
+                    if self.imp().success_list.lock().unwrap().contains(&link)
+                        && !self.imp().updated_list.lock().unwrap().contains(&link)
+                    {
                         if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
                             row.remove_css_class("error");
+                            row.remove_css_class("accent");
                             row.add_css_class("success");
                         }
                     } else if self
@@ -445,9 +447,16 @@ impl Window {
                             row.remove_css_class("success");
                             row.add_css_class("error");
                         }
+                    } else if self.imp().updated_list.lock().unwrap().contains(&link) {
+                        if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+                            row.add_css_class("accent");
+                            row.remove_css_class("success");
+                            row.remove_css_class("error");
+                        }
                     } else if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
                         row.remove_css_class("success");
                         row.remove_css_class("error");
+                        row.remove_css_class("accent");
                     }
                 }
             }
@@ -504,7 +513,6 @@ impl Window {
     fn set_row_channel(&self, row: &ListBoxRow) -> glib::Sender<Message> {
         let (tx, rx) = MainContext::channel(Priority::DEFAULT);
         let revealer = window::Window::get_row_revealer(row);
-        let row_box = window::Window::get_row_box(row);
         let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
         let updated_list_clone = self.imp().updated_list.clone();
 
@@ -547,13 +555,8 @@ impl Window {
                 progress_bar.remove_css_class("fetch");
                 ControlFlow::Continue
             }
-            Message::Updated(name) => {
-                row_box.add_css_class("accent");
-                updated_list_clone.lock().unwrap().push(name);
-                ControlFlow::Continue
-            }
-            Message::Start => {
-                row_box.remove_css_class("accent");
+            Message::Updated(link) => {
+                updated_list_clone.lock().unwrap().push(link);
                 ControlFlow::Continue
             }
             Message::Finish => {
@@ -579,10 +582,6 @@ impl Window {
             .unwrap()
             .downcast::<Revealer>()
             .unwrap()
-    }
-
-    fn get_row_box(row: &ListBoxRow) -> Box {
-        row.child().unwrap().downcast::<Box>().unwrap()
     }
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
