@@ -301,10 +301,12 @@ pub fn fetch_repo(
                 spinner.unwrap().set_prefix(" ø");
             }
             #[cfg(feature = "gui")]
-            let _ = tx
-                .clone()
-                .unwrap()
-                .send(Message::Updated(String::from(target)));
+            if tx.is_some() {
+                let _ = tx
+                    .clone()
+                    .unwrap()
+                    .send(Message::Updated(String::from(target)));
+            }
         }
     }
 
