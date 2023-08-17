@@ -1166,6 +1166,7 @@ mod tests {
         wait_ui(1000);
 
         assert!(window.imp().success_list.lock().unwrap().len() == 1);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 1);
         assert!(window.imp().errors_list.lock().unwrap().len() == 0);
         assert!(Path::new("/tmp/dorst_test-gui/localhost:7870.dorst/FETCH_HEAD").exists());
         assert!(Path::new("test-gui-src/localhost:7870/foo").exists());
