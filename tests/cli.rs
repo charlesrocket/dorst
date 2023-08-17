@@ -87,7 +87,7 @@ mod cli {
             let parent = last_commit(&repo);
 
             repo.commit(
-                Some("refs/heads/dev"),
+                Some("HEAD"),
                 &sig,
                 &sig,
                 "test2",
