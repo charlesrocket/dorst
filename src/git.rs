@@ -151,6 +151,7 @@ pub fn clone_repo(
 pub fn fetch_repo(
     target: &str,
     repo: &Repository,
+    mirror: bool,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
     #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
     git_config: &git2::Config,
@@ -290,6 +291,23 @@ pub fn fetch_repo(
 
         remote.disconnect()?;
         remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
+
+        let local_oid = repo.refname_to_id("HEAD")?;
+        let remote_oid = repo.refname_to_id("FETCH_HEAD")?;
+
+        if local_oid != remote_oid && !mirror {
+            #[cfg(feature = "cli")]
+            if silent == Some(false) {
+                spinner.unwrap().set_prefix(" ø");
+            }
+            #[cfg(feature = "gui")]
+            if tx.is_some() {
+                let _ = tx
+                    .clone()
+                    .unwrap()
+                    .send(Message::Updated(String::from(target)));
+            }
+        }
     }
 
     Ok(())
@@ -311,6 +329,7 @@ pub fn process_target(
         fetch_repo(
             target,
             &repo,
+            mirror,
             #[cfg(feature = "cli")]
             spinner,
             #[cfg(feature = "gui")]

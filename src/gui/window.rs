@@ -39,6 +39,7 @@ pub enum Message {
     Clone,
     Fetch,
     Deltas,
+    Updated(String),
     Finish,
 }
 
@@ -239,6 +240,7 @@ impl Window {
         self.controls_disabled(true);
         self.imp().banner.set_revealed(false);
         self.imp().revealer_banner.set_reveal_child(false);
+        self.imp().updated_list.lock().unwrap().clear();
         self.imp().errors_list.lock().unwrap().clear();
         self.imp().success_list.lock().unwrap().clear();
         self.imp().button_source_dest.add_css_class("with_bar");
@@ -265,6 +267,7 @@ impl Window {
                 window.update_rows();
 
                 if completed == total_repos as f64 {
+                    let updated_list_locked = window.imp().updated_list.lock().unwrap();
                     let errors_list_locked = window.imp().errors_list.lock().unwrap();
                     let errors_locked = errors_list_locked.iter()
                                                           .map(std::string::ToString::to_string)
@@ -276,6 +279,10 @@ impl Window {
                         window.imp().revealer_banner.set_reveal_child(true);
                         window.imp().banner.set_revealed(true);
                         window.show_message(&format!("Failures: {}", errors_list_locked.len()), 1);
+                    }
+
+                    if !updated_list_locked.is_empty() {
+                        window.show_message(&format!("Repositories with updates: {}", updated_list_locked.len()), 4);
                     }
 
                     window.imp().progress_bar.set_fraction(1.0);
@@ -299,7 +306,7 @@ impl Window {
                 active_task = true;
                 let repo_link = repo.link();
                 let thread_pool_clone = thread_pool.clone();
-                let tx = window::Window::set_row_channel(&row);
+                let tx = self.set_row_channel(&row);
                 let destination_clone = format!(
                     "{}/{}",
                     &dest_clone.clone().display().to_string(),
@@ -420,9 +427,12 @@ impl Window {
             if let Some(obj) = repos.item(i) {
                 if let Some(repo_object) = obj.downcast_ref::<RepoObject>() {
                     let link = repo_object.repo_data().link.clone();
-                    if self.imp().success_list.lock().unwrap().contains(&link) {
+                    if self.imp().success_list.lock().unwrap().contains(&link)
+                        && !self.imp().updated_list.lock().unwrap().contains(&link)
+                    {
                         if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
                             row.remove_css_class("error");
+                            row.remove_css_class("accent");
                             row.add_css_class("success");
                         }
                     } else if self
@@ -437,9 +447,16 @@ impl Window {
                             row.remove_css_class("success");
                             row.add_css_class("error");
                         }
+                    } else if self.imp().updated_list.lock().unwrap().contains(&link) {
+                        if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+                            row.add_css_class("accent");
+                            row.remove_css_class("success");
+                            row.remove_css_class("error");
+                        }
                     } else if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
                         row.remove_css_class("success");
                         row.remove_css_class("error");
+                        row.remove_css_class("accent");
                     }
                 }
             }
@@ -493,10 +510,11 @@ impl Window {
         }
     }
 
-    fn set_row_channel(row: &ListBoxRow) -> glib::Sender<Message> {
+    fn set_row_channel(&self, row: &ListBoxRow) -> glib::Sender<Message> {
         let (tx, rx) = MainContext::channel(Priority::DEFAULT);
         let revealer = window::Window::get_row_revealer(row);
         let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+        let updated_list_clone = self.imp().updated_list.clone();
 
         rx.attach(None, move |x| match x {
             Message::Reset => {
@@ -535,6 +553,10 @@ impl Window {
                 progress_bar.add_css_class("deltas");
                 progress_bar.remove_css_class("clone");
                 progress_bar.remove_css_class("fetch");
+                ControlFlow::Continue
+            }
+            Message::Updated(link) => {
+                updated_list_clone.lock().unwrap().push(link);
                 ControlFlow::Continue
             }
             Message::Finish => {
@@ -1144,6 +1166,7 @@ mod tests {
         wait_ui(1000);
 
         assert!(window.imp().success_list.lock().unwrap().len() == 1);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 1);
         assert!(window.imp().errors_list.lock().unwrap().len() == 0);
         assert!(Path::new("/tmp/dorst_test-gui/localhost:7870.dorst/FETCH_HEAD").exists());
         assert!(Path::new("test-gui-src/localhost:7870/foo").exists());
