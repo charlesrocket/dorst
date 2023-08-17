@@ -48,6 +48,21 @@ pub fn set_default_branch(mirror: &Repository) -> Result<(), git2::Error> {
     Ok(())
 }
 
+pub fn current_branch(destination: std::path::PathBuf) -> Result<String, git2::Error> {
+    let repo = Repository::open(destination)?;
+    let head = repo.head()?;
+
+    if head.is_branch() {
+        if let Some(branch) = head.shorthand() {
+            Ok(String::from(branch))
+        } else {
+            Ok(String::from("*INVALID"))
+        }
+    } else {
+        Ok(String::from("*DETACHED"))
+    }
+}
+
 pub fn clone_repo(
     target: &str,
     destination: &str,
