@@ -225,7 +225,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
             spinner.tick();
             spinner.set_style(ProgressStyle::default_spinner().tick_strings(&SPINNER));
             spinner.set_message(format!(
-                "\x1b[96mstarting\x1b[0m \x1b[93m{target_name}\x1b[0m"
+                "\x1b[1;96mstarting\x1b[0m \x1b[93m{target_name}\x1b[0m"
             ));
         }
 
@@ -249,8 +249,9 @@ fn cli(matches: &ArgMatches) -> Result<()> {
                 compl_count += 1;
                 if !silent {
                     let status = spinner.prefix();
+                    let branch = git::current_branch(destination_clone.into())?;
                     spinner.finish_with_message(format!(
-                        "\x1b[96mdone\x1b[0m \x1b[93m{target_name}\x1b[0m{status}"
+                        "\x1b[1;96mdone\x1b[0m \x1b[0;93m{target_name}\x1b[0m \x1b[4;36m{branch}\x1b[0m{status}"
                     ));
                 }
             }
@@ -314,7 +315,7 @@ fn process_repo(
     if mirror {
         if silent == Some(false) {
             spinner.unwrap().set_message(format!(
-                "\x1b[96mbackup \x1b[93m{}\x1b[0m",
+                "\x1b[1;96mbackup \x1b[0;93m{}\x1b[0m",
                 get_name(target)
             ));
         }
