@@ -582,9 +582,7 @@ impl Window {
     }
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
-        let ok_symbolic = gio::ThemedIcon::new("emblem-ok-symbolic");
-        let ok_image = gtk::Image::from_gicon(&ok_symbolic);
-        ok_image.set_visible(false);
+        let status_image = gtk::Image::builder().css_classes(["dim-label"]).build();
 
         let name = Label::builder()
             .halign(Align::Start)
@@ -613,7 +611,14 @@ impl Window {
             .halign(Align::Fill)
             .build();
 
+        let text_box = Box::builder().orientation(Orientation::Vertical).build();
+        let widget_box = Box::builder().orientation(Orientation::Horizontal).build();
         let pb_box = Box::builder().orientation(Orientation::Horizontal).build();
+        let status_box = Box::builder()
+            .orientation(Orientation::Horizontal)
+            .halign(Align::End)
+            .hexpand(true)
+            .build();
 
         let popover_box = Box::builder().hexpand(true).build();
         let popover = Popover::builder()
@@ -651,6 +656,12 @@ impl Window {
             .child(&branch)
             .build();
 
+        let status_revealer = Revealer::builder()
+            .transition_type(RevealerTransitionType::Crossfade)
+            .transition_duration(142)
+            .child(&status_image)
+            .build();
+
         let gesture = GestureClick::new();
 
         gesture.connect_released(clone!(@weak popover => move |gesture, _, _, _,| {
@@ -658,25 +669,34 @@ impl Window {
             popover.popup();
         }));
 
-        repo_object.connect_status_notify(clone!(@weak name => move |repo_object| {
-            if repo_object.repo_data().status == "ok" {
-                name.add_css_class("success");
-                name.remove_css_class("error");
-                name.remove_css_class("accent");
-            } else if repo_object.repo_data().status == "updated" {
-                name.add_css_class("accent");
-                name.remove_css_class("success");
-                name.remove_css_class("error");
-            } else if repo_object.repo_data().status == "err" {
-                name.add_css_class("error");
-                name.remove_css_class("success");
-                name.remove_css_class("accent");
-            } else if repo_object.repo_data().status == "pending"{
-                name.remove_css_class("error");
-                name.remove_css_class("success");
-                name.remove_css_class("accent");
-            }
-        }));
+        repo_object.connect_status_notify(
+            clone!(@weak name, @weak status_image, @weak status_revealer => move |repo_object| {
+                if repo_object.repo_data().status == "ok" {
+                    name.add_css_class("success");
+                    name.remove_css_class("error");
+                    name.remove_css_class("accent");
+                    status_image.set_from_icon_name(Some("emblem-ok-symbolic"));
+                    status_revealer.set_reveal_child(true);
+                } else if repo_object.repo_data().status == "updated" {
+                    name.add_css_class("accent");
+                    name.remove_css_class("success");
+                    name.remove_css_class("error");
+                    status_image.set_from_icon_name(Some("emblem-default-symbolic"));
+                    status_revealer.set_reveal_child(true);
+                } else if repo_object.repo_data().status == "err" {
+                    name.add_css_class("error");
+                    name.remove_css_class("success");
+                    name.remove_css_class("accent");
+                    status_image.set_from_icon_name(Some("dialog-error-symbolic"));
+                    status_revealer.set_reveal_child(true);
+                } else if repo_object.repo_data().status == "pending"{
+                    name.remove_css_class("error");
+                    name.remove_css_class("success");
+                    name.remove_css_class("accent");
+                    status_revealer.set_reveal_child(false);
+                }
+            }),
+        );
 
         branch.connect_label_notify(clone!(@weak branch_revealer => move |branch| {
             if branch.label().is_empty() {
@@ -713,9 +733,12 @@ impl Window {
         repo_box.add_controller(gesture);
         name_box.append(&name);
         name_box.append(&branch_revealer);
-        name_box.append(&ok_image);
-        repo_box.append(&name_box);
-        repo_box.append(&link);
+        status_box.append(&status_revealer);
+        text_box.append(&name_box);
+        text_box.append(&link);
+        widget_box.append(&text_box);
+        widget_box.append(&status_box);
+        repo_box.append(&widget_box);
         repo_box.append(&pb_box);
 
         remove_button.connect_clicked(clone!(@weak self as window => move |_| {
