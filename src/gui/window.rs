@@ -657,6 +657,7 @@ impl Window {
             .build();
 
         let status_revealer = Revealer::builder()
+            .margin_start(12)
             .transition_type(RevealerTransitionType::Crossfade)
             .transition_duration(142)
             .child(&status_image)
