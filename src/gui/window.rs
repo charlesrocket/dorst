@@ -670,41 +670,37 @@ impl Window {
         }));
 
         repo_object.connect_status_notify(
-            clone!(@weak name, @weak status_image, @weak status_revealer => move |repo_object| {
+            clone!(@weak name, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
                 if repo_object.repo_data().status == "ok" {
                     name.add_css_class("success");
                     name.remove_css_class("error");
                     name.remove_css_class("accent");
                     status_image.set_from_icon_name(Some("emblem-ok-symbolic"));
                     status_revealer.set_reveal_child(true);
+                    branch_revealer.set_reveal_child(true);
                 } else if repo_object.repo_data().status == "updated" {
                     name.add_css_class("accent");
                     name.remove_css_class("success");
                     name.remove_css_class("error");
                     status_image.set_from_icon_name(Some("emblem-default-symbolic"));
                     status_revealer.set_reveal_child(true);
+                    branch_revealer.set_reveal_child(true);
                 } else if repo_object.repo_data().status == "err" {
                     name.add_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
                     status_image.set_from_icon_name(Some("dialog-error-symbolic"));
                     status_revealer.set_reveal_child(true);
+                    branch_revealer.set_reveal_child(false);
                 } else if repo_object.repo_data().status == "pending"{
                     name.remove_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
                     status_revealer.set_reveal_child(false);
+                    branch_revealer.set_reveal_child(false);
                 }
             }),
         );
-
-        branch.connect_label_notify(clone!(@weak branch_revealer => move |branch| {
-            if branch.label().is_empty() {
-                branch_revealer.set_reveal_child(false);
-            } else {
-                branch_revealer.set_reveal_child(true);
-            }
-        }));
 
         repo_object
             .bind_property("name", &name, "label")
