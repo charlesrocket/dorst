@@ -430,11 +430,12 @@ impl Window {
                     if self.imp().success_list.lock().unwrap().contains(&link)
                         && !self.imp().updated_list.lock().unwrap().contains(&link)
                     {
-                        if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                            row.remove_css_class("error");
-                            row.remove_css_class("accent");
-                            row.add_css_class("success");
-                        }
+                        let mut path = self.get_dest_clone();
+                        path.push(repo_object.repo_data().name);
+
+                        let branch = git::current_branch(path).unwrap();
+                        repo_object.set_branch(branch);
+                        repo_object.set_status("ok");
                     } else if self
                         .imp()
                         .errors_list
@@ -443,20 +444,16 @@ impl Window {
                         .iter()
                         .any(|x| x.contains(&link))
                     {
-                        if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                            row.remove_css_class("success");
-                            row.add_css_class("error");
-                        }
+                        repo_object.set_status("err");
                     } else if self.imp().updated_list.lock().unwrap().contains(&link) {
-                        if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                            row.add_css_class("accent");
-                            row.remove_css_class("success");
-                            row.remove_css_class("error");
-                        }
-                    } else if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
-                        row.remove_css_class("success");
-                        row.remove_css_class("error");
-                        row.remove_css_class("accent");
+                        let mut path = self.get_dest_clone();
+                        path.push(repo_object.repo_data().name);
+
+                        let branch = git::current_branch(path).unwrap();
+                        repo_object.set_branch(branch);
+                        repo_object.set_status("updated");
+                    } else {
+                        repo_object.set_status("pending");
                     }
                 }
             }
@@ -585,15 +582,26 @@ impl Window {
     }
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
+        let status_image = gtk::Image::builder().css_classes(["dim-label"]).build();
+
         let name = Label::builder()
             .halign(Align::Start)
             .ellipsize(EllipsizeMode::End)
+            .css_classes(["heading"])
+            .margin_end(4)
             .build();
 
         let link = Label::builder()
             .halign(Align::Start)
             .ellipsize(EllipsizeMode::End)
             .margin_top(4)
+            .css_classes(["body", "caption", "dim-label"])
+            .build();
+
+        let branch = Label::builder()
+            .halign(Align::Start)
+            .ellipsize(EllipsizeMode::End)
+            .css_classes(["caption-heading", "monospace"])
             .build();
 
         let pb = ProgressBar::builder()
@@ -603,7 +611,14 @@ impl Window {
             .halign(Align::Fill)
             .build();
 
+        let text_box = Box::builder().orientation(Orientation::Vertical).build();
+        let widget_box = Box::builder().orientation(Orientation::Horizontal).build();
         let pb_box = Box::builder().orientation(Orientation::Horizontal).build();
+        let status_box = Box::builder()
+            .orientation(Orientation::Horizontal)
+            .halign(Align::End)
+            .hexpand(true)
+            .build();
 
         let popover_box = Box::builder().hexpand(true).build();
         let popover = Popover::builder()
@@ -612,7 +627,10 @@ impl Window {
             .has_arrow(true)
             .build();
 
-        let remove_button = Button::builder().label("Remove").build();
+        let remove_button = Button::builder()
+            .label("Remove")
+            .css_classes(["destructive-action"])
+            .build();
 
         let repo_box = Box::builder()
             .orientation(Orientation::Vertical)
@@ -623,11 +641,26 @@ impl Window {
             .margin_top(6)
             .build();
 
+        let name_box = Box::builder().orientation(Orientation::Horizontal).build();
+
         let revealer = Revealer::builder()
             .margin_top(4)
             .transition_type(RevealerTransitionType::Crossfade)
             .transition_duration(542)
             .child(&pb)
+            .build();
+
+        let branch_revealer = Revealer::builder()
+            .transition_type(RevealerTransitionType::SlideRight)
+            .transition_duration(142)
+            .child(&branch)
+            .build();
+
+        let status_revealer = Revealer::builder()
+            .margin_start(12)
+            .transition_type(RevealerTransitionType::Crossfade)
+            .transition_duration(142)
+            .child(&status_image)
             .build();
 
         let gesture = GestureClick::new();
@@ -636,6 +669,39 @@ impl Window {
             gesture.set_state(EventSequenceState::Claimed);
             popover.popup();
         }));
+
+        repo_object.connect_status_notify(
+            clone!(@weak name, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
+                if repo_object.repo_data().status == "ok" {
+                    name.add_css_class("success");
+                    name.remove_css_class("error");
+                    name.remove_css_class("accent");
+                    status_image.set_from_icon_name(Some("emblem-ok-symbolic"));
+                    status_revealer.set_reveal_child(true);
+                    branch_revealer.set_reveal_child(true);
+                } else if repo_object.repo_data().status == "updated" {
+                    name.add_css_class("accent");
+                    name.remove_css_class("success");
+                    name.remove_css_class("error");
+                    status_image.set_from_icon_name(Some("emblem-default-symbolic"));
+                    status_revealer.set_reveal_child(true);
+                    branch_revealer.set_reveal_child(true);
+                } else if repo_object.repo_data().status == "err" {
+                    name.add_css_class("error");
+                    name.remove_css_class("success");
+                    name.remove_css_class("accent");
+                    status_image.set_from_icon_name(Some("dialog-error-symbolic"));
+                    status_revealer.set_reveal_child(true);
+                    branch_revealer.set_reveal_child(false);
+                } else if repo_object.repo_data().status == "pending"{
+                    name.remove_css_class("error");
+                    name.remove_css_class("success");
+                    name.remove_css_class("accent");
+                    status_revealer.set_reveal_child(false);
+                    branch_revealer.set_reveal_child(false);
+                }
+            }),
+        );
 
         repo_object
             .bind_property("name", &name, "label")
@@ -647,23 +713,29 @@ impl Window {
             .sync_create()
             .build();
 
+        repo_object
+            .bind_property("branch", &branch, "label")
+            .sync_create()
+            .build();
+
         if &link.label() == "INVALID" {
             name.add_css_class("error");
         }
 
-        remove_button.add_css_class("destructive-action");
-        name.add_css_class("heading");
-        link.add_css_class("body");
-        link.add_css_class("caption");
-        link.add_css_class("dim-label");
         pb.add_css_class("osd");
         pb.add_css_class("row-progress");
         pb_box.append(&revealer);
         popover_box.append(&remove_button);
         popover.set_parent(&repo_box);
         repo_box.add_controller(gesture);
-        repo_box.append(&name);
-        repo_box.append(&link);
+        name_box.append(&name);
+        name_box.append(&branch_revealer);
+        status_box.append(&status_revealer);
+        text_box.append(&name_box);
+        text_box.append(&link);
+        widget_box.append(&text_box);
+        widget_box.append(&status_box);
+        repo_box.append(&widget_box);
         repo_box.append(&pb_box);
 
         remove_button.connect_clicked(clone!(@weak self as window => move |_| {
@@ -698,7 +770,7 @@ impl Window {
         }
 
         let name = util::get_name(&content).to_owned();
-        let repo = RepoObject::new(name, content);
+        let repo = RepoObject::new(name, content, String::new(), String::from("pending"));
         self.repos().append(&repo);
     }
 
@@ -792,6 +864,8 @@ impl Window {
                             RepoData {
                                 name: util::get_name(&link_string).to_owned(),
                                 link: link_string,
+                                branch: String::new(),
+                                status: String::from("pending"),
                             }
                         })
                     })

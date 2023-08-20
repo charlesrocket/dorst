@@ -48,6 +48,21 @@ pub fn set_default_branch(mirror: &Repository) -> Result<(), git2::Error> {
     Ok(())
 }
 
+pub fn current_branch(destination: std::path::PathBuf) -> Result<String, git2::Error> {
+    let repo = Repository::open(destination)?;
+    let head = repo.head()?;
+
+    if head.is_branch() {
+        if let Some(branch) = head.shorthand() {
+            Ok(String::from(branch))
+        } else {
+            Ok(String::from("*INVALID"))
+        }
+    } else {
+        Ok(String::from("*DETACHED"))
+    }
+}
+
 pub fn clone_repo(
     target: &str,
     destination: &str,
@@ -66,14 +81,14 @@ pub fn clone_repo(
         callbacks.transfer_progress(|stats| {
             if stats.received_objects() == stats.total_objects() {
                 spinner.unwrap().set_message(format!(
-                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\
+                    "\x1b[1;35mpulling\x1b[0m \x1b[93m{target_name}\
                      \x1b[0m resolving deltas {}/{}",
                     stats.indexed_deltas(),
                     stats.total_deltas()
                 ));
             } else if stats.total_objects() > 0 {
                 spinner.unwrap().set_message(format!(
-                    "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                    "\x1b[1;94mpulling\x1b[0m \x1b[93m{target_name}\
                      \x1b[0m received {}/{} | indexed {} in {}",
                     stats.received_objects(),
                     stats.total_objects(),
@@ -171,7 +186,7 @@ pub fn fetch_repo(
         if silent == Some(false) {
             callbacks.sideband_progress(|data| {
                 spinner.unwrap().set_message(format!(
-                    "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\
+                    "\x1b[1;35mpulling\x1b[0m \x1b[93m{target_name}\
                      \x1b[0m remote: {}",
                     std::str::from_utf8(data).unwrap()
                 ));
@@ -198,14 +213,14 @@ pub fn fetch_repo(
             callbacks.transfer_progress(|stats| {
                 if stats.received_objects() == stats.total_objects() {
                     spinner.unwrap().set_message(format!(
-                        "\x1b[35mpulling\x1b[0m \x1b[93m{target_name}\
+                        "\x1b[1;35mpulling\x1b[0m \x1b[93m{target_name}\
                          \x1b[0m resolving deltas {}/{}",
                         stats.indexed_deltas(),
                         stats.total_deltas()
                     ));
                 } else if stats.total_objects() > 0 {
                     spinner.unwrap().set_message(format!(
-                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                        "\x1b[1;94mpulling\x1b[0m \x1b[93m{target_name}\
                          \x1b[0m received {}/{} | indexed {} in {}",
                         stats.received_objects(),
                         stats.total_objects(),
@@ -258,7 +273,7 @@ pub fn fetch_repo(
 
                 if stats.local_objects() > 0 {
                     spinner.unwrap().set_message(format!(
-                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                        "\x1b[1;94mpulling\x1b[0m \x1b[93m{target_name}\
                          \x1b[0m received {}/{} in {} (used {} local objects)",
                         stats.indexed_objects(),
                         stats.total_objects(),
@@ -267,7 +282,7 @@ pub fn fetch_repo(
                     ));
                 } else {
                     spinner.unwrap().set_message(format!(
-                        "\x1b[94mpulling\x1b[0m \x1b[93m{target_name}\
+                        "\x1b[1;94mpulling\x1b[0m \x1b[93m{target_name}\
                          \x1b[0m received {}/{} in {}",
                         stats.indexed_objects(),
                         stats.total_objects(),

@@ -10,10 +10,12 @@ glib::wrapper! {
 }
 
 impl RepoObject {
-    pub fn new(name: String, link: String) -> Self {
+    pub fn new(name: String, link: String, branch: String, status: String) -> Self {
         Object::builder()
             .property("name", name)
             .property("link", link)
+            .property("branch", branch)
+            .property("status", status)
             .build()
     }
 
@@ -22,7 +24,12 @@ impl RepoObject {
     }
 
     pub fn from_repo_data(repo_data: RepoData) -> Self {
-        Self::new(repo_data.name, repo_data.link)
+        Self::new(
+            repo_data.name,
+            repo_data.link,
+            repo_data.branch,
+            repo_data.status,
+        )
     }
 }
 
@@ -30,4 +37,6 @@ impl RepoObject {
 pub struct RepoData {
     pub name: String,
     pub link: String,
+    pub branch: String,
+    pub status: String,
 }
