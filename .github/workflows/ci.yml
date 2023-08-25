@@ -55,6 +55,7 @@ jobs:
           - nightly
         feature:
           - default
+          - cli
           - gui
     steps:
       - name: Checkout repository
