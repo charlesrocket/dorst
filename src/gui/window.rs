@@ -10,6 +10,9 @@ use gtk::{
     RevealerTransitionType,
 };
 
+#[cfg(feature = "logs")]
+use tracing::{error, info};
+
 use std::{
     cell::Ref,
     fs,
@@ -357,12 +360,18 @@ impl Window {
                         &Some(tx.clone()),
                     ) {
                         Ok(()) => {
+                            #[cfg(feature = "logs")]
+                            info!("Completed: {}", util::get_name(&repo_link));
                             success_clone.lock().unwrap().push(repo_link);
                         }
-                        Err(error) => errors_clone
-                            .lock()
-                            .unwrap()
-                            .push(format!("{repo_link}: {error}")),
+                        Err(error) => {
+                            #[cfg(feature = "logs")]
+                            error!("Failed: {} - {error}", util::get_name(&repo_link));
+                            errors_clone
+                                .lock()
+                                .unwrap()
+                                .push(format!("{repo_link}: {error}"));
+                        }
                     }
 
                     *completed_repos_clone.lock().unwrap() += 1;

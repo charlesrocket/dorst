@@ -1,6 +1,9 @@
 use adw::{gio, prelude::*, Application};
 use gtk::{gdk::Display, CssProvider};
 
+#[cfg(feature = "logs")]
+use tracing::info;
+
 use repo_object::RepoData;
 use window::Window;
 
@@ -39,6 +42,11 @@ fn load_css() {
 }
 
 pub fn start() {
+    #[cfg(feature = "logs")]
+    let _logger = crate::util::init_logs();
+    #[cfg(feature = "logs")]
+    info!("Started");
+
     let args: Vec<String> = vec![];
     let app = builder();
 

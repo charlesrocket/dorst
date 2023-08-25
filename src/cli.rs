@@ -3,6 +3,9 @@ use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "logs")]
+use tracing::{error, info};
+
 use std::{
     env, fs,
     io::Write,
@@ -184,7 +187,12 @@ fn bar_chars() -> [&'static str; 3] {
 }
 
 fn cli(matches: &ArgMatches) -> Result<()> {
+    #[cfg(feature = "logs")]
+    let _logger = crate::util::init_logs();
+
     println!("{BANNER}");
+    #[cfg(feature = "logs")]
+    info!("Started");
 
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let purge = matches.get_flag("purge");
@@ -246,6 +254,8 @@ fn cli(matches: &ArgMatches) -> Result<()> {
             Some(silent),
         ) {
             Ok(_) => {
+                #[cfg(feature = "logs")]
+                info!("Completed: {target_name}");
                 compl_count += 1;
                 if !silent {
                     let status = spinner.prefix();
@@ -257,6 +267,8 @@ fn cli(matches: &ArgMatches) -> Result<()> {
             }
 
             Err(error) => {
+                #[cfg(feature = "logs")]
+                error!("Failed: {target_name} - {error}");
                 let err = format!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
 
                 err_count += 1;
