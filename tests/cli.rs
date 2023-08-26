@@ -207,8 +207,9 @@ mod cli {
             ));
 
         commit(repo_dir);
+        #[cfg(feature = "logs")]
+        fetch.arg("--no-log");
         fetch
-            .arg("--no-log")
             .arg("--config")
             .arg(config.path())
             .arg("test-mirror")
