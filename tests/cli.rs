@@ -208,6 +208,7 @@ mod cli {
 
         commit(repo_dir);
         fetch
+            .arg("--no-log")
             .arg("--config")
             .arg(config.path())
             .arg("test-mirror")
