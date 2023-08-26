@@ -62,6 +62,17 @@ pub fn xdg_path() -> Result<PathBuf> {
     Ok(PathBuf::from(file_path))
 }
 
+#[cfg(feature = "logs")]
+pub fn init_logs() -> tracing_appender::non_blocking::WorkerGuard {
+    let log_path = expand_path("~/");
+    let file_appender = tracing_appender::rolling::never(log_path, "dorst.log");
+    let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+
+    tracing_subscriber::fmt().with_writer(non_blocking).init();
+
+    guard
+}
+
 #[test]
 fn test_path() {
     let path_string = "~/";

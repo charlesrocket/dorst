@@ -39,6 +39,9 @@ fn load_css() {
 }
 
 pub fn start() {
+    #[cfg(feature = "logs")]
+    let _logger = crate::util::init_logs();
+
     let args: Vec<String> = vec![];
     let app = builder();
 

@@ -10,6 +10,9 @@ use gtk::{
     RevealerTransitionType,
 };
 
+#[cfg(feature = "logs")]
+use tracing::{error, info};
+
 use std::{
     cell::Ref,
     fs,
@@ -134,12 +137,16 @@ impl Window {
         );
 
         let action_task_limiter = gio::PropertyAction::new("task-limiter", self, "task_limiter");
+        #[cfg(feature = "logs")]
+        let action_logs = gio::PropertyAction::new("logs", self, "logs");
 
         self.add_action(&action_about);
         self.add_action(&action_process_targets);
         self.add_action(&action_close);
         self.add_action(&action_color_scheme);
         self.add_action(&action_task_limiter);
+        #[cfg(feature = "logs")]
+        self.add_action(&action_logs);
     }
 
     fn setup_callbacks(&self) {
@@ -256,8 +263,15 @@ impl Window {
         let dest_clone = self.get_dest_clone();
         let dest_backup = self.get_dest_backup();
         let backups_enabled = self.imp().backups_enabled.get();
+        #[cfg(feature = "logs")]
+        let logs = self.imp().logs.get();
 
         let thread_pool = Arc::new(Mutex::new(0));
+
+        #[cfg(feature = "logs")]
+        if logs {
+            info!("Started");
+        }
 
         glib::idle_add_local(
             clone!(@weak self as window => @default-return ControlFlow::Continue, move || {
@@ -290,6 +304,12 @@ impl Window {
                     window.imp().button_source_dest.remove_css_class("with_bar");
                     window.imp().button_backup_state.remove_css_class("with_bar");
                     window.controls_disabled(false);
+
+                    #[cfg(feature = "logs")]
+                    if logs {
+                        info!("Finished");
+                    }
+
                     ControlFlow::Break
                 } else {
                     window.imp().progress_bar.set_fraction(progress);
@@ -357,12 +377,24 @@ impl Window {
                         &Some(tx.clone()),
                     ) {
                         Ok(()) => {
+                            #[cfg(feature = "logs")]
+                            if logs {
+                                info!("Completed: {}", util::get_name(&repo_link));
+                            }
+
                             success_clone.lock().unwrap().push(repo_link);
                         }
-                        Err(error) => errors_clone
-                            .lock()
-                            .unwrap()
-                            .push(format!("{repo_link}: {error}")),
+                        Err(error) => {
+                            #[cfg(feature = "logs")]
+                            if logs {
+                                error!("Failed: {} - {error}", util::get_name(&repo_link));
+                            }
+
+                            errors_clone
+                                .lock()
+                                .unwrap()
+                                .push(format!("{repo_link}: {error}"));
+                        }
                     }
 
                     *completed_repos_clone.lock().unwrap() += 1;
@@ -946,6 +978,8 @@ impl Window {
         let backups_enabled = self.imp().backups_enabled.get();
         let threads = *self.imp().thread_pool.lock().unwrap();
         let task_limiter = self.task_limiter();
+        #[cfg(feature = "logs")]
+        let logs = self.logs();
         let color_scheme = self.imp().color_scheme.lock().unwrap();
 
         keyfile.set_int64("window", "width", size.0.into());
@@ -956,6 +990,8 @@ impl Window {
         keyfile.set_boolean("backup", "enabled", backups_enabled);
         keyfile.set_uint64("core", "threads", threads);
         keyfile.set_boolean("core", "task-limiter", task_limiter);
+        #[cfg(feature = "logs")]
+        keyfile.set_boolean("core", "logs", logs);
 
         let settings_path = cache_dir.join("dorst");
         std::fs::create_dir_all(&settings_path).expect("Failed to create settings path");
@@ -1039,6 +1075,11 @@ impl Window {
 
             if let Ok(task_limiter) = keyfile.boolean("core", "task-limiter") {
                 self.set_task_limiter(task_limiter);
+            }
+
+            #[cfg(feature = "logs")]
+            if let Ok(logs) = keyfile.boolean("core", "logs") {
+                self.set_logs(logs);
             }
         }
     }
