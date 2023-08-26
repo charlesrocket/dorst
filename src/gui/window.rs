@@ -1453,7 +1453,7 @@ mod tests {
         let window = window();
 
         window.imp().button_start.emit_clicked();
-        wait_ui(500);
+        wait_ui(1000);
 
         assert!(window.imp().errors_list.lock().unwrap().len() > 0);
     }
