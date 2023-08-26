@@ -148,12 +148,12 @@ jobs:
         uses: coactions/setup-xvfb@v1
         with:
           run: cargo llvm-cov --workspace --no-default-features --features ${{ matrix.feature }} --lcov --output-path lcov.info
-        if: "!startsWith(github.ref, 'refs/tags/')" && matrix.feature != 'all'
+        if: "${{ (!startsWith(github.ref, 'refs/tags/')) && (matrix.feature != 'all') }}"
       - name: Generate code coverage (all features)
         uses: coactions/setup-xvfb@v1
         with:
           run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
-        if: "!startsWith(github.ref, 'refs/tags/')" && matrix.feature == 'all'
+        if: "${{ (!startsWith(github.ref, 'refs/tags/')) && (matrix.feature == 'all') }}"
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
