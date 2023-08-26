@@ -19,4 +19,5 @@ flag_management:
         threshold: 30%
 
 comment:
+  layout: "reach, diff, flags, files"
   require_changes: true
