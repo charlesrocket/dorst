@@ -45,7 +45,7 @@ jobs:
         run: cargo build
 
   test:
-    name: Test ${{ matrix.feature }} feature / ${{ matrix.toolchain }}
+    name: Test / ${{ matrix.feature }} / ${{ matrix.toolchain }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
