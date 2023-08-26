@@ -60,6 +60,9 @@ pub struct Window {
     pub updated_list: Arc<Mutex<Vec<String>>>,
     pub errors_list: Arc<Mutex<Vec<String>>>,
     pub success_list: Arc<Mutex<Vec<String>>>,
+    #[cfg(feature = "logs")]
+    #[property(get, set)]
+    pub logs: Cell<bool>,
     #[property(get, set)]
     pub task_limiter: Cell<bool>,
     pub thread_pool: Arc<Mutex<u64>>,
@@ -97,6 +100,8 @@ impl ObjectSubclass for Window {
             updated_list: Arc::default(),
             errors_list: Arc::default(),
             success_list: Arc::default(),
+            #[cfg(feature = "logs")]
+            logs: Cell::new(true),
             task_limiter: Cell::default(),
             thread_pool: Arc::new(Mutex::new(7)),
         }

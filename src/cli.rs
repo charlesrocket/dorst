@@ -169,6 +169,11 @@ fn args() -> ArgMatches {
                 .long("silent")
                 .help("Do not output status")
                 .action(ArgAction::SetTrue),
+            #[cfg(feature = "logs")]
+            Arg::new("logs")
+                .long("no-log")
+                .help("Disable logging")
+                .action(ArgAction::SetFalse),
         ]);
 
     matches.get_matches()
@@ -191,19 +196,24 @@ fn cli(matches: &ArgMatches) -> Result<()> {
     let _logger = crate::util::init_logs();
 
     println!("{BANNER}");
-    #[cfg(feature = "logs")]
-    info!("Started");
 
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let purge = matches.get_flag("purge");
     let repo_mirror = matches.get_flag("bootstrap");
     let silent = matches.get_flag("silent");
+    #[cfg(feature = "logs")]
+    let logs = matches.get_flag("logs");
     let mut config = Config::default();
 
     if let Some(config_path) = matches.get_one::<PathBuf>("config") {
         config.open(config_path)?;
     } else {
         config.open(&xdg_path()?)?;
+    }
+
+    #[cfg(feature = "logs")]
+    if logs {
+        info!("Started");
     }
 
     let indicat = Arc::new(MultiProgress::new());
@@ -255,7 +265,10 @@ fn cli(matches: &ArgMatches) -> Result<()> {
         ) {
             Ok(_) => {
                 #[cfg(feature = "logs")]
-                info!("Completed: {target_name}");
+                if logs {
+                    info!("Completed: {target_name}");
+                }
+
                 compl_count += 1;
                 if !silent {
                     let status = spinner.prefix();
@@ -268,7 +281,10 @@ fn cli(matches: &ArgMatches) -> Result<()> {
 
             Err(error) => {
                 #[cfg(feature = "logs")]
-                error!("Failed: {target_name} - {error}");
+                if logs {
+                    error!("Failed: {target_name} - {error}");
+                }
+
                 let err = format!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
 
                 err_count += 1;
@@ -286,6 +302,11 @@ fn cli(matches: &ArgMatches) -> Result<()> {
     }
 
     progress_bar.finish();
+
+    #[cfg(feature = "logs")]
+    if logs {
+        info!("Finished");
+    }
 
     if err_count > 0 {
         eprintln!(
