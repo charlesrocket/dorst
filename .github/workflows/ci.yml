@@ -133,7 +133,7 @@ jobs:
         if: matrix.feature == 'all'
       - name: Test
         run: cargo test --no-default-features --features ${{ matrix.feature }} --verbose
-        if: matrix.feature != 'gui' || matrix.feature != 'all'
+        if: matrix.feature != 'gui' && matrix.feature != 'all'
       - name: Test (all features)
         uses: coactions/setup-xvfb@v1
         with:
@@ -143,7 +143,7 @@ jobs:
         uses: coactions/setup-xvfb@v1
         with:
           run: cargo test --no-default-features --features ${{ matrix.feature }} -- --test-threads=1
-        if: matrix.feature == 'gui' || matrix.feature != 'all'
+        if: matrix.feature == 'gui' && matrix.feature != 'all'
       - name: Generate code coverage
         uses: coactions/setup-xvfb@v1
         with:
