@@ -13,6 +13,7 @@ pub struct RepoObject {
     #[property(name = "name", get, set, type = String, member = name)]
     #[property(name = "link", get, set, type = String, member = link)]
     #[property(name = "branch", get, set, type = String, member = branch)]
+    #[property(name = "progress", get, set, type = f64, member = progress)]
     #[property(name = "status", get, set, type = String, member = status)]
     pub data: RefCell<RepoData>,
 }

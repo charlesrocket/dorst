@@ -5,9 +5,8 @@ use gtk::{
     gio::{self, ListStore, SimpleAction},
     glib,
     pango::EllipsizeMode,
-    Align, Box, Button, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label,
-    License, ListBoxRow, NoSelection, Orientation, Popover, ProgressBar, Revealer,
-    RevealerTransitionType,
+    Align, Box, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
+    Orientation, ProgressBar, Revealer, RevealerTransitionType,
 };
 
 #[cfg(feature = "logs")]
@@ -321,12 +320,11 @@ impl Window {
         for i in 0..repos.n_items() {
             let completed_repos_clone = completed_repos.clone();
             let obj = repos.item(i).unwrap();
-            let repo = obj.downcast_ref::<RepoObject>().unwrap();
-            if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+            if let Some(repo) = obj.downcast_ref::<RepoObject>() {
                 active_task = true;
                 let repo_link = repo.link();
                 let thread_pool_clone = thread_pool.clone();
-                let tx = self.set_row_channel(&row);
+                let tx = self.set_row_channel(obj.clone());
                 let destination_clone = format!(
                     "{}/{}",
                     &dest_clone.clone().display().to_string(),
@@ -340,11 +338,8 @@ impl Window {
 
                 let errors_clone = self.imp().errors_list.clone();
                 let success_clone = self.imp().success_list.clone();
-                let revealer = window::Window::get_row_revealer(&row);
-                let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
-                progress_bar.set_fraction(0.0);
-                revealer.set_reveal_child(true);
+                repo.set_status("started");
 
                 if self.task_limiter() {
                     while *thread_pool_clone.lock().unwrap()
@@ -539,21 +534,19 @@ impl Window {
         }
     }
 
-    fn set_row_channel(&self, row: &ListBoxRow) -> glib::Sender<Message> {
+    fn set_row_channel(&self, row: Object) -> glib::Sender<Message> {
         let (tx, rx) = MainContext::channel(Priority::DEFAULT);
-        let revealer = window::Window::get_row_revealer(row);
-        let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+        let repo = row.downcast::<RepoObject>().unwrap();
         let updated_list_clone = self.imp().updated_list.clone();
 
         rx.attach(None, move |x| match x {
             Message::Reset => {
-                progress_bar.set_fraction(0.0);
-                revealer.set_reveal_child(true);
+                repo.set_progress(0.0);
                 ControlFlow::Continue
             }
             Message::Progress(value, progress) => {
                 if value.is_nan() {
-                    progress_bar.set_fraction(1.0);
+                    repo.set_progress(1.0);
                 } else {
                     let fraction = match progress {
                         Status::Deltas => (value / 2.0) + 0.5,
@@ -561,27 +554,21 @@ impl Window {
                         Status::Normal => value,
                     };
 
-                    progress_bar.set_fraction(fraction);
+                    repo.set_progress(fraction);
                 }
 
                 ControlFlow::Continue
             }
             Message::Clone => {
-                progress_bar.add_css_class("clone");
-                progress_bar.remove_css_class("deltas");
-                progress_bar.remove_css_class("fetch");
+                repo.set_status("cloning");
                 ControlFlow::Continue
             }
             Message::Fetch => {
-                progress_bar.add_css_class("fetch");
-                progress_bar.remove_css_class("clone");
-                progress_bar.remove_css_class("deltas");
+                repo.set_status("fetching");
                 ControlFlow::Continue
             }
             Message::Deltas => {
-                progress_bar.add_css_class("deltas");
-                progress_bar.remove_css_class("clone");
-                progress_bar.remove_css_class("fetch");
+                repo.set_status("resolving");
                 ControlFlow::Continue
             }
             Message::Updated(link) => {
@@ -589,28 +576,12 @@ impl Window {
                 ControlFlow::Continue
             }
             Message::Finish => {
-                progress_bar.set_fraction(1.0);
-                revealer.set_reveal_child(false);
+                repo.set_progress(1.0);
                 ControlFlow::Continue
             }
         });
 
         tx
-    }
-
-    fn get_row_revealer(row: &ListBoxRow) -> Revealer {
-        row.child()
-            .unwrap()
-            .downcast::<Box>()
-            .unwrap()
-            .last_child()
-            .unwrap()
-            .downcast::<Box>()
-            .unwrap()
-            .last_child()
-            .unwrap()
-            .downcast::<Revealer>()
-            .unwrap()
     }
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
@@ -648,22 +619,38 @@ impl Window {
         let pb_box = Box::builder().orientation(Orientation::Horizontal).build();
         let status_box = Box::builder()
             .orientation(Orientation::Horizontal)
-            .halign(Align::End)
+            .halign(Align::Start)
             .hexpand(true)
             .build();
 
-        let popover_box = Box::builder().hexpand(true).build();
-        let popover = Popover::builder()
-            .child(&popover_box)
-            .autohide(true)
-            .has_arrow(true)
+        let action_group = gtk::gio::SimpleActionGroup::new();
+        let remove_action = gio::SimpleAction::new("remove", None);
+
+        remove_action.connect_activate(
+            glib::clone!(@weak self as window, @weak name, @weak link => move |_, _| {
+                window.remove_repo(&link.label());
+                window.show_message(&format!("Removed: {}", name.label()), 3);
+            }),
+        );
+
+        action_group.add_action(&remove_action);
+
+        let menu = gio::Menu::new();
+        let remove_item = gio::MenuItem::new(Some("Remove"), Some("repo.remove"));
+
+        menu.append_item(&remove_item);
+
+        let menu_button = gtk::MenuButton::builder()
+            .valign(gtk::Align::Center)
+            .icon_name("view-more-symbolic")
+            .menu_model(&menu)
             .build();
 
-        let remove_button = Button::builder()
-            .label("Remove")
-            .css_classes(["destructive-action"])
-            .build();
+        menu_button.add_css_class("flat");
+        menu_button.add_css_class("dim-label");
+        menu_button.insert_action_group("repo", Some(&action_group));
 
+        let row_box = Box::builder().orientation(Orientation::Horizontal).build();
         let repo_box = Box::builder()
             .orientation(Orientation::Vertical)
             .halign(Align::Fill)
@@ -695,15 +682,8 @@ impl Window {
             .child(&status_image)
             .build();
 
-        let gesture = GestureClick::new();
-
-        gesture.connect_released(clone!(@weak popover => move |gesture, _, _, _,| {
-            gesture.set_state(EventSequenceState::Claimed);
-            popover.popup();
-        }));
-
         repo_object.connect_status_notify(
-            clone!(@weak name, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
+            clone!(@weak name, @weak pb, @weak revealer, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
                 if repo_object.repo_data().status == "ok" {
                     name.add_css_class("success");
                     name.remove_css_class("error");
@@ -711,6 +691,7 @@ impl Window {
                     status_image.set_from_icon_name(Some("emblem-ok-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(true);
+                    revealer.set_reveal_child(false);
                 } else if repo_object.repo_data().status == "updated" {
                     name.add_css_class("accent");
                     name.remove_css_class("success");
@@ -718,6 +699,7 @@ impl Window {
                     status_image.set_from_icon_name(Some("emblem-default-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(true);
+                    revealer.set_reveal_child(false);
                 } else if repo_object.repo_data().status == "err" {
                     name.add_css_class("error");
                     name.remove_css_class("success");
@@ -725,15 +707,41 @@ impl Window {
                     status_image.set_from_icon_name(Some("dialog-error-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(false);
+                    revealer.set_reveal_child(false);
                 } else if repo_object.repo_data().status == "pending"{
                     name.remove_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
                     status_revealer.set_reveal_child(false);
                     branch_revealer.set_reveal_child(false);
+                } else if repo_object.repo_data().status == "started"{
+                    name.remove_css_class("error");
+                    name.remove_css_class("success");
+                    name.remove_css_class("accent");
+                    pb.set_fraction(0.0);
+                    status_revealer.set_reveal_child(false);
+                    branch_revealer.set_reveal_child(false);
+                    revealer.set_reveal_child(true);
+                } else if repo_object.repo_data().status == "cloning"{
+                    pb.add_css_class("clone");
+                    pb.remove_css_class("deltas");
+                    pb.remove_css_class("fetch");
+                } else if repo_object.repo_data().status == "fetching"{
+                    pb.add_css_class("fetch");
+                    pb.remove_css_class("clone");
+                    pb.remove_css_class("deltas");
+                } else if repo_object.repo_data().status == "resolving"{
+                    pb.add_css_class("deltas");
+                    pb.remove_css_class("clone");
+                    pb.remove_css_class("fetch");
                 }
             }),
         );
+
+        repo_object.connect_progress_notify(clone!(@weak pb => move |repo| {
+            let value = repo.progress();
+            pb.set_fraction(value);
+        }));
 
         repo_object
             .bind_property("name", &name, "label")
@@ -757,9 +765,6 @@ impl Window {
         pb.add_css_class("osd");
         pb.add_css_class("row-progress");
         pb_box.append(&revealer);
-        popover_box.append(&remove_button);
-        popover.set_parent(&repo_box);
-        repo_box.add_controller(gesture);
         name_box.append(&name);
         name_box.append(&branch_revealer);
         status_box.append(&status_revealer);
@@ -769,14 +774,10 @@ impl Window {
         widget_box.append(&status_box);
         repo_box.append(&widget_box);
         repo_box.append(&pb_box);
+        row_box.append(&repo_box);
+        row_box.append(&menu_button);
 
-        remove_button.connect_clicked(clone!(@weak self as window => move |_| {
-            window.remove_repo(&link.label());
-            window.show_message(&format!("Removed: {}", name.label()), 3);
-            popover.popdown();
-        }));
-
-        ListBoxRow::builder().child(&repo_box).build()
+        ListBoxRow::builder().child(&row_box).build()
     }
 
     fn new_repo(&self, main_view: bool) {
@@ -802,7 +803,7 @@ impl Window {
         }
 
         let name = util::get_name(&content).to_owned();
-        let repo = RepoObject::new(name, content, String::new(), String::from("pending"));
+        let repo = RepoObject::new(name, content, String::new(), 0.0, String::from("pending"));
         self.repos().append(&repo);
     }
 
@@ -897,6 +898,7 @@ impl Window {
                                 name: util::get_name(&link_string).to_owned(),
                                 link: link_string,
                                 branch: String::new(),
+                                progress: 0.0,
                                 status: String::from("pending"),
                             }
                         })
