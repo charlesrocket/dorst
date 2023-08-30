@@ -1413,12 +1413,11 @@ mod tests {
         assert!(window.imp().stack.visible_child_name() == Some("main".into()));
 
         let row = window.imp().repos_list.row_at_index(0).unwrap();
+
+        row.emit_activate();
+
         let button = row
-            .child()
-            .unwrap()
-            .downcast::<Box>()
-            .unwrap()
-            .first_child()
+            .last_child()
             .unwrap()
             .downcast::<Popover>()
             .unwrap()
