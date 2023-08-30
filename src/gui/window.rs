@@ -5,8 +5,8 @@ use gtk::{
     gio::{self, ListStore, SimpleAction},
     glib,
     pango::EllipsizeMode,
-    Align, Box, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
-    Orientation, ProgressBar, Revealer, RevealerTransitionType,
+    Align, Box, Button, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
+    Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
 };
 
 #[cfg(feature = "logs")]
@@ -189,6 +189,64 @@ impl Window {
                 row.upcast()
             }),
         );
+
+        self.imp().repos_list.connect_row_activated(clone!(@weak self as window => move |_, row| {
+            let popover_box = Box::builder().hexpand(true).build();
+            let popover = Popover::builder()
+                .child(&popover_box)
+                .autohide(true)
+                .has_arrow(true)
+                .build();
+
+            let edit_button = Button::builder()
+                .label("Edit")
+                .build();
+
+            let remove_button = Button::builder()
+                .label("Remove")
+                .css_classes(["destructive-action"])
+                .build();
+
+            edit_button.connect_clicked(clone!(@weak window, @weak row, @weak popover => move |_| {
+                let repos = window.repos();
+                let repo_pos = row.index();
+                let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
+                let entry = gtk::Entry::builder().secondary_icon_name("document-edit-symbolic").build();
+
+                repo.bind_property("link", &entry, "text")
+                    .sync_create().bidirectional()
+                                  .build();
+
+                let entry_window = gtk::Window::builder().child(&entry).modal(true).transient_for(&window).decorated(false).default_width(420).build();
+
+                entry.connect_activate(clone!(@weak entry_window => move |_| {
+                    entry_window.destroy();
+                }));
+
+                entry.connect_icon_release(clone!(@weak entry_window => move |_, _| {
+                    entry_window.destroy();
+                }));
+
+                popover.popdown();
+                entry_window.present()
+            }));
+
+            remove_button.connect_clicked(clone!(@weak window, @strong row, @weak popover=> move |_| {
+                let repos = window.repos();
+                let repo_pos = row.index();
+                let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
+
+                repos.remove(repo_pos.try_into().unwrap());
+                window.show_message(&format!("Removed: {}", repo.repo_data().name), 3);
+                popover.popdown();
+            }));
+
+            popover_box.add_css_class("linked");
+            popover_box.append(&edit_button);
+            popover_box.append(&remove_button);
+            popover.set_parent(row);
+            popover.popup();
+        }));
 
         self.set_repo_list_visible(&self.repos());
         self.repos()
@@ -619,36 +677,9 @@ impl Window {
         let pb_box = Box::builder().orientation(Orientation::Horizontal).build();
         let status_box = Box::builder()
             .orientation(Orientation::Horizontal)
-            .halign(Align::Start)
+            .halign(Align::End)
             .hexpand(true)
             .build();
-
-        let action_group = gtk::gio::SimpleActionGroup::new();
-        let remove_action = gio::SimpleAction::new("remove", None);
-
-        remove_action.connect_activate(
-            glib::clone!(@weak self as window, @weak name, @weak link => move |_, _| {
-                window.remove_repo(&link.label());
-                window.show_message(&format!("Removed: {}", name.label()), 3);
-            }),
-        );
-
-        action_group.add_action(&remove_action);
-
-        let menu = gio::Menu::new();
-        let remove_item = gio::MenuItem::new(Some("Remove"), Some("repo.remove"));
-
-        menu.append_item(&remove_item);
-
-        let menu_button = gtk::MenuButton::builder()
-            .valign(gtk::Align::Center)
-            .icon_name("view-more-symbolic")
-            .menu_model(&menu)
-            .build();
-
-        menu_button.add_css_class("flat");
-        menu_button.add_css_class("dim-label");
-        menu_button.insert_action_group("repo", Some(&action_group));
 
         let row_box = Box::builder().orientation(Orientation::Horizontal).build();
         let repo_box = Box::builder()
@@ -775,7 +806,6 @@ impl Window {
         repo_box.append(&widget_box);
         repo_box.append(&pb_box);
         row_box.append(&repo_box);
-        row_box.append(&menu_button);
 
         ListBoxRow::builder().child(&row_box).build()
     }
@@ -805,20 +835,6 @@ impl Window {
         let name = util::get_name(&content).to_owned();
         let repo = RepoObject::new(name, content, String::new(), 0.0, String::from("pending"));
         self.repos().append(&repo);
-    }
-
-    fn remove_repo(&self, repo: &str) {
-        let repos = self.repos();
-        let mut position = 0;
-        while let Some(item) = repos.item(position) {
-            let repo_object = item.downcast_ref::<RepoObject>().unwrap();
-
-            if repo_object.link() == repo {
-                repos.remove(position);
-            } else {
-                position += 1;
-            }
-        }
     }
 
     fn set_source_directory(&self, directory: &Path) {
