@@ -295,12 +295,28 @@ impl Window {
             self.imp().button_backup_dest.set_sensitive(false);
             self.imp().button_backup_state.set_sensitive(false);
             self.imp().repo_entry.set_sensitive(false);
+
+            for i in 0..self.imp().repos_list_count.get() {
+                self.imp()
+                    .repos_list
+                    .row_at_index(i.try_into().unwrap())
+                    .unwrap()
+                    .set_activatable(false);
+            }
         } else {
             self.imp().button_start.set_sensitive(true);
             self.imp().button_source_dest.set_sensitive(true);
             self.imp().button_backup_dest.set_sensitive(true);
             self.imp().button_backup_state.set_sensitive(true);
             self.imp().repo_entry.set_sensitive(true);
+
+            for i in 0..self.imp().repos_list_count.get() {
+                self.imp()
+                    .repos_list
+                    .row_at_index(i.try_into().unwrap())
+                    .unwrap()
+                    .set_activatable(true);
+            }
         }
     }
 
