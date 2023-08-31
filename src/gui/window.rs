@@ -255,6 +255,10 @@ impl Window {
                 window.set_repo_list_stack();
             }));
 
+        filter_model.connect_items_changed(clone!(@weak self as window => move |model, _, _, _| {
+            window.imp().repos_list_count.set(model.n_items());
+        }));
+
         let action_filter = SimpleAction::new_stateful(
             "filter",
             Some(&String::static_variant_type()),
@@ -1329,6 +1333,7 @@ mod tests {
         wait_ui(500);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+        assert!(window.imp().repos_list_count.get() == 1);
 
         window
             .imp()
@@ -1339,7 +1344,8 @@ mod tests {
         window.imp().button_start.emit_clicked();
         wait_ui(500);
 
-        assert!(window.imp().errors_list.lock().unwrap().len() == 0);
+        assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+        assert!(window.imp().repos_list_count.get() == 0);
 
         window
             .imp()
@@ -1350,7 +1356,8 @@ mod tests {
         window.imp().button_start.emit_clicked();
         wait_ui(500);
 
-        assert!(window.imp().errors_list.lock().unwrap().len() == 0);
+        assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+        assert!(window.imp().repos_list_count.get() == 0);
     }
 
     #[gtk::test]

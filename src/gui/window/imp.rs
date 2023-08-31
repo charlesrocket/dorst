@@ -36,6 +36,7 @@ pub struct Window {
     pub repo_entry_empty: TemplateChild<Entry>,
     #[template_child]
     pub repos_list: TemplateChild<ListBox>,
+    pub repos_list_count: Cell<u32>,
     pub repos: RefCell<Option<gio::ListStore>>,
     pub source_directory: RefCell<String>,
     pub backup_directory: RefCell<PathBuf>,
@@ -83,6 +84,7 @@ impl ObjectSubclass for Window {
             repo_entry: TemplateChild::default(),
             repo_entry_empty: TemplateChild::default(),
             repos_list: TemplateChild::default(),
+            repos_list_count: Cell::default(),
             repos: RefCell::default(),
             source_directory: RefCell::new(String::new()),
             backup_directory: RefCell::new(PathBuf::new()),
