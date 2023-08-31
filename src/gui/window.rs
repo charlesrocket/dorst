@@ -185,7 +185,7 @@ impl Window {
             Some(&selection_model),
             clone!(@weak self as window => @default-panic, move |obj| {
                 let repo_object = obj.downcast_ref().expect("The object should be of type `RepoObject`.");
-                let row = window.create_repo_row(repo_object);
+                let row = Window::create_repo_row(repo_object);
                 row.upcast()
             }),
         );
@@ -646,7 +646,7 @@ impl Window {
         tx
     }
 
-    fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
+    fn create_repo_row(repo_object: &RepoObject) -> ListBoxRow {
         let status_image = gtk::Image::builder().css_classes(["dim-label"]).build();
 
         let name = Label::builder()
