@@ -1,4 +1,6 @@
-use adw::{prelude::*, subclass::prelude::*, AboutWindow, ColorScheme};
+use adw::{
+    prelude::*, subclass::prelude::*, AboutWindow, ColorScheme, MessageDialog, ResponseAppearance,
+};
 use anyhow::Result;
 use glib::{clone, ControlFlow, KeyFile, MainContext, Object, Priority, Sender};
 use gtk::{
@@ -179,6 +181,8 @@ impl Window {
         self.imp().repos.replace(Some(model));
 
         let filter_model = FilterListModel::new(Some(self.repos()), self.filter());
+        self.imp().repos_filtered.replace(filter_model.clone());
+
         let selection_model = NoSelection::new(Some(filter_model.clone()));
 
         self.imp().repos_list.bind_model(
@@ -208,36 +212,107 @@ impl Window {
                 .build();
 
             edit_button.connect_clicked(clone!(@weak window, @weak row, @weak popover => move |_| {
-                let repos = window.repos();
+                let repos = window.imp().repos_filtered.borrow().clone();
                 let repo_pos = row.index();
                 let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
-                let entry = gtk::Entry::builder().secondary_icon_name("document-edit-symbolic").build();
+                let entry = gtk::Entry::builder()
+                    .placeholder_text("Link")
+                    .activates_default(true)
+                    .build();
 
-                repo.bind_property("link", &entry, "text")
-                    .sync_create().bidirectional()
-                                  .build();
+                let cancel_response = "cancel";
+                let edit_response = "edit";
+                let dialog = MessageDialog::builder()
+                    .heading("Edit link")
+                    .transient_for(&window)
+                    .modal(true)
+                    .destroy_with_parent(true)
+                    .close_response(cancel_response)
+                    .default_response(edit_response)
+                    .extra_child(&entry)
+                    .build();
 
-                let entry_window = gtk::Window::builder().child(&entry).modal(true).transient_for(&window).decorated(false).default_width(420).build();
+                dialog.add_responses(&[(cancel_response, "Cancel"), (edit_response, "Edit")]);
+                dialog.set_response_enabled(edit_response, false);
+                dialog.set_response_appearance(edit_response, ResponseAppearance::Suggested);
 
-                entry.connect_activate(clone!(@weak entry_window => move |_| {
-                    entry_window.destroy();
+                entry.connect_changed(clone!(@weak dialog => move |entry| {
+                    let text = entry.text();
+                    let empty = text.is_empty();
+
+                    dialog.set_response_enabled(edit_response, !empty);
+
+                    if empty {
+                        entry.add_css_class("error");
+                    } else {
+                        entry.remove_css_class("error");
+                    }
                 }));
 
-                entry.connect_icon_release(clone!(@weak entry_window => move |_, _| {
-                    entry_window.destroy();
-                }));
+                dialog.connect_response(
+                    None,
+                    clone!(@weak entry => move |dialog, response| {
+                        dialog.destroy();
 
+                        if response != edit_response {
+                            return;
+                        }
+
+                        repo.set_link(entry.text().to_string());
+
+                    }),
+                );
+
+                dialog.present();
                 popover.popdown();
-                entry_window.present();
             }));
 
             remove_button.connect_clicked(clone!(@weak window, @strong row, @weak popover=> move |_| {
-                let repos = window.repos();
+                let repos_filtered = window.imp().repos_filtered.borrow().clone();
                 let repo_pos = row.index();
-                let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
+                let repo = repos_filtered.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
 
-                repos.remove(repo_pos.try_into().unwrap());
-                window.show_message(&format!("Removed: {}", repo.repo_data().name), 3);
+                let cancel_response = "cancel";
+                let remove_response = "remove";
+                let dialog = MessageDialog::builder()
+                    .heading("Remove repository?")
+                    .transient_for(&window)
+                    .modal(true)
+                    .destroy_with_parent(true)
+                    .close_response(cancel_response)
+                    .default_response(cancel_response)
+                    .build();
+
+                dialog.add_responses(&[(cancel_response, "Cancel"), (remove_response, "Remove")]);
+                dialog.set_response_appearance(remove_response, ResponseAppearance::Destructive);
+
+                dialog.connect_response(
+                    None,
+                    clone!(@weak window => move |dialog, response| {
+                        dialog.destroy();
+
+                        if response != remove_response {
+                            return;
+                        }
+
+                        let link = repo.repo_data().link;
+                        let repos = window.repos();
+                        let mut position = 0;
+                        while let Some(item) = repos.item(position) {
+                            let repo_object = item.downcast_ref::<RepoObject>().unwrap();
+
+                            if repo_object.link() == link {
+                                repos.remove(position);
+                            } else {
+                                position += 1;
+                            }
+                        }
+
+                        window.show_message(&format!("Removed: {}", repo.repo_data().name), 3);
+                    }),
+                );
+
+                dialog.present();
                 popover.popdown();
             }));
 
