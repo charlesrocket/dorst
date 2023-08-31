@@ -228,7 +228,7 @@ impl Window {
                 }));
 
                 popover.popdown();
-                entry_window.present()
+                entry_window.present();
             }));
 
             remove_button.connect_clicked(clone!(@weak window, @strong row, @weak popover=> move |_| {
