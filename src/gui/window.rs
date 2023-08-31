@@ -5,9 +5,8 @@ use gtk::{
     gio::{self, ListStore, SimpleAction},
     glib,
     pango::EllipsizeMode,
-    Align, Box, Button, CustomFilter, EventSequenceState, FilterListModel, GestureClick, Label,
-    License, ListBoxRow, NoSelection, Orientation, Popover, ProgressBar, Revealer,
-    RevealerTransitionType,
+    Align, Box, Button, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
+    Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
 };
 
 #[cfg(feature = "logs")]
@@ -186,10 +185,68 @@ impl Window {
             Some(&selection_model),
             clone!(@weak self as window => @default-panic, move |obj| {
                 let repo_object = obj.downcast_ref().expect("The object should be of type `RepoObject`.");
-                let row = window.create_repo_row(repo_object);
+                let row = Window::create_repo_row(repo_object);
                 row.upcast()
             }),
         );
+
+        self.imp().repos_list.connect_row_activated(clone!(@weak self as window => move |_, row| {
+            let popover_box = Box::builder().hexpand(true).build();
+            let popover = Popover::builder()
+                .child(&popover_box)
+                .autohide(true)
+                .has_arrow(true)
+                .build();
+
+            let edit_button = Button::builder()
+                .label("Edit")
+                .build();
+
+            let remove_button = Button::builder()
+                .label("Remove")
+                .css_classes(["destructive-action"])
+                .build();
+
+            edit_button.connect_clicked(clone!(@weak window, @weak row, @weak popover => move |_| {
+                let repos = window.repos();
+                let repo_pos = row.index();
+                let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
+                let entry = gtk::Entry::builder().secondary_icon_name("document-edit-symbolic").build();
+
+                repo.bind_property("link", &entry, "text")
+                    .sync_create().bidirectional()
+                                  .build();
+
+                let entry_window = gtk::Window::builder().child(&entry).modal(true).transient_for(&window).decorated(false).default_width(420).build();
+
+                entry.connect_activate(clone!(@weak entry_window => move |_| {
+                    entry_window.destroy();
+                }));
+
+                entry.connect_icon_release(clone!(@weak entry_window => move |_, _| {
+                    entry_window.destroy();
+                }));
+
+                popover.popdown();
+                entry_window.present();
+            }));
+
+            remove_button.connect_clicked(clone!(@weak window, @strong row, @weak popover=> move |_| {
+                let repos = window.repos();
+                let repo_pos = row.index();
+                let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
+
+                repos.remove(repo_pos.try_into().unwrap());
+                window.show_message(&format!("Removed: {}", repo.repo_data().name), 3);
+                popover.popdown();
+            }));
+
+            popover_box.add_css_class("linked");
+            popover_box.append(&edit_button);
+            popover_box.append(&remove_button);
+            popover.set_parent(row);
+            popover.popup();
+        }));
 
         self.set_repo_list_visible(&self.repos());
         self.repos()
@@ -197,6 +254,10 @@ impl Window {
                 window.set_repo_list_visible(repos);
                 window.set_repo_list_stack();
             }));
+
+        filter_model.connect_items_changed(clone!(@weak self as window => move |model, _, _, _| {
+            window.imp().repos_list_count.set(model.n_items());
+        }));
 
         let action_filter = SimpleAction::new_stateful(
             "filter",
@@ -321,12 +382,11 @@ impl Window {
         for i in 0..repos.n_items() {
             let completed_repos_clone = completed_repos.clone();
             let obj = repos.item(i).unwrap();
-            let repo = obj.downcast_ref::<RepoObject>().unwrap();
-            if let Some(row) = self.imp().repos_list.row_at_index(i as i32) {
+            if let Some(repo) = obj.downcast_ref::<RepoObject>() {
                 active_task = true;
                 let repo_link = repo.link();
                 let thread_pool_clone = thread_pool.clone();
-                let tx = self.set_row_channel(&row);
+                let tx = self.set_row_channel(obj.clone());
                 let destination_clone = format!(
                     "{}/{}",
                     &dest_clone.clone().display().to_string(),
@@ -340,11 +400,8 @@ impl Window {
 
                 let errors_clone = self.imp().errors_list.clone();
                 let success_clone = self.imp().success_list.clone();
-                let revealer = window::Window::get_row_revealer(&row);
-                let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
 
-                progress_bar.set_fraction(0.0);
-                revealer.set_reveal_child(true);
+                repo.set_status("started");
 
                 if self.task_limiter() {
                     while *thread_pool_clone.lock().unwrap()
@@ -539,21 +596,19 @@ impl Window {
         }
     }
 
-    fn set_row_channel(&self, row: &ListBoxRow) -> glib::Sender<Message> {
+    fn set_row_channel(&self, row: Object) -> glib::Sender<Message> {
         let (tx, rx) = MainContext::channel(Priority::DEFAULT);
-        let revealer = window::Window::get_row_revealer(row);
-        let progress_bar = revealer.child().unwrap().downcast::<ProgressBar>().unwrap();
+        let repo = row.downcast::<RepoObject>().unwrap();
         let updated_list_clone = self.imp().updated_list.clone();
 
         rx.attach(None, move |x| match x {
             Message::Reset => {
-                progress_bar.set_fraction(0.0);
-                revealer.set_reveal_child(true);
+                repo.set_progress(0.0);
                 ControlFlow::Continue
             }
             Message::Progress(value, progress) => {
                 if value.is_nan() {
-                    progress_bar.set_fraction(1.0);
+                    repo.set_progress(1.0);
                 } else {
                     let fraction = match progress {
                         Status::Deltas => (value / 2.0) + 0.5,
@@ -561,27 +616,21 @@ impl Window {
                         Status::Normal => value,
                     };
 
-                    progress_bar.set_fraction(fraction);
+                    repo.set_progress(fraction);
                 }
 
                 ControlFlow::Continue
             }
             Message::Clone => {
-                progress_bar.add_css_class("clone");
-                progress_bar.remove_css_class("deltas");
-                progress_bar.remove_css_class("fetch");
+                repo.set_status("cloning");
                 ControlFlow::Continue
             }
             Message::Fetch => {
-                progress_bar.add_css_class("fetch");
-                progress_bar.remove_css_class("clone");
-                progress_bar.remove_css_class("deltas");
+                repo.set_status("fetching");
                 ControlFlow::Continue
             }
             Message::Deltas => {
-                progress_bar.add_css_class("deltas");
-                progress_bar.remove_css_class("clone");
-                progress_bar.remove_css_class("fetch");
+                repo.set_status("resolving");
                 ControlFlow::Continue
             }
             Message::Updated(link) => {
@@ -589,8 +638,7 @@ impl Window {
                 ControlFlow::Continue
             }
             Message::Finish => {
-                progress_bar.set_fraction(1.0);
-                revealer.set_reveal_child(false);
+                repo.set_progress(1.0);
                 ControlFlow::Continue
             }
         });
@@ -598,22 +646,7 @@ impl Window {
         tx
     }
 
-    fn get_row_revealer(row: &ListBoxRow) -> Revealer {
-        row.child()
-            .unwrap()
-            .downcast::<Box>()
-            .unwrap()
-            .last_child()
-            .unwrap()
-            .downcast::<Box>()
-            .unwrap()
-            .last_child()
-            .unwrap()
-            .downcast::<Revealer>()
-            .unwrap()
-    }
-
-    fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
+    fn create_repo_row(repo_object: &RepoObject) -> ListBoxRow {
         let status_image = gtk::Image::builder().css_classes(["dim-label"]).build();
 
         let name = Label::builder()
@@ -652,18 +685,7 @@ impl Window {
             .hexpand(true)
             .build();
 
-        let popover_box = Box::builder().hexpand(true).build();
-        let popover = Popover::builder()
-            .child(&popover_box)
-            .autohide(true)
-            .has_arrow(true)
-            .build();
-
-        let remove_button = Button::builder()
-            .label("Remove")
-            .css_classes(["destructive-action"])
-            .build();
-
+        let row_box = Box::builder().orientation(Orientation::Horizontal).build();
         let repo_box = Box::builder()
             .orientation(Orientation::Vertical)
             .halign(Align::Fill)
@@ -695,15 +717,8 @@ impl Window {
             .child(&status_image)
             .build();
 
-        let gesture = GestureClick::new();
-
-        gesture.connect_released(clone!(@weak popover => move |gesture, _, _, _,| {
-            gesture.set_state(EventSequenceState::Claimed);
-            popover.popup();
-        }));
-
         repo_object.connect_status_notify(
-            clone!(@weak name, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
+            clone!(@weak name, @weak pb, @weak revealer, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
                 if repo_object.repo_data().status == "ok" {
                     name.add_css_class("success");
                     name.remove_css_class("error");
@@ -711,6 +726,7 @@ impl Window {
                     status_image.set_from_icon_name(Some("emblem-ok-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(true);
+                    revealer.set_reveal_child(false);
                 } else if repo_object.repo_data().status == "updated" {
                     name.add_css_class("accent");
                     name.remove_css_class("success");
@@ -718,6 +734,7 @@ impl Window {
                     status_image.set_from_icon_name(Some("emblem-default-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(true);
+                    revealer.set_reveal_child(false);
                 } else if repo_object.repo_data().status == "err" {
                     name.add_css_class("error");
                     name.remove_css_class("success");
@@ -725,15 +742,41 @@ impl Window {
                     status_image.set_from_icon_name(Some("dialog-error-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(false);
+                    revealer.set_reveal_child(false);
                 } else if repo_object.repo_data().status == "pending"{
                     name.remove_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
                     status_revealer.set_reveal_child(false);
                     branch_revealer.set_reveal_child(false);
+                } else if repo_object.repo_data().status == "started"{
+                    name.remove_css_class("error");
+                    name.remove_css_class("success");
+                    name.remove_css_class("accent");
+                    pb.set_fraction(0.0);
+                    status_revealer.set_reveal_child(false);
+                    branch_revealer.set_reveal_child(false);
+                    revealer.set_reveal_child(true);
+                } else if repo_object.repo_data().status == "cloning"{
+                    pb.add_css_class("clone");
+                    pb.remove_css_class("deltas");
+                    pb.remove_css_class("fetch");
+                } else if repo_object.repo_data().status == "fetching"{
+                    pb.add_css_class("fetch");
+                    pb.remove_css_class("clone");
+                    pb.remove_css_class("deltas");
+                } else if repo_object.repo_data().status == "resolving"{
+                    pb.add_css_class("deltas");
+                    pb.remove_css_class("clone");
+                    pb.remove_css_class("fetch");
                 }
             }),
         );
+
+        repo_object.connect_progress_notify(clone!(@weak pb => move |repo| {
+            let value = repo.progress();
+            pb.set_fraction(value);
+        }));
 
         repo_object
             .bind_property("name", &name, "label")
@@ -757,9 +800,6 @@ impl Window {
         pb.add_css_class("osd");
         pb.add_css_class("row-progress");
         pb_box.append(&revealer);
-        popover_box.append(&remove_button);
-        popover.set_parent(&repo_box);
-        repo_box.add_controller(gesture);
         name_box.append(&name);
         name_box.append(&branch_revealer);
         status_box.append(&status_revealer);
@@ -769,14 +809,9 @@ impl Window {
         widget_box.append(&status_box);
         repo_box.append(&widget_box);
         repo_box.append(&pb_box);
+        row_box.append(&repo_box);
 
-        remove_button.connect_clicked(clone!(@weak self as window => move |_| {
-            window.remove_repo(&link.label());
-            window.show_message(&format!("Removed: {}", name.label()), 3);
-            popover.popdown();
-        }));
-
-        ListBoxRow::builder().child(&repo_box).build()
+        ListBoxRow::builder().child(&row_box).build()
     }
 
     fn new_repo(&self, main_view: bool) {
@@ -802,22 +837,8 @@ impl Window {
         }
 
         let name = util::get_name(&content).to_owned();
-        let repo = RepoObject::new(name, content, String::new(), String::from("pending"));
+        let repo = RepoObject::new(name, content, String::new(), 0.0, String::from("pending"));
         self.repos().append(&repo);
-    }
-
-    fn remove_repo(&self, repo: &str) {
-        let repos = self.repos();
-        let mut position = 0;
-        while let Some(item) = repos.item(position) {
-            let repo_object = item.downcast_ref::<RepoObject>().unwrap();
-
-            if repo_object.link() == repo {
-                repos.remove(position);
-            } else {
-                position += 1;
-            }
-        }
     }
 
     fn set_source_directory(&self, directory: &Path) {
@@ -897,6 +918,7 @@ impl Window {
                                 name: util::get_name(&link_string).to_owned(),
                                 link: link_string,
                                 branch: String::new(),
+                                progress: 0.0,
                                 status: String::from("pending"),
                             }
                         })
@@ -1311,6 +1333,7 @@ mod tests {
         wait_ui(500);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+        assert!(window.imp().repos_list_count.get() == 1);
 
         window
             .imp()
@@ -1321,7 +1344,8 @@ mod tests {
         window.imp().button_start.emit_clicked();
         wait_ui(500);
 
-        assert!(window.imp().errors_list.lock().unwrap().len() == 0);
+        assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+        assert!(window.imp().repos_list_count.get() == 0);
 
         window
             .imp()
@@ -1332,7 +1356,8 @@ mod tests {
         window.imp().button_start.emit_clicked();
         wait_ui(500);
 
-        assert!(window.imp().errors_list.lock().unwrap().len() == 0);
+        assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+        assert!(window.imp().repos_list_count.get() == 0);
     }
 
     #[gtk::test]
@@ -1377,6 +1402,64 @@ mod tests {
     }
 
     #[gtk::test]
+    fn edit_target() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("invalid"));
+
+        window.imp().repo_entry_empty.emit_activate();
+
+        let row = window.imp().repos_list.row_at_index(0).unwrap();
+
+        row.emit_activate();
+
+        let button = row
+            .last_child()
+            .unwrap()
+            .downcast::<Popover>()
+            .unwrap()
+            .child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .first_child()
+            .unwrap()
+            .downcast::<Button>()
+            .unwrap();
+
+        button.emit_clicked();
+
+        let entry = &gtk::Window::list_toplevels()[0]
+            .first_child()
+            .unwrap()
+            .downcast::<gtk::Entry>()
+            .unwrap();
+
+        let buffer = entry.buffer();
+
+        buffer.set_text("invalid23");
+        entry.emit_activate();
+
+        let link = window
+            .repos()
+            .item(0)
+            .unwrap()
+            .downcast::<RepoObject>()
+            .unwrap()
+            .repo_data()
+            .link;
+
+        assert!(link == "invalid23");
+    }
+
+    #[gtk::test]
     fn remove_target() {
         if Path::new("/tmp/dorst_test_conf.yaml").exists() {
             remove_file("/tmp/dorst_test_conf.yaml").unwrap();
@@ -1395,12 +1478,11 @@ mod tests {
         assert!(window.imp().stack.visible_child_name() == Some("main".into()));
 
         let row = window.imp().repos_list.row_at_index(0).unwrap();
+
+        row.emit_activate();
+
         let button = row
-            .child()
-            .unwrap()
-            .downcast::<Box>()
-            .unwrap()
-            .first_child()
+            .last_child()
             .unwrap()
             .downcast::<Popover>()
             .unwrap()
