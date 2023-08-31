@@ -1402,6 +1402,64 @@ mod tests {
     }
 
     #[gtk::test]
+    fn edit_target() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("invalid"));
+
+        window.imp().repo_entry_empty.emit_activate();
+
+        let row = window.imp().repos_list.row_at_index(0).unwrap();
+
+        row.emit_activate();
+
+        let button = row
+            .last_child()
+            .unwrap()
+            .downcast::<Popover>()
+            .unwrap()
+            .child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .first_child()
+            .unwrap()
+            .downcast::<Button>()
+            .unwrap();
+
+        button.emit_clicked();
+
+        let entry = &gtk::Window::list_toplevels()[0]
+            .first_child()
+            .unwrap()
+            .downcast::<gtk::Entry>()
+            .unwrap();
+
+        let buffer = entry.buffer();
+
+        buffer.set_text("invalid23");
+        entry.emit_activate();
+
+        let link = window
+            .repos()
+            .item(0)
+            .unwrap()
+            .downcast::<RepoObject>()
+            .unwrap()
+            .repo_data()
+            .link;
+
+        assert!(link == "invalid23");
+    }
+
+    #[gtk::test]
     fn remove_target() {
         if Path::new("/tmp/dorst_test_conf.yaml").exists() {
             remove_file("/tmp/dorst_test_conf.yaml").unwrap();
