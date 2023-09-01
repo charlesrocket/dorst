@@ -1593,6 +1593,13 @@ mod tests {
 
         button.emit_clicked();
 
+        let dialog = &gtk::Window::list_toplevels()[0]
+            .clone()
+            .downcast::<MessageDialog>()
+            .unwrap();
+
+        dialog.response("remove");
+
         assert!(window.repos().n_items() == 0);
         assert!(window.imp().stack.visible_child_name() == Some("empty".into()));
     }
