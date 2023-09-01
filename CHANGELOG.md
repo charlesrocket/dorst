@@ -2,6 +2,73 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0] - 2023-09-01
+
+### Bug Fixes
+
+- Status check behind `tx.is_some()`
+- Fix `status_revealer` margin
+
+### CI/CD
+
+- Add `cli` feature
+- Set codecov layout
+- Update features
+- Fix codecov conditions
+- Rename test job
+- Fix test conditions
+
+### Features
+
+- Show updated targets
+- Show the number of updated targets
+- Indicate updated repositories (#24)
+- Add `current_branch()`
+- Indicate current branch
+- Add status icon
+- Indicate branches (#25)
+- Add loggers
+- Add `logs` option
+- Add logging facility (#26)
+- Add row menu
+- Add `edit_button`
+- Add `repos_list_count`
+- Allow `link` edits (#27)
+- Deactivate rows with `controls_disabled()`
+- Add row dialogs
+- Use `MessageDialog` (#28)
+
+### Miscellaneous tasks
+
+- Fix description
+
+### Refactor
+
+- Add `toggle_backups` template callback
+- Add directory selection functions
+- Use `updated_list`
+- Reconnect `branch_revealer`
+- Fix `edit_button.connect_clicked()` formatting
+- Update `create_repo_row()`
+
+### Testing
+
+- Drop `features()`
+- Add `toggle_backups()`
+- Do not push to `dev` branch
+- Update `backup()`
+- Update `invalid_url()`
+- Update `mirror()`
+- Fix `mirror()`
+- Fix `remove_target()`
+- Add `edit_target()`
+- Fix `edit_target()`
+- Fix `remove_target()`
+
+### Build
+
+- Add `logs` feature
+
 ## [0.11.3] - 2023-08-09
 
 ### Bug Fixes
