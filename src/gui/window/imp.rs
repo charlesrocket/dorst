@@ -1,7 +1,7 @@
 use adw::{prelude::*, subclass::prelude::*, Banner, StyleManager, ToastOverlay};
 use gtk::{
-    gio, glib::subclass::InitializingObject, Button, CompositeTemplate, Entry, FileDialog, ListBox,
-    ProgressBar, Revealer, Stack, ToggleButton,
+    gio, glib::subclass::InitializingObject, Button, CompositeTemplate, Entry, FileDialog,
+    FilterListModel, ListBox, ProgressBar, Revealer, Stack, ToggleButton,
 };
 
 use glib::Properties;
@@ -38,6 +38,7 @@ pub struct Window {
     pub repos_list: TemplateChild<ListBox>,
     pub repos_list_count: Cell<u32>,
     pub repos: RefCell<Option<gio::ListStore>>,
+    pub repos_filtered: RefCell<FilterListModel>,
     pub source_directory: RefCell<String>,
     pub backup_directory: RefCell<PathBuf>,
     #[template_child]
@@ -86,6 +87,7 @@ impl ObjectSubclass for Window {
             repos_list: TemplateChild::default(),
             repos_list_count: Cell::default(),
             repos: RefCell::default(),
+            repos_filtered: RefCell::default(),
             source_directory: RefCell::new(String::new()),
             backup_directory: RefCell::new(PathBuf::new()),
             progress_bar: TemplateChild::default(),
