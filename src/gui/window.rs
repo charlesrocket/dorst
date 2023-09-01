@@ -1527,8 +1527,13 @@ mod tests {
 
         button.emit_clicked();
 
-        let entry = &gtk::Window::list_toplevels()[0]
-            .first_child()
+        let dialog = &gtk::Window::list_toplevels()[0]
+            .clone()
+            .downcast::<MessageDialog>()
+            .unwrap();
+
+        let entry = dialog
+            .extra_child()
             .unwrap()
             .downcast::<gtk::Entry>()
             .unwrap();
@@ -1536,7 +1541,7 @@ mod tests {
         let buffer = entry.buffer();
 
         buffer.set_text("invalid23");
-        entry.emit_activate();
+        dialog.response("edit");
 
         let link = window
             .repos()
