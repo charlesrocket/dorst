@@ -5,6 +5,17 @@
 ### Intro
 
 Bootstrap (and backup) codebases with Dørst.
+
+### Features
+##### Default
+
+* `logs`
+* `cli`
+
+##### Optional
+
+* `gui`
+
 ## CLI
 ### Compilation
 
