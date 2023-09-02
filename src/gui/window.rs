@@ -262,7 +262,7 @@ impl Window {
                         }
 
                         repo.set_link(entry.text().to_string());
-                        repo.set_name(util::get_name(&entry.text().to_string()));
+                        repo.set_name(util::get_name(&entry.text()));
                     }),
                 );
 
