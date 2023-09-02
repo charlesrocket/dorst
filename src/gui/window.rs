@@ -216,14 +216,17 @@ impl Window {
                 let repo_pos = row.index();
                 let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
                 let entry = gtk::Entry::builder()
-                    .placeholder_text("Link")
+                    .placeholder_text(repo.link())
                     .activates_default(true)
                     .build();
 
                 let cancel_response = "cancel";
                 let edit_response = "edit";
                 let dialog = MessageDialog::builder()
+                    .default_width(350)
                     .heading("Edit link")
+                    .body(format!("<tt>{}</tt>", repo.name()))
+                    .body_use_markup(true)
                     .transient_for(&window)
                     .modal(true)
                     .destroy_with_parent(true)
@@ -259,7 +262,7 @@ impl Window {
                         }
 
                         repo.set_link(entry.text().to_string());
-
+                        repo.set_name(util::get_name(&entry.text().to_string()));
                     }),
                 );
 
