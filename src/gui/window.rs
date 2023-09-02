@@ -278,7 +278,9 @@ impl Window {
                 let cancel_response = "cancel";
                 let remove_response = "remove";
                 let dialog = MessageDialog::builder()
-                    .heading("Remove repository?")
+                    .heading("Remove repository")
+                    .body(format!("<tt>{}</tt>", repo.name()))
+                    .body_use_markup(true)
                     .transient_for(&window)
                     .modal(true)
                     .destroy_with_parent(true)
@@ -298,7 +300,7 @@ impl Window {
                             return;
                         }
 
-                        let link = repo.repo_data().link;
+                        let link = repo.link();
                         let repos = window.repos();
                         let mut position = 0;
                         while let Some(item) = repos.item(position) {
