@@ -1660,4 +1660,25 @@ mod tests {
 
         assert!(*window.imp().backup_directory.borrow() == PathBuf::from("/backup_foobar"));
     }
+
+    #[gtk::test]
+    fn about_window() {
+        let window = window();
+        let version = env!("CARGO_PKG_VERSION");
+
+        window
+            .imp()
+            .stack
+            .activate_action("win.about", None)
+            .unwrap();
+
+        let about_window = &gtk::Window::list_toplevels()[0]
+            .clone()
+            .downcast::<AboutWindow>()
+            .unwrap();
+
+        assert!(about_window.version().contains(version));
+
+        about_window.clone().close();
+    }
 }
