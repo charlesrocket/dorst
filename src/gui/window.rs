@@ -1,18 +1,16 @@
 use adw::{
     prelude::*, subclass::prelude::*, AboutWindow, ColorScheme, MessageDialog, ResponseAppearance,
 };
-use anyhow::Result;
-use glib::{clone, ControlFlow, KeyFile, MainContext, Object, Priority, Sender};
 use gtk::{
     gio::{self, ListStore, SimpleAction},
-    glib,
+    glib::{self, clone, ControlFlow, KeyFile, MainContext, Object, Priority},
     pango::EllipsizeMode,
     Align, Box, Button, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
     Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
 };
 
 #[cfg(feature = "logs")]
-use tracing::{error, info};
+use tracing::info;
 
 use std::{
     cell::Ref,
@@ -26,7 +24,7 @@ mod imp;
 
 use crate::{
     git,
-    gui::{repo_object::RepoObject, window, RepoData},
+    gui::{repo_object::RepoObject, RepoData},
     util,
 };
 
@@ -189,7 +187,7 @@ impl Window {
             Some(&selection_model),
             clone!(@weak self as window => @default-panic, move |obj| {
                 let repo_object = obj.downcast_ref().expect("The object should be of type `RepoObject`.");
-                let row = Window::create_repo_row(repo_object);
+                let row = window.create_repo_row(repo_object);
                 row.upcast()
             }),
         );
@@ -416,7 +414,6 @@ impl Window {
         let repos = self.repos();
         let total_repos = self.get_repo_data().len();
         let completed_repos = Arc::new(Mutex::new(0));
-        let completed_repos_clone = completed_repos.clone();
         let dest_clone = self.get_dest_clone();
         let dest_backup = self.get_dest_backup();
         let backups_enabled = self.imp().backups_enabled.get();
@@ -432,7 +429,7 @@ impl Window {
 
         glib::idle_add_local(
             clone!(@weak self as window => @default-return ControlFlow::Continue, move || {
-                let completed = *completed_repos_clone.lock().unwrap() as f64;
+                let completed = window.completed() as f64;
                 let progress = completed / total_repos as f64;
 
                 window.update_rows();
@@ -476,7 +473,6 @@ impl Window {
         );
 
         for i in 0..repos.n_items() {
-            let completed_repos_clone = completed_repos.clone();
             let obj = repos.item(i).unwrap();
             if let Some(repo) = obj.downcast_ref::<RepoObject>() {
                 active_task = true;
@@ -493,9 +489,6 @@ impl Window {
                     &dest_backup.clone().display().to_string(),
                     util::get_name(&repo_link)
                 );
-
-                let errors_clone = self.imp().errors_list.clone();
-                let success_clone = self.imp().success_list.clone();
 
                 repo.set_status("started");
 
@@ -520,39 +513,17 @@ impl Window {
 
                 *thread_pool_clone.lock().unwrap() += 1;
 
-                gio::spawn_blocking(move || {
-                    match window::Window::process_repo(
-                        &destination_clone,
-                        &destination_backup,
-                        &repo_link,
-                        backups_enabled,
-                        #[cfg(feature = "gui")]
-                        &Some(tx.clone()),
-                    ) {
-                        Ok(()) => {
-                            #[cfg(feature = "logs")]
-                            if logs {
-                                info!("Completed: {}", util::get_name(&repo_link));
-                            }
+                repo.process_repo(
+                    &destination_clone,
+                    &destination_backup,
+                    backups_enabled,
+                    #[cfg(feature = "gui")]
+                    Some(tx.clone()),
+                    #[cfg(feature = "logs")]
+                    logs,
+                );
 
-                            success_clone.lock().unwrap().push(repo_link);
-                        }
-                        Err(error) => {
-                            #[cfg(feature = "logs")]
-                            if logs {
-                                error!("Failed: {} - {error}", util::get_name(&repo_link));
-                            }
-
-                            errors_clone
-                                .lock()
-                                .unwrap()
-                                .push(format!("{repo_link}: {error}"));
-                        }
-                    }
-
-                    *completed_repos_clone.lock().unwrap() += 1;
-                    *thread_pool_clone.lock().unwrap() -= 1;
-                });
+                *thread_pool_clone.lock().unwrap() -= 1;
             } else {
                 *completed_repos.lock().unwrap() += 1;
             }
@@ -561,48 +532,6 @@ impl Window {
         if !active_task {
             self.controls_disabled(false);
         }
-    }
-
-    fn process_repo(
-        destination_clone: &str,
-        destination_backup: &str,
-        repo_link: &str,
-        mirror: bool,
-        #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
-    ) -> Result<()> {
-        git::process_target(
-            destination_clone,
-            repo_link,
-            false,
-            #[cfg(feature = "cli")]
-            None,
-            #[cfg(feature = "gui")]
-            tx,
-            #[cfg(feature = "cli")]
-            None,
-        )?;
-
-        let _ = tx.clone().unwrap().send(Message::Finish);
-
-        if mirror {
-            let _ = tx.clone().unwrap().send(Message::Reset);
-
-            git::process_target(
-                destination_backup,
-                repo_link,
-                true,
-                #[cfg(feature = "cli")]
-                None,
-                #[cfg(feature = "gui")]
-                tx,
-                #[cfg(feature = "cli")]
-                None,
-            )?;
-
-            let _ = tx.clone().unwrap().send(Message::Finish);
-        }
-
-        Ok(())
     }
 
     fn update_rows(&self) {
@@ -742,7 +671,7 @@ impl Window {
         tx
     }
 
-    fn create_repo_row(repo_object: &RepoObject) -> ListBoxRow {
+    fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
         let status_image = gtk::Image::builder().css_classes(["dim-label"]).build();
 
         let name = Label::builder()
@@ -874,6 +803,26 @@ impl Window {
             pb.set_fraction(value);
         }));
 
+        repo_object.connect_success_notify(clone!(@weak self as window => move |repo| {
+            let success_list = &window.imp().success_list;
+            let link = repo.link();
+
+            success_list.lock().unwrap().push(link);
+        }));
+
+        repo_object.connect_error_notify(clone!(@weak self as window => move |repo| {
+            let errors_list = &window.imp().errors_list;
+            let error = repo.error();
+
+            errors_list.lock().unwrap().push(error);
+        }));
+
+        repo_object.connect_completed_notify(clone!(@weak self as window => move |_| {
+            let completed = window.completed() + 1;
+
+            window.set_completed(completed);
+        }));
+
         repo_object
             .bind_property("name", &name, "label")
             .sync_create()
@@ -933,7 +882,17 @@ impl Window {
         }
 
         let name = util::get_name(&content).to_owned();
-        let repo = RepoObject::new(name, content, String::new(), 0.0, String::from("pending"));
+        let repo = RepoObject::new(
+            name,
+            content,
+            String::new(),
+            0.0,
+            String::from("pending"),
+            false,
+            String::new(),
+            false,
+        );
+
         self.repos().append(&repo);
     }
 
@@ -1016,6 +975,9 @@ impl Window {
                                 branch: String::new(),
                                 progress: 0.0,
                                 status: String::from("pending"),
+                                success: false,
+                                error: String::new(),
+                                completed: false,
                             }
                         })
                     })
