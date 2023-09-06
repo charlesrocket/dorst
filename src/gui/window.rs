@@ -1,24 +1,21 @@
 use adw::{
     prelude::*, subclass::prelude::*, AboutWindow, ColorScheme, MessageDialog, ResponseAppearance,
 };
-use anyhow::Result;
-use glib::{clone, ControlFlow, KeyFile, MainContext, Object, Priority, Sender};
 use gtk::{
     gio::{self, ListStore, SimpleAction},
-    glib,
+    glib::{self, clone, ControlFlow, KeyFile, MainContext, Object, Priority},
     pango::EllipsizeMode,
     Align, Box, Button, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
     Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
 };
 
 #[cfg(feature = "logs")]
-use tracing::{error, info};
+use tracing::info;
 
 use std::{
     cell::Ref,
     fs,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
     time,
 };
 
@@ -26,7 +23,7 @@ mod imp;
 
 use crate::{
     git,
-    gui::{repo_object::RepoObject, window, RepoData},
+    gui::{repo_object::RepoObject, RepoData},
     util,
 };
 
@@ -189,7 +186,7 @@ impl Window {
             Some(&selection_model),
             clone!(@weak self as window => @default-panic, move |obj| {
                 let repo_object = obj.downcast_ref().expect("The object should be of type `RepoObject`.");
-                let row = Window::create_repo_row(repo_object);
+                let row = window.create_repo_row(repo_object);
                 row.upcast()
             }),
         );
@@ -345,25 +342,23 @@ impl Window {
             &"All".to_variant(),
         );
 
-        action_filter.connect_activate(
-            clone!(@weak self as window => move |action, parameter| {
-                let parameter = parameter
-                    .unwrap()
-                    .get::<String>()
-                    .unwrap();
+        action_filter.connect_activate(clone!(@weak self as window => move |action, parameter| {
+            let parameter = parameter
+                .unwrap()
+                .get::<String>()
+                .unwrap();
 
-                *window.imp().filter_option.borrow_mut() = String::from(&parameter);
+            *window.imp().filter_option.borrow_mut() = String::from(&parameter);
 
-                filter_model.set_filter(window.filter().as_ref());
+            filter_model.set_filter(window.filter().as_ref());
 
-                if window.imp().errors_list.lock().unwrap().len() > 0 || window.imp().success_list.lock().unwrap().len() > 0 {
-                    window.update_rows();
-                }
+            if window.imp().errors_list.lock().unwrap().len() > 0 || window.imp().success_list.lock().unwrap().len() > 0 {
+                window.update_rows();
+            }
 
-                window.set_repo_list_stack();
-                action.set_state(&parameter.to_variant());
-            }),
-        );
+            window.set_repo_list_stack();
+            action.set_state(&parameter.to_variant());
+        }));
 
         self.add_action(&action_filter);
     }
@@ -382,6 +377,13 @@ impl Window {
                     .row_at_index(i.try_into().unwrap())
                     .unwrap()
                     .set_activatable(false);
+            }
+
+            for i in 0..self.repos().n_items() {
+                let obj = self.repos().item(i).unwrap();
+                if let Some(repo) = obj.downcast_ref::<RepoObject>() {
+                    repo.set_status("started");
+                }
             }
         } else {
             self.imp().button_start.set_sensitive(true);
@@ -411,77 +413,27 @@ impl Window {
         self.imp().button_backup_state.add_css_class("with_bar");
         self.imp().progress_bar.set_fraction(0.0);
         self.imp().revealer.set_reveal_child(true);
+        self.set_completed(0);
 
         let mut active_task = false;
         let repos = self.repos();
-        let total_repos = self.get_repo_data().len();
-        let completed_repos = Arc::new(Mutex::new(0));
-        let completed_repos_clone = completed_repos.clone();
         let dest_clone = self.get_dest_clone();
         let dest_backup = self.get_dest_backup();
         let backups_enabled = self.imp().backups_enabled.get();
         #[cfg(feature = "logs")]
         let logs = self.imp().logs.get();
 
-        let thread_pool = Arc::new(Mutex::new(0));
-
         #[cfg(feature = "logs")]
         if logs {
             info!("Started");
         }
 
-        glib::idle_add_local(
-            clone!(@weak self as window => @default-return ControlFlow::Continue, move || {
-                let completed = *completed_repos_clone.lock().unwrap() as f64;
-                let progress = completed / total_repos as f64;
-
-                window.update_rows();
-
-                if completed == total_repos as f64 {
-                    let updated_list_locked = window.imp().updated_list.lock().unwrap();
-                    let errors_list_locked = window.imp().errors_list.lock().unwrap();
-                    let errors_locked = errors_list_locked.iter()
-                                                          .map(std::string::ToString::to_string)
-                                                          .collect::<Vec<_>>()
-                        .join("\n");
-
-                    if !errors_locked.is_empty() {
-                        window.imp().banner.set_title(&errors_locked);
-                        window.imp().revealer_banner.set_reveal_child(true);
-                        window.imp().banner.set_revealed(true);
-                        window.show_message(&format!("Failures: {}", errors_list_locked.len()), 1);
-                    }
-
-                    if !updated_list_locked.is_empty() {
-                        window.show_message(&format!("Repositories with updates: {}", updated_list_locked.len()), 4);
-                    }
-
-                    window.imp().progress_bar.set_fraction(1.0);
-                    window.imp().revealer.set_reveal_child(false);
-                    window.imp().button_source_dest.remove_css_class("with_bar");
-                    window.imp().button_backup_state.remove_css_class("with_bar");
-                    window.controls_disabled(false);
-
-                    #[cfg(feature = "logs")]
-                    if logs {
-                        info!("Finished");
-                    }
-
-                    ControlFlow::Break
-                } else {
-                    window.imp().progress_bar.set_fraction(progress);
-                    ControlFlow::Continue
-                }
-            }),
-        );
-
         for i in 0..repos.n_items() {
-            let completed_repos_clone = completed_repos.clone();
             let obj = repos.item(i).unwrap();
             if let Some(repo) = obj.downcast_ref::<RepoObject>() {
                 active_task = true;
+
                 let repo_link = repo.link();
-                let thread_pool_clone = thread_pool.clone();
                 let tx = self.set_row_channel(obj.clone());
                 let destination_clone = format!(
                     "{}/{}",
@@ -494,16 +446,10 @@ impl Window {
                     util::get_name(&repo_link)
                 );
 
-                let errors_clone = self.imp().errors_list.clone();
-                let success_clone = self.imp().success_list.clone();
-
-                repo.set_status("started");
-
                 if self.task_limiter() {
-                    while *thread_pool_clone.lock().unwrap()
+                    while *self.imp().active_threads.lock().unwrap()
                         > *self.imp().thread_pool.lock().unwrap()
                     {
-                        self.update_rows();
                         let wait_loop = glib::MainLoop::new(None, false);
 
                         glib::timeout_add(
@@ -518,91 +464,24 @@ impl Window {
                     }
                 }
 
-                *thread_pool_clone.lock().unwrap() += 1;
+                *self.imp().active_threads.lock().unwrap() += 1;
 
-                gio::spawn_blocking(move || {
-                    match window::Window::process_repo(
-                        &destination_clone,
-                        &destination_backup,
-                        &repo_link,
-                        backups_enabled,
-                        #[cfg(feature = "gui")]
-                        &Some(tx.clone()),
-                    ) {
-                        Ok(()) => {
-                            #[cfg(feature = "logs")]
-                            if logs {
-                                info!("Completed: {}", util::get_name(&repo_link));
-                            }
-
-                            success_clone.lock().unwrap().push(repo_link);
-                        }
-                        Err(error) => {
-                            #[cfg(feature = "logs")]
-                            if logs {
-                                error!("Failed: {} - {error}", util::get_name(&repo_link));
-                            }
-
-                            errors_clone
-                                .lock()
-                                .unwrap()
-                                .push(format!("{repo_link}: {error}"));
-                        }
-                    }
-
-                    *completed_repos_clone.lock().unwrap() += 1;
-                    *thread_pool_clone.lock().unwrap() -= 1;
-                });
-            } else {
-                *completed_repos.lock().unwrap() += 1;
+                repo.process_repo(
+                    &destination_clone,
+                    &destination_backup,
+                    backups_enabled,
+                    #[cfg(feature = "gui")]
+                    Some(tx.clone()),
+                    #[cfg(feature = "logs")]
+                    logs,
+                    self.imp().active_threads.clone(),
+                );
             }
         }
 
         if !active_task {
             self.controls_disabled(false);
         }
-    }
-
-    fn process_repo(
-        destination_clone: &str,
-        destination_backup: &str,
-        repo_link: &str,
-        mirror: bool,
-        #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
-    ) -> Result<()> {
-        git::process_target(
-            destination_clone,
-            repo_link,
-            false,
-            #[cfg(feature = "cli")]
-            None,
-            #[cfg(feature = "gui")]
-            tx,
-            #[cfg(feature = "cli")]
-            None,
-        )?;
-
-        let _ = tx.clone().unwrap().send(Message::Finish);
-
-        if mirror {
-            let _ = tx.clone().unwrap().send(Message::Reset);
-
-            git::process_target(
-                destination_backup,
-                repo_link,
-                true,
-                #[cfg(feature = "cli")]
-                None,
-                #[cfg(feature = "gui")]
-                tx,
-                #[cfg(feature = "cli")]
-                None,
-            )?;
-
-            let _ = tx.clone().unwrap().send(Message::Finish);
-        }
-
-        Ok(())
     }
 
     fn update_rows(&self) {
@@ -742,7 +621,7 @@ impl Window {
         tx
     }
 
-    fn create_repo_row(repo_object: &RepoObject) -> ListBoxRow {
+    fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
         let status_image = gtk::Image::builder().css_classes(["dim-label"]).build();
 
         let name = Label::builder()
@@ -814,8 +693,8 @@ impl Window {
             .build();
 
         repo_object.connect_status_notify(
-            clone!(@weak name, @weak pb, @weak revealer, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
-                if repo_object.repo_data().status == "ok" {
+            clone!(@weak self as window, @weak name, @weak pb, @weak revealer, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
+                if repo_object.status() == "ok" {
                     name.add_css_class("success");
                     name.remove_css_class("error");
                     name.remove_css_class("accent");
@@ -823,15 +702,12 @@ impl Window {
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(true);
                     revealer.set_reveal_child(false);
-                } else if repo_object.repo_data().status == "updated" {
+                } else if repo_object.status() == "updated" {
                     name.add_css_class("accent");
                     name.remove_css_class("success");
                     name.remove_css_class("error");
                     status_image.set_from_icon_name(Some("emblem-default-symbolic"));
-                    status_revealer.set_reveal_child(true);
-                    branch_revealer.set_reveal_child(true);
-                    revealer.set_reveal_child(false);
-                } else if repo_object.repo_data().status == "err" {
+                } else if repo_object.status() == "err" {
                     name.add_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
@@ -839,13 +715,13 @@ impl Window {
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(false);
                     revealer.set_reveal_child(false);
-                } else if repo_object.repo_data().status == "pending"{
+                } else if repo_object.status() == "pending"{
                     name.remove_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
                     status_revealer.set_reveal_child(false);
                     branch_revealer.set_reveal_child(false);
-                } else if repo_object.repo_data().status == "started"{
+                } else if repo_object.status() == "started"{
                     name.remove_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
@@ -853,15 +729,32 @@ impl Window {
                     status_revealer.set_reveal_child(false);
                     branch_revealer.set_reveal_child(false);
                     revealer.set_reveal_child(true);
-                } else if repo_object.repo_data().status == "cloning"{
+                } else if repo_object.status() == "finished"{
+                    if repo_object.error().is_empty() {
+                        let success_list = &window.imp().success_list;
+                        let link = repo_object.link();
+
+                        success_list.lock().unwrap().push(link);
+
+                        let mut path = window.get_dest_clone();
+                        path.push(repo_object.name());
+
+                        let branch = git::current_branch(path).unwrap();
+                        repo_object.set_branch(branch);
+
+                        if window.imp().updated_list.lock().unwrap().contains(&repo_object.link()) {
+                            repo_object.set_status("updated");
+                        }
+                    }
+                } else if repo_object.status() == "cloning"{
                     pb.add_css_class("clone");
                     pb.remove_css_class("deltas");
                     pb.remove_css_class("fetch");
-                } else if repo_object.repo_data().status == "fetching"{
+                } else if repo_object.status() == "fetching"{
                     pb.add_css_class("fetch");
                     pb.remove_css_class("clone");
                     pb.remove_css_class("deltas");
-                } else if repo_object.repo_data().status == "resolving"{
+                } else if repo_object.status() == "resolving"{
                     pb.add_css_class("deltas");
                     pb.remove_css_class("clone");
                     pb.remove_css_class("fetch");
@@ -872,6 +765,20 @@ impl Window {
         repo_object.connect_progress_notify(clone!(@weak pb => move |repo| {
             let value = repo.progress();
             pb.set_fraction(value);
+        }));
+
+        repo_object.connect_error_notify(clone!(@weak self as window => move |repo| {
+            let errors_list = &window.imp().errors_list;
+            let error = repo.error();
+
+            errors_list.lock().unwrap().push(error);
+        }));
+
+        repo_object.connect_completed_notify(clone!(@weak self as window => move |_| {
+            let completed = window.completed() + 1;
+
+            window.set_completed(completed);
+
         }));
 
         repo_object
@@ -933,7 +840,16 @@ impl Window {
         }
 
         let name = util::get_name(&content).to_owned();
-        let repo = RepoObject::new(name, content, String::new(), 0.0, String::from("pending"));
+        let repo = RepoObject::new(
+            name,
+            content,
+            String::new(),
+            0.0,
+            String::from("pending"),
+            String::new(),
+            false,
+        );
+
         self.repos().append(&repo);
     }
 
@@ -1016,6 +932,8 @@ impl Window {
                                 branch: String::new(),
                                 progress: 0.0,
                                 status: String::from("pending"),
+                                error: String::new(),
+                                completed: false,
                             }
                         })
                     })
@@ -1360,6 +1278,33 @@ mod tests {
     }
 
     #[gtk::test]
+    fn backup_error() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("test_backup"));
+
+        window.imp().repo_entry_empty.emit_activate();
+
+        if !window.imp().button_backup_state.is_active() {
+            window.imp().button_backup_state.emit_clicked();
+        };
+
+        window.imp().button_start.emit_clicked();
+        wait_ui(2000);
+
+        assert!(window.imp().success_list.lock().unwrap().len() == 0);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 0);
+        assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+    }
+
+    #[gtk::test]
     fn backup() {
         if Path::new("test-gui-src").exists() {
             remove_dir_all("test-gui-src").unwrap();
@@ -1392,11 +1337,11 @@ mod tests {
         window.select_backup_directory(&PathBuf::from("/tmp/dorst_test-gui"));
         window.select_source_directory(&PathBuf::from("test-gui-src"));
         window.imp().button_start.emit_clicked();
-        wait_ui(500);
+        wait_ui(1000);
         helper::commit(repo_dir);
         wait_ui(1000);
         window.imp().button_start.emit_clicked();
-        wait_ui(1000);
+        wait_ui(2000);
 
         assert!(window.imp().success_list.lock().unwrap().len() == 1);
         assert!(window.imp().updated_list.lock().unwrap().len() == 1);
@@ -1414,22 +1359,48 @@ mod tests {
             remove_file("/tmp/dorst_test_conf.yaml").unwrap();
         }
 
+        if Path::new("test-gui-src-filter").exists() {
+            remove_dir_all("test-gui-src-filter").unwrap();
+        }
+
+        let repo = helper::test_repo();
+        let repo_dir = String::from(repo.path().to_str().unwrap());
+        let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(1)
+            .build()
+            .unwrap();
+
+        config.write_all(b"\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x37\x31").unwrap();
+        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+        runtime.spawn(async move {
+            helper::serve(repo, 7871);
+        });
+
         let window = window();
+
+        window.select_backup_directory(&PathBuf::from("/tmp/dorst_test-gui-filter"));
+        window.select_source_directory(&PathBuf::from("test-gui-src-filter"));
 
         let filter_ssh = "SSH".to_variant();
         let filter_https = "HTTPS".to_variant();
 
         window
             .imp()
-            .repo_entry_empty
+            .repo_entry
             .set_buffer(&entry_buffer_from_str("invalid"));
 
-        window.imp().repo_entry_empty.emit_activate();
-        window.imp().button_start.emit_clicked();
+        window.imp().repo_entry.emit_activate();
         wait_ui(500);
+        window.imp().button_start.emit_clicked();
+        wait_ui(2000);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
-        assert!(window.imp().repos_list_count.get() == 1);
+        assert!(window.imp().repos_list_count.get() == 2);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 0);
+
+        helper::commit(repo_dir);
+        wait_ui(500);
 
         window
             .imp()
@@ -1438,10 +1409,11 @@ mod tests {
             .unwrap();
 
         window.imp().button_start.emit_clicked();
-        wait_ui(500);
+        wait_ui(1000);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
         assert!(window.imp().repos_list_count.get() == 0);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 1);
 
         window
             .imp()
@@ -1450,10 +1422,13 @@ mod tests {
             .unwrap();
 
         window.imp().button_start.emit_clicked();
-        wait_ui(500);
+        wait_ui(1000);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
         assert!(window.imp().repos_list_count.get() == 0);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 1);
+
+        remove_dir_all("test-gui-src-filter").unwrap();
     }
 
     #[gtk::test]
