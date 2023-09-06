@@ -1359,22 +1359,48 @@ mod tests {
             remove_file("/tmp/dorst_test_conf.yaml").unwrap();
         }
 
+        if Path::new("test-gui-src-filter").exists() {
+            remove_dir_all("test-gui-src-filter").unwrap();
+        }
+
+        let repo = helper::test_repo();
+        let repo_dir = String::from(repo.path().to_str().unwrap());
+        let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(1)
+            .build()
+            .unwrap();
+
+        config.write_all(b"\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x37\x31").unwrap();
+        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+        runtime.spawn(async move {
+            helper::serve(repo, 7871);
+        });
+
         let window = window();
+
+        window.select_backup_directory(&PathBuf::from("/tmp/dorst_test-gui-filter"));
+        window.select_source_directory(&PathBuf::from("test-gui-src-filter"));
 
         let filter_ssh = "SSH".to_variant();
         let filter_https = "HTTPS".to_variant();
 
         window
             .imp()
-            .repo_entry_empty
+            .repo_entry
             .set_buffer(&entry_buffer_from_str("invalid"));
 
-        window.imp().repo_entry_empty.emit_activate();
-        window.imp().button_start.emit_clicked();
+        window.imp().repo_entry.emit_activate();
         wait_ui(500);
+        window.imp().button_start.emit_clicked();
+        wait_ui(2000);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
-        assert!(window.imp().repos_list_count.get() == 1);
+        assert!(window.imp().repos_list_count.get() == 2);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 0);
+
+        helper::commit(repo_dir);
+        wait_ui(500);
 
         window
             .imp()
@@ -1383,10 +1409,11 @@ mod tests {
             .unwrap();
 
         window.imp().button_start.emit_clicked();
-        wait_ui(500);
+        wait_ui(1000);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
         assert!(window.imp().repos_list_count.get() == 0);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 1);
 
         window
             .imp()
@@ -1395,10 +1422,13 @@ mod tests {
             .unwrap();
 
         window.imp().button_start.emit_clicked();
-        wait_ui(500);
+        wait_ui(1000);
 
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
         assert!(window.imp().repos_list_count.get() == 0);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 1);
+
+        remove_dir_all("test-gui-src-filter").unwrap();
     }
 
     #[gtk::test]
