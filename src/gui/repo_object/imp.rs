@@ -15,7 +15,6 @@ pub struct RepoObject {
     #[property(name = "branch", get, set, type = String, member = branch)]
     #[property(name = "progress", get, set, type = f64, member = progress)]
     #[property(name = "status", get, set, type = String, member = status)]
-    #[property(name = "success", get, set, type = bool, member = success)]
     #[property(name = "error", get, set, type = String, member = error)]
     #[property(name = "completed", get, set, type = bool, member = completed)]
     pub data: RefCell<RepoData>,

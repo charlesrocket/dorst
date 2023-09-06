@@ -14,6 +14,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+#[cfg(feature = "logs")]
+use tracing::info;
+
 use crate::gui::window::RepoObject;
 use crate::gui::RepoData;
 use crate::util;
@@ -70,6 +73,7 @@ pub struct Window {
     #[property(get, set)]
     pub task_limiter: Cell<bool>,
     pub thread_pool: Arc<Mutex<u64>>,
+    pub active_threads: Arc<Mutex<u64>>,
 }
 
 #[glib::object_subclass]
@@ -111,6 +115,7 @@ impl ObjectSubclass for Window {
             logs: Cell::new(true),
             task_limiter: Cell::default(),
             thread_pool: Arc::new(Mutex::new(7)),
+            active_threads: Arc::default(),
         }
     }
 
@@ -165,6 +170,55 @@ impl ObjectImpl for Window {
         obj.setup_theme();
         obj.setup_callbacks();
         obj.restore_data();
+
+        obj.connect_completed_notify(|window| {
+            let total_repos = window.get_repo_data().len();
+            let completed = window.completed() as f64;
+            let progress = completed / total_repos as f64;
+
+            #[cfg(feature = "logs")]
+            let logs = window.imp().logs.get();
+
+            if completed == total_repos as f64 {
+                let updated_list_locked = window.imp().updated_list.lock().unwrap();
+                let errors_list_locked = window.imp().errors_list.lock().unwrap();
+                let errors_locked = errors_list_locked
+                    .iter()
+                    .map(std::string::ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                if !errors_locked.is_empty() {
+                    window.imp().banner.set_title(&errors_locked);
+                    window.imp().revealer_banner.set_reveal_child(true);
+                    window.imp().banner.set_revealed(true);
+                    window.show_message(&format!("Failures: {}", errors_list_locked.len()), 1);
+                }
+
+                if !updated_list_locked.is_empty() {
+                    window.show_message(
+                        &format!("Repositories with updates: {}", updated_list_locked.len()),
+                        4,
+                    );
+                }
+
+                window.imp().progress_bar.set_fraction(1.0);
+                window.imp().revealer.set_reveal_child(false);
+                window.imp().button_source_dest.remove_css_class("with_bar");
+                window
+                    .imp()
+                    .button_backup_state
+                    .remove_css_class("with_bar");
+                window.controls_disabled(false);
+
+                #[cfg(feature = "logs")]
+                if logs {
+                    info!("Finished");
+                }
+            } else {
+                window.imp().progress_bar.set_fraction(progress);
+            }
+        });
     }
 }
 

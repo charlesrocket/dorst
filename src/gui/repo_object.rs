@@ -8,6 +8,8 @@ use {
     tracing::{error, info},
 };
 
+use std::sync::{Arc, Mutex};
+
 use crate::{git, gui::window::Message};
 
 mod imp;
@@ -17,9 +19,10 @@ glib::wrapper! {
 }
 
 enum RepoMessage {
-    Success(bool),
+    Ok,
     Error(String),
-    Completed(bool),
+    Start,
+    Finish(bool),
 }
 
 impl RepoObject {
@@ -29,7 +32,6 @@ impl RepoObject {
         branch: String,
         progress: f64,
         status: String,
-        success: bool,
         error: String,
         completed: bool,
     ) -> Self {
@@ -39,7 +41,6 @@ impl RepoObject {
             .property("branch", branch)
             .property("progress", progress)
             .property("status", status)
-            .property("success", success)
             .property("error", error)
             .property("completed", completed)
             .build()
@@ -56,7 +57,6 @@ impl RepoObject {
             repo_data.branch,
             repo_data.progress,
             repo_data.status,
-            repo_data.success,
             repo_data.error,
             repo_data.completed,
         )
@@ -69,6 +69,7 @@ impl RepoObject {
         mirror: bool,
         #[cfg(feature = "gui")] tx: Option<Sender<Message>>,
         #[cfg(feature = "logs")] logs: bool,
+        active_threads: Arc<Mutex<u64>>,
     ) {
         let repo = self.clone();
         let repo_link = self.repo_data().link;
@@ -78,16 +79,22 @@ impl RepoObject {
         let (tx_repo, rx_repo) = MainContext::channel(Priority::default());
 
         rx_repo.attach(None, move |x| match x {
-            RepoMessage::Success(value) => {
-                repo.set_success(value);
+            RepoMessage::Ok => {
+                repo.set_status("ok");
                 ControlFlow::Continue
             }
             RepoMessage::Error(value) => {
                 repo.set_error(value);
+                repo.set_status("err");
                 ControlFlow::Continue
             }
-            RepoMessage::Completed(value) => {
+            RepoMessage::Start => {
+                repo.set_status("started");
+                ControlFlow::Continue
+            }
+            RepoMessage::Finish(value) => {
                 repo.set_completed(value);
+                repo.set_status("finished");
                 ControlFlow::Continue
             }
         });
@@ -110,7 +117,7 @@ impl RepoObject {
                         info!("Completed: {}", util::get_name(&repo_link));
                     }
 
-                    tx_repo.send(RepoMessage::Success(true)).unwrap();
+                    tx_repo.send(RepoMessage::Ok).unwrap();
                 }
                 Err(error) => {
                     #[cfg(feature = "logs")]
@@ -128,6 +135,7 @@ impl RepoObject {
 
             if mirror {
                 tx.clone().unwrap().send(Message::Reset).unwrap();
+                tx_repo.send(RepoMessage::Start).unwrap();
 
                 match git::process_target(
                     &dest_backup,
@@ -146,7 +154,7 @@ impl RepoObject {
                             info!("Completed (backup): {}", util::get_name(&repo_link));
                         }
 
-                        tx_repo.send(RepoMessage::Success(true)).unwrap();
+                        tx_repo.send(RepoMessage::Ok).unwrap();
                     }
                     Err(error) => {
                         #[cfg(feature = "logs")]
@@ -163,7 +171,8 @@ impl RepoObject {
                 tx.clone().unwrap().send(Message::Finish).unwrap();
             }
 
-            tx_repo.send(RepoMessage::Completed(true)).unwrap();
+            tx_repo.send(RepoMessage::Finish(true)).unwrap();
+            *active_threads.lock().unwrap() -= 1;
         });
     }
 }
@@ -175,7 +184,6 @@ pub struct RepoData {
     pub branch: String,
     pub progress: f64,
     pub status: String,
-    pub success: bool,
     pub error: String,
     pub completed: bool,
 }
