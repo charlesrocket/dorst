@@ -172,14 +172,12 @@ impl ObjectImpl for Window {
         obj.restore_data();
 
         obj.connect_completed_notify(|window| {
+            let error_margin = f64::EPSILON;
             let total_repos = window.get_repo_data().len();
-            let completed = window.completed() as f64;
+            let completed = f64::from(window.completed());
             let progress = completed / total_repos as f64;
 
-            #[cfg(feature = "logs")]
-            let logs = window.imp().logs.get();
-
-            if completed == total_repos as f64 {
+            if (completed - total_repos as f64).abs() < error_margin {
                 let updated_list_locked = window.imp().updated_list.lock().unwrap();
                 let errors_list_locked = window.imp().errors_list.lock().unwrap();
                 let errors_locked = errors_list_locked
@@ -212,7 +210,7 @@ impl ObjectImpl for Window {
                 window.controls_disabled(false);
 
                 #[cfg(feature = "logs")]
-                if logs {
+                if window.logs() {
                     info!("Finished");
                 }
             } else {
