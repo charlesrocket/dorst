@@ -100,6 +100,8 @@ impl RepoObject {
         });
 
         gtk::gio::spawn_blocking(move || {
+            let mut err_string = String::new();
+
             match git::process_target(
                 &dest_clone,
                 &repo_link,
@@ -125,9 +127,7 @@ impl RepoObject {
                         error!("Failed: {} - {error}", util::get_name(&repo_link));
                     }
 
-                    tx_repo
-                        .send(RepoMessage::Error(format!("{repo_link}: {error}")))
-                        .unwrap();
+                    err_string.push_str(&format!("{repo_link}: {error}"));
                 }
             }
 
@@ -162,13 +162,15 @@ impl RepoObject {
                             error!("Failed (backup): {} - {error}", util::get_name(&repo_link));
                         }
 
-                        tx_repo
-                            .send(RepoMessage::Error(format!("{repo_link} (backup): {error}")))
-                            .unwrap();
+                        err_string.push_str(&format!(" backup: {error}"));
                     }
                 }
 
                 tx.clone().unwrap().send(Message::Finish).unwrap();
+            }
+
+            if !err_string.is_empty() {
+                tx_repo.send(RepoMessage::Error(err_string)).unwrap();
             }
 
             tx_repo.send(RepoMessage::Finish(true)).unwrap();
