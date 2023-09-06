@@ -707,9 +707,6 @@ impl Window {
                     name.remove_css_class("success");
                     name.remove_css_class("error");
                     status_image.set_from_icon_name(Some("emblem-default-symbolic"));
-                    status_revealer.set_reveal_child(true);
-                    branch_revealer.set_reveal_child(true);
-                    revealer.set_reveal_child(false);
                 } else if repo_object.status() == "err" {
                     name.add_css_class("error");
                     name.remove_css_class("success");
@@ -746,10 +743,7 @@ impl Window {
                         repo_object.set_branch(branch);
 
                         if window.imp().updated_list.lock().unwrap().contains(&repo_object.link()) {
-                            name.add_css_class("accent");
-                            name.remove_css_class("success");
-                            name.remove_css_class("error");
-                            status_image.set_from_icon_name(Some("emblem-default-symbolic"));
+                            repo_object.set_status("updated");
                         }
                     }
                 } else if repo_object.status() == "cloning"{
