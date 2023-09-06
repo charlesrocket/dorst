@@ -1310,11 +1310,11 @@ mod tests {
         window.select_backup_directory(&PathBuf::from("/tmp/dorst_test-gui"));
         window.select_source_directory(&PathBuf::from("test-gui-src"));
         window.imp().button_start.emit_clicked();
-        wait_ui(500);
+        wait_ui(1000);
         helper::commit(repo_dir);
         wait_ui(1000);
         window.imp().button_start.emit_clicked();
-        wait_ui(1000);
+        wait_ui(2000);
 
         assert!(window.imp().success_list.lock().unwrap().len() == 1);
         assert!(window.imp().updated_list.lock().unwrap().len() == 1);
