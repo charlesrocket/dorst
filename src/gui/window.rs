@@ -1278,6 +1278,33 @@ mod tests {
     }
 
     #[gtk::test]
+    fn backup_error() {
+        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
+            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        }
+
+        let window = window();
+
+        window
+            .imp()
+            .repo_entry_empty
+            .set_buffer(&entry_buffer_from_str("test_backup"));
+
+        window.imp().repo_entry_empty.emit_activate();
+
+        if !window.imp().button_backup_state.is_active() {
+            window.imp().button_backup_state.emit_clicked();
+        };
+
+        window.imp().button_start.emit_clicked();
+        wait_ui(2000);
+
+        assert!(window.imp().success_list.lock().unwrap().len() == 0);
+        assert!(window.imp().updated_list.lock().unwrap().len() == 0);
+        assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+    }
+
+    #[gtk::test]
     fn backup() {
         if Path::new("test-gui-src").exists() {
             remove_dir_all("test-gui-src").unwrap();
