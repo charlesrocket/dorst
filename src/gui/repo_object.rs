@@ -21,7 +21,7 @@ glib::wrapper! {
 enum RepoMessage {
     Ok,
     Error(String),
-    Start,
+    Reset,
     Finish(bool),
 }
 
@@ -88,8 +88,8 @@ impl RepoObject {
                 repo.set_status("err");
                 ControlFlow::Continue
             }
-            RepoMessage::Start => {
-                repo.set_status("started");
+            RepoMessage::Reset => {
+                repo.set_status("pending");
                 ControlFlow::Continue
             }
             RepoMessage::Finish(value) => {
@@ -135,7 +135,7 @@ impl RepoObject {
 
             if mirror {
                 tx.clone().unwrap().send(Message::Reset).unwrap();
-                tx_repo.send(RepoMessage::Start).unwrap();
+                tx_repo.send(RepoMessage::Reset).unwrap();
 
                 match git::process_target(
                     &dest_backup,
