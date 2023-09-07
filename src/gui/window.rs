@@ -563,8 +563,6 @@ impl Window {
                         let branch = git::current_branch(path).unwrap();
                         repo_object.set_branch(branch);
                         repo_object.set_status("updated");
-                    } else {
-                        repo_object.set_status("pending");
                     }
                 }
             }
@@ -762,12 +760,6 @@ impl Window {
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(false);
                     revealer.set_reveal_child(false);
-                } else if repo_object.status() == "pending"{
-                    name.remove_css_class("error");
-                    name.remove_css_class("success");
-                    name.remove_css_class("accent");
-                    status_revealer.set_reveal_child(false);
-                    branch_revealer.set_reveal_child(false);
                 } else if repo_object.status() == "started"{
                     name.remove_css_class("error");
                     name.remove_css_class("success");
@@ -892,7 +884,7 @@ impl Window {
             content,
             String::new(),
             0.0,
-            String::from("pending"),
+            String::new(),
             String::new(),
             false,
         );
@@ -978,7 +970,7 @@ impl Window {
                                 link: link_string,
                                 branch: String::new(),
                                 progress: 0.0,
-                                status: String::from("pending"),
+                                status: String::new(),
                                 error: String::new(),
                                 completed: false,
                             }
