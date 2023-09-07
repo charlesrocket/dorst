@@ -26,11 +26,10 @@ logs = ["dep:tracing", "tracing-appender", "tracing-subscriber"]
 adw = { version = "0.5", package = "libadwaita", features = ["v1_3"], optional = true }
 anyhow = "1.0"
 clap = { version = "4.3", features = ["string"], optional = true }
-git2 = "0.17"
+git2 = { version = "0.17", features = ["vendored-openssl"] }
 glib = { version = "0.18", optional = true }
 gtk = { version = "0.7", package = "gtk4", features = ["v4_10"], optional = true }
 indicatif = { version = "0.17", optional = true }
-openssl-sys = { version = "0.9", features = ["vendored"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 tracing = { version = "0.1", optional = true }
