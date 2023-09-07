@@ -34,7 +34,7 @@ glib::wrapper! {
                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
 }
 
-pub enum Message {
+pub enum RowMessage {
     Reset,
     Progress(f64, Status),
     Clone,
@@ -618,17 +618,17 @@ impl Window {
         }
     }
 
-    fn set_row_channel(&self, row: Object) -> glib::Sender<Message> {
+    fn set_row_channel(&self, row: Object) -> glib::Sender<RowMessage> {
         let (tx, rx) = MainContext::channel(Priority::DEFAULT);
         let repo = row.downcast::<RepoObject>().unwrap();
         let updated_list_clone = self.imp().updated_list.clone();
 
         rx.attach(None, move |x| match x {
-            Message::Reset => {
+            RowMessage::Reset => {
                 repo.set_progress(0.0);
                 ControlFlow::Continue
             }
-            Message::Progress(value, progress) => {
+            RowMessage::Progress(value, progress) => {
                 if value.is_nan() {
                     repo.set_progress(1.0);
                 } else {
@@ -643,23 +643,23 @@ impl Window {
 
                 ControlFlow::Continue
             }
-            Message::Clone => {
+            RowMessage::Clone => {
                 repo.set_status("cloning");
                 ControlFlow::Continue
             }
-            Message::Fetch => {
+            RowMessage::Fetch => {
                 repo.set_status("fetching");
                 ControlFlow::Continue
             }
-            Message::Deltas => {
+            RowMessage::Deltas => {
                 repo.set_status("resolving");
                 ControlFlow::Continue
             }
-            Message::Updated(link) => {
+            RowMessage::Updated(link) => {
                 updated_list_clone.lock().unwrap().push(link);
                 ControlFlow::Continue
             }
-            Message::Finish => {
+            RowMessage::Finish => {
                 repo.set_progress(1.0);
                 ControlFlow::Continue
             }

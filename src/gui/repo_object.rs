@@ -10,7 +10,7 @@ use {
 
 use std::sync::{Arc, Mutex};
 
-use crate::{git, gui::window::Message};
+use crate::{git, gui::window::RowMessage};
 
 mod imp;
 
@@ -67,7 +67,7 @@ impl RepoObject {
         destination_clone: &str,
         destination_backup: &str,
         mirror: bool,
-        #[cfg(feature = "gui")] tx: Option<Sender<Message>>,
+        #[cfg(feature = "gui")] tx: Option<Sender<RowMessage>>,
         #[cfg(feature = "logs")] logs: bool,
         active_threads: Arc<Mutex<u64>>,
     ) {
@@ -131,10 +131,10 @@ impl RepoObject {
                 }
             }
 
-            tx.clone().unwrap().send(Message::Finish).unwrap();
+            tx.clone().unwrap().send(RowMessage::Finish).unwrap();
 
             if mirror {
-                tx.clone().unwrap().send(Message::Reset).unwrap();
+                tx.clone().unwrap().send(RowMessage::Reset).unwrap();
                 tx_repo.send(RepoMessage::Reset).unwrap();
 
                 match git::process_target(
@@ -166,7 +166,7 @@ impl RepoObject {
                     }
                 }
 
-                tx.clone().unwrap().send(Message::Finish).unwrap();
+                tx.clone().unwrap().send(RowMessage::Finish).unwrap();
             }
 
             if !err_string.is_empty() {

@@ -6,7 +6,7 @@ use glib::Sender;
 use indicatif::{HumanBytes, ProgressBar};
 
 #[cfg(feature = "gui")]
-use crate::gui::window::{Message, Status};
+use crate::gui::window::{RowMessage, Status};
 #[cfg(feature = "cli")]
 use crate::util::get_name;
 
@@ -68,7 +68,7 @@ pub fn clone_repo(
     destination: &str,
     bare: bool,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
-    #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
+    #[cfg(feature = "gui")] tx: &Option<Sender<RowMessage>>,
     git_config: &git2::Config,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<(), git2::Error> {
@@ -103,18 +103,18 @@ pub fn clone_repo(
 
     #[cfg(feature = "gui")]
     if tx.is_some() {
-        let _ = tx.clone().unwrap().send(Message::Clone);
+        let _ = tx.clone().unwrap().send(RowMessage::Clone);
 
         callbacks.transfer_progress(|stats| {
             if stats.received_objects() == stats.total_objects() {
-                let _ = tx.clone().unwrap().send(Message::Deltas);
+                let _ = tx.clone().unwrap().send(RowMessage::Deltas);
                 let indexed = stats.indexed_deltas() as f64;
                 let total = stats.total_deltas() as f64;
                 let progress = indexed / total;
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(Message::Progress(progress, Status::Deltas));
+                    .send(RowMessage::Progress(progress, Status::Deltas));
             } else if stats.total_objects() > 0 {
                 let received = stats.received_objects() as f64;
                 let total = stats.total_objects() as f64;
@@ -122,7 +122,7 @@ pub fn clone_repo(
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(Message::Progress(progress, Status::Data));
+                    .send(RowMessage::Progress(progress, Status::Data));
             }
 
             true
@@ -168,7 +168,7 @@ pub fn fetch_repo(
     repo: &Repository,
     mirror: bool,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
-    #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
+    #[cfg(feature = "gui")] tx: &Option<Sender<RowMessage>>,
     git_config: &git2::Config,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<(), git2::Error> {
@@ -237,18 +237,18 @@ pub fn fetch_repo(
 
         #[cfg(feature = "gui")]
         if tx.is_some() {
-            let _ = tx.clone().unwrap().send(Message::Fetch);
+            let _ = tx.clone().unwrap().send(RowMessage::Fetch);
 
             callbacks.transfer_progress(|stats| {
                 if stats.received_objects() == stats.total_objects() {
-                    let _ = tx.clone().unwrap().send(Message::Deltas);
+                    let _ = tx.clone().unwrap().send(RowMessage::Deltas);
                     let indexed = stats.indexed_deltas() as f64;
                     let total = stats.total_deltas() as f64;
                     let progress = indexed / total;
                     let _ = tx
                         .clone()
                         .unwrap()
-                        .send(Message::Progress(progress, Status::Deltas));
+                        .send(RowMessage::Progress(progress, Status::Deltas));
                 } else if stats.total_objects() > 0 {
                     let received = stats.received_objects() as f64;
                     let total = stats.total_objects() as f64;
@@ -256,7 +256,7 @@ pub fn fetch_repo(
                     let _ = tx
                         .clone()
                         .unwrap()
-                        .send(Message::Progress(progress, Status::Data));
+                        .send(RowMessage::Progress(progress, Status::Data));
                 }
 
                 true
@@ -300,7 +300,7 @@ pub fn fetch_repo(
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(Message::Progress(progress, Status::Normal));
+                    .send(RowMessage::Progress(progress, Status::Normal));
             }
         }
 
@@ -320,7 +320,7 @@ pub fn fetch_repo(
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(Message::Updated(String::from(target)));
+                    .send(RowMessage::Updated(String::from(target)));
             }
         }
     }
@@ -333,7 +333,7 @@ pub fn process_target(
     target: &str,
     mirror: bool,
     #[cfg(feature = "cli")] spinner: Option<&ProgressBar>,
-    #[cfg(feature = "gui")] tx: &Option<Sender<Message>>,
+    #[cfg(feature = "gui")] tx: &Option<Sender<RowMessage>>,
     #[cfg(feature = "cli")] silent: Option<bool>,
 ) -> Result<()> {
     let git_config = git2::Config::open_default()?;
