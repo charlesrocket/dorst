@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.1] - 2023-09-07
+
+### Bug Fixes
+
+- Fix `edit` dialog
+- Fix `remove` dialog
+- Drop `glib::idle_add_local()`
+- Merge error strings
+- Update `obj.connect_completed_notify()`
+- Fix `RepoMessage::Reset`
+- Fix `update_rows()`
+- Set `repo_name` attribute
+
+### CI/CD
+
+- Update `checkout`
+- Disable `fail-fast`
+
+### Documentation
+
+- Add `Features`
+
+### Refactor
+
+- Drop redundant `to_string()`
+- Move `process_repo()`
+- Drop `RepoMessage::Start`
+- Reuse `updated` status
+- Use `RepoObject` to process targets (#29)
+- Move `completed_notify` callback
+- `Message` -> `RowMessage`
+- Drop `pending` status
+- Use `repo_data` methods
+
+### Testing
+
+- Add `about_window()`
+- Update `backup()`
+- Add `backup_error()`
+- Update `ssh_filter()`
+
+### Build
+
+- Set `git2` features
+
 ## [0.12.0] - 2023-09-01
 
 ### Bug Fixes
