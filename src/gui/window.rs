@@ -538,15 +538,17 @@ impl Window {
             if let Some(obj) = repos.item(i) {
                 if let Some(repo_object) = obj.downcast_ref::<RepoObject>() {
                     let link = repo_object.link().clone();
-                    if self.imp().success_list.lock().unwrap().contains(&link)
-                        && !self.imp().updated_list.lock().unwrap().contains(&link)
-                    {
+                    if self.imp().success_list.lock().unwrap().contains(&link) {
                         let mut path = self.get_dest_clone();
                         path.push(repo_object.name());
 
                         let branch = git::current_branch(path).unwrap();
                         repo_object.set_branch(branch);
                         repo_object.set_status("ok");
+
+                        if self.imp().updated_list.lock().unwrap().contains(&link) {
+                            repo_object.set_status("updated");
+                        }
                     } else if self
                         .imp()
                         .errors_list
@@ -556,13 +558,6 @@ impl Window {
                         .any(|x| x.contains(&link))
                     {
                         repo_object.set_status("err");
-                    } else if self.imp().updated_list.lock().unwrap().contains(&link) {
-                        let mut path = self.get_dest_clone();
-                        path.push(repo_object.name());
-
-                        let branch = git::current_branch(path).unwrap();
-                        repo_object.set_branch(branch);
-                        repo_object.set_status("updated");
                     }
                 }
             }
