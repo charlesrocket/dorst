@@ -70,6 +70,7 @@ impl RepoObject {
     ) {
         let repo = self.clone();
         let repo_link = self.link();
+        #[cfg(feature = "logs")]
         let repo_name = self.name();
         let dest_clone = String::from(destination_clone);
         let dest_backup = String::from(destination_backup);
