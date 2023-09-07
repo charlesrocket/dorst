@@ -3,10 +3,7 @@ use gtk::subclass::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "logs")]
-use {
-    crate::util,
-    tracing::{error, info},
-};
+use tracing::{error, info};
 
 use std::sync::{Arc, Mutex};
 
@@ -72,7 +69,8 @@ impl RepoObject {
         active_threads: Arc<Mutex<u64>>,
     ) {
         let repo = self.clone();
-        let repo_link = self.repo_data().link;
+        let repo_link = self.link();
+        let repo_name = self.name();
         let dest_clone = String::from(destination_clone);
         let dest_backup = String::from(destination_backup);
 
@@ -116,7 +114,7 @@ impl RepoObject {
                 Ok(()) => {
                     #[cfg(feature = "logs")]
                     if logs {
-                        info!("Completed: {}", util::get_name(&repo_link));
+                        info!("Completed: {repo_name}");
                     }
 
                     tx_repo.send(RepoMessage::Ok).unwrap();
@@ -124,7 +122,7 @@ impl RepoObject {
                 Err(error) => {
                     #[cfg(feature = "logs")]
                     if logs {
-                        error!("Failed: {} - {error}", util::get_name(&repo_link));
+                        error!("Failed: {repo_name} - {error}");
                     }
 
                     err_string.push_str(&format!("{repo_link}: {error}"));
@@ -151,7 +149,7 @@ impl RepoObject {
                     Ok(()) => {
                         #[cfg(feature = "logs")]
                         if logs {
-                            info!("Completed (backup): {}", util::get_name(&repo_link));
+                            info!("Completed (backup): {repo_name}");
                         }
 
                         tx_repo.send(RepoMessage::Ok).unwrap();
@@ -159,7 +157,7 @@ impl RepoObject {
                     Err(error) => {
                         #[cfg(feature = "logs")]
                         if logs {
-                            error!("Failed (backup): {} - {error}", util::get_name(&repo_link));
+                            error!("Failed (backup): {repo_name} - {error}");
                         }
 
                         err_string.push_str(&format!(" backup: {error}"));

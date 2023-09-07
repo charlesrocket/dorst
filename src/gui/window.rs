@@ -357,7 +357,7 @@ impl Window {
                             }
                         }
 
-                        window.show_message(&format!("Removed: {}", repo.repo_data().name), 3);
+                        window.show_message(&format!("Removed: {}", repo.name()), 3);
                     }),
                 );
 
@@ -537,12 +537,12 @@ impl Window {
         for i in 0..repos.n_items() {
             if let Some(obj) = repos.item(i) {
                 if let Some(repo_object) = obj.downcast_ref::<RepoObject>() {
-                    let link = repo_object.repo_data().link.clone();
+                    let link = repo_object.link().clone();
                     if self.imp().success_list.lock().unwrap().contains(&link)
                         && !self.imp().updated_list.lock().unwrap().contains(&link)
                     {
                         let mut path = self.get_dest_clone();
-                        path.push(repo_object.repo_data().name);
+                        path.push(repo_object.name());
 
                         let branch = git::current_branch(path).unwrap();
                         repo_object.set_branch(branch);
@@ -558,7 +558,7 @@ impl Window {
                         repo_object.set_status("err");
                     } else if self.imp().updated_list.lock().unwrap().contains(&link) {
                         let mut path = self.get_dest_clone();
-                        path.push(repo_object.repo_data().name);
+                        path.push(repo_object.name());
 
                         let branch = git::current_branch(path).unwrap();
                         repo_object.set_branch(branch);
@@ -991,7 +991,7 @@ impl Window {
                 .downcast_ref::<RepoObject>()
                 .expect("The object needs to be of type `RepoObject`.");
 
-            repo_object.repo_data().link.contains('@')
+            repo_object.link().contains('@')
         });
 
         let filter_https = CustomFilter::new(|obj| {
@@ -999,7 +999,7 @@ impl Window {
                 .downcast_ref::<RepoObject>()
                 .expect("The object needs to be of type `RepoObject`.");
 
-            repo_object.repo_data().link.contains("https://")
+            repo_object.link().contains("https://")
         });
 
         match filter_state.as_str() {
