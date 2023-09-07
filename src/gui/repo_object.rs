@@ -89,7 +89,7 @@ impl RepoObject {
                 ControlFlow::Continue
             }
             RepoMessage::Reset => {
-                repo.set_status("pending");
+                repo.set_status("started");
                 ControlFlow::Continue
             }
             RepoMessage::Finish(value) => {
