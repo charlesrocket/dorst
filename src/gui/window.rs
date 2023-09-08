@@ -5,8 +5,8 @@ use gtk::{
     gio::{self, ListStore, SimpleAction},
     glib::{self, clone, ControlFlow, KeyFile, MainContext, Object, Priority},
     pango::EllipsizeMode,
-    Align, Box, Button, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
-    Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
+    Align, Box, Button, CustomFilter, FilterListModel, Frame, Label, License, ListBoxRow,
+    NoSelection, Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
 };
 
 #[cfg(feature = "logs")]
@@ -188,9 +188,6 @@ impl Window {
                     .join("\n");
 
                 if !errors_locked.is_empty() {
-                    window.imp().banner.set_title(&errors_locked);
-                    window.imp().revealer_banner.set_reveal_child(true);
-                    window.imp().banner.set_revealed(true);
                     window.show_message(&format!("Failures: {}", errors_list_locked.len()), 1);
                 }
 
@@ -239,7 +236,16 @@ impl Window {
         );
 
         self.imp().repos_list.connect_row_activated(clone!(@weak self as window => move |_, row| {
-            let popover_box = Box::builder().hexpand(true).build();
+            let repos = window.imp().repos_filtered.borrow().clone();
+            let repo_pos = row.index();
+            let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
+            let popover_box = Box::builder().orientation(Orientation::Vertical).build();
+            let button_box = Box::builder().orientation(Orientation::Horizontal).halign(Align::Center).build();
+            let error_box = Box::builder().orientation(Orientation::Horizontal).halign(Align::Center).margin_bottom(8).build();
+
+            let error = repo.error();
+            let error_label = Label::builder().css_classes(["warning"]).wrap(true).max_width_chars(15).tooltip_text(&error).ellipsize(EllipsizeMode::End).build();
+            let error_frame = Frame::builder().child(&error_label).css_classes(["card"]).build();
             let popover = Popover::builder()
                 .child(&popover_box)
                 .autohide(true)
@@ -254,6 +260,12 @@ impl Window {
                 .label("Remove")
                 .css_classes(["destructive-action"])
                 .build();
+
+            if error.is_empty() {
+                error_box.set_visible(false);
+            } else {
+                error_label.set_label(&error);
+            }
 
             edit_button.connect_clicked(clone!(@weak window, @weak row, @weak popover => move |_| {
                 let repos = window.imp().repos_filtered.borrow().clone();
@@ -365,9 +377,12 @@ impl Window {
                 popover.popdown();
             }));
 
-            popover_box.add_css_class("linked");
-            popover_box.append(&edit_button);
-            popover_box.append(&remove_button);
+            button_box.add_css_class("linked");
+            button_box.append(&edit_button);
+            button_box.append(&remove_button);
+            error_box.append(&error_frame);
+            popover_box.append(&error_box);
+            popover_box.append(&button_box);
             popover.set_parent(row);
             popover.popup();
         }));
@@ -451,8 +466,6 @@ impl Window {
 
     fn process_targets(&self) {
         self.controls_disabled(true);
-        self.imp().banner.set_revealed(false);
-        self.imp().revealer_banner.set_reveal_child(false);
         self.imp().updated_list.lock().unwrap().clear();
         self.imp().errors_list.lock().unwrap().clear();
         self.imp().success_list.lock().unwrap().clear();
@@ -805,7 +818,7 @@ impl Window {
             let errors_list = &window.imp().errors_list;
             let error = repo.error();
 
-            errors_list.lock().unwrap().push(error);
+            errors_list.lock().unwrap().push(format!("{}: {error}", repo.link()));
         }));
 
         repo_object.connect_completed_notify(clone!(@weak self as window => move |_| {

@@ -126,7 +126,7 @@ impl RepoObject {
                         error!("Failed: {repo_name} - {error}");
                     }
 
-                    err_string.push_str(&format!("{repo_link}: {error}"));
+                    err_string.push_str(&format!("{error}"));
                 }
             }
 
