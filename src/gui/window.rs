@@ -1333,6 +1333,14 @@ mod tests {
             remove_file("/tmp/dorst_test_conf.yaml").unwrap();
         }
 
+        if Path::new("test-gui-src-backup").exists() {
+            remove_dir_all("test-gui-src-backup").unwrap();
+        }
+
+        if Path::new("/tmp/dorst_test-gui-backup").exists() {
+            remove_dir_all("/tmp/dorst_test-gui-backup").unwrap();
+        }
+
         let window = window();
 
         window
@@ -1346,12 +1354,50 @@ mod tests {
             window.imp().button_backup_state.emit_clicked();
         };
 
+        window.select_backup_directory(&PathBuf::from("/tmp/dorst_test-gui-backup"));
+        window.select_source_directory(&PathBuf::from("test-gui-src-backup"));
+
         window.imp().button_start.emit_clicked();
         wait_ui(2000);
 
+        let row = window.imp().repos_list.row_at_index(0).unwrap();
+
+        row.emit_activate();
+
+        let error = row
+            .last_child()
+            .unwrap()
+            .downcast::<Popover>()
+            .unwrap()
+            .child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .first_child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .first_child()
+            .unwrap()
+            .downcast::<Frame>()
+            .unwrap()
+            .child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .last_child()
+            .unwrap()
+            .downcast::<Label>()
+            .unwrap()
+            .text();
+
+        assert!(error.contains("unsupported URL"));
         assert!(window.imp().success_list.lock().unwrap().len() == 0);
         assert!(window.imp().updated_list.lock().unwrap().len() == 0);
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+
+        remove_dir_all("/tmp/dorst_test-gui-backup").unwrap();
+        remove_dir_all("test-gui-src-backup").unwrap();
     }
 
     #[gtk::test]
