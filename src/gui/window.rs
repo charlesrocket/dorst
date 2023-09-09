@@ -4,7 +4,7 @@ use adw::{
 use gtk::{
     gio::{self, ListStore, SimpleAction},
     glib::{self, clone, ControlFlow, KeyFile, MainContext, Object, Priority},
-    pango::EllipsizeMode,
+    pango::{EllipsizeMode, WrapMode},
     Align, Box, Button, CustomFilter, FilterListModel, Frame, Label, License, ListBoxRow,
     NoSelection, Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
 };
@@ -241,11 +241,12 @@ impl Window {
             let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
             let popover_box = Box::builder().orientation(Orientation::Vertical).build();
             let button_box = Box::builder().orientation(Orientation::Horizontal).halign(Align::Center).build();
-            let error_box = Box::builder().orientation(Orientation::Horizontal).halign(Align::Center).margin_bottom(8).build();
-
             let error = repo.error();
-            let error_label = Label::builder().css_classes(["warning"]).wrap(true).max_width_chars(15).tooltip_text(&error).ellipsize(EllipsizeMode::End).build();
-            let error_frame = Frame::builder().child(&error_label).css_classes(["card"]).build();
+            let error_box = Box::builder().tooltip_text(&error).orientation(Orientation::Horizontal).halign(Align::Center).margin_bottom(8).build();
+            let error_text_box = Box::builder().tooltip_text(&error).orientation(Orientation::Vertical).hexpand(true).halign(Align::Start).build();
+            let error_heading = Label::builder().label("error").css_classes(["error", "caption-heading"]).build();
+            let error_label = Label::builder().wrap(true).wrap_mode(WrapMode::Char).css_classes(["caption"]).max_width_chars(20).lines(1).ellipsize(EllipsizeMode::End).build();
+            let error_frame = Frame::builder().child(&error_text_box).css_classes(["card"]).hexpand(true).build();
             let popover = Popover::builder()
                 .child(&popover_box)
                 .autohide(true)
@@ -380,6 +381,8 @@ impl Window {
             button_box.add_css_class("linked");
             button_box.append(&edit_button);
             button_box.append(&remove_button);
+            error_text_box.append(&error_heading);
+            error_text_box.append(&error_label);
             error_box.append(&error_frame);
             popover_box.append(&error_box);
             popover_box.append(&button_box);
