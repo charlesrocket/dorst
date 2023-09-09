@@ -242,8 +242,8 @@ impl Window {
             let popover_box = Box::builder().orientation(Orientation::Vertical).build();
             let button_box = Box::builder().orientation(Orientation::Horizontal).halign(Align::Center).build();
             let error = repo.error();
-            let error_box = Box::builder().tooltip_text(&error).orientation(Orientation::Horizontal).halign(Align::Center).margin_bottom(8).build();
-            let error_text_box = Box::builder().tooltip_text(&error).orientation(Orientation::Vertical).hexpand(true).halign(Align::Start).build();
+            let error_box = Box::builder().tooltip_text(&error).tooltip_text(&error).orientation(Orientation::Horizontal).halign(Align::Center).margin_bottom(8).build();
+            let error_text_box = Box::builder().orientation(Orientation::Vertical).hexpand(true).halign(Align::Start).build();
             let error_heading = Label::builder().label("error").css_classes(["error", "heading"]).build();
             let error_label = Label::builder().wrap(true).wrap_mode(WrapMode::Char).css_classes(["caption", "monospace"]).max_width_chars(15).lines(1).ellipsize(EllipsizeMode::End).build();
             let error_frame = Frame::builder().child(&error_text_box).css_classes(["card"]).hexpand(true).build();
