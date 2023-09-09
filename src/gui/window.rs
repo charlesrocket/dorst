@@ -239,10 +239,10 @@ impl Window {
             let repos = window.imp().repos_filtered.borrow().clone();
             let repo_pos = row.index();
             let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
-            let popover_box = Box::builder().orientation(Orientation::Vertical).build();
-            let button_box = Box::builder().orientation(Orientation::Horizontal).halign(Align::Center).build();
+            let popover_box = Box::builder().orientation(Orientation::Vertical).spacing(8).build();
+            let button_box = Box::builder().orientation(Orientation::Horizontal).halign(Align::Center).spacing(8).build();
             let error = repo.error();
-            let error_box = Box::builder().tooltip_text(&error).tooltip_text(&error).orientation(Orientation::Horizontal).halign(Align::Center).margin_bottom(8).build();
+            let error_box = Box::builder().tooltip_text(&error).tooltip_text(&error).orientation(Orientation::Horizontal).halign(Align::Center).build();
             let error_text_box = Box::builder().orientation(Orientation::Vertical).hexpand(true).halign(Align::Start).build();
             let error_heading = Label::builder().label("error").css_classes(["error", "heading"]).build();
             let error_label = Label::builder().wrap(true).wrap_mode(WrapMode::Char).css_classes(["caption", "monospace"]).max_width_chars(15).lines(1).ellipsize(EllipsizeMode::End).build();
@@ -378,7 +378,6 @@ impl Window {
                 popover.popdown();
             }));
 
-            button_box.add_css_class("linked");
             button_box.append(&edit_button);
             button_box.append(&remove_button);
             error_text_box.append(&error_heading);
