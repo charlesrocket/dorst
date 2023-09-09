@@ -767,7 +767,7 @@ impl Window {
                     name.add_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
-                    status_image.set_from_icon_name(Some("dialog-error-symbolic"));
+                    status_image.set_from_icon_name(Some("dialog-warning-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(false);
                     revealer.set_reveal_child(false);
