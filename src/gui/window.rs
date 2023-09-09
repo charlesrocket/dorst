@@ -255,10 +255,12 @@ impl Window {
 
             let edit_button = Button::builder()
                 .label("Edit")
+                .tooltip_text("Edit repository")
                 .build();
 
             let remove_button = Button::builder()
                 .label("Remove")
+                .tooltip_text("Remove repository")
                 .css_classes(["destructive-action"])
                 .build();
 
