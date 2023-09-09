@@ -4,9 +4,9 @@ use adw::{
 use gtk::{
     gio::{self, ListStore, SimpleAction},
     glib::{self, clone, ControlFlow, KeyFile, MainContext, Object, Priority},
-    pango::EllipsizeMode,
-    Align, Box, Button, CustomFilter, FilterListModel, Label, License, ListBoxRow, NoSelection,
-    Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
+    pango::{EllipsizeMode, WrapMode},
+    Align, Box, Button, CustomFilter, FilterListModel, Frame, Label, License, ListBoxRow,
+    NoSelection, Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
 };
 
 #[cfg(feature = "logs")]
@@ -188,9 +188,6 @@ impl Window {
                     .join("\n");
 
                 if !errors_locked.is_empty() {
-                    window.imp().banner.set_title(&errors_locked);
-                    window.imp().revealer_banner.set_reveal_child(true);
-                    window.imp().banner.set_revealed(true);
                     window.show_message(&format!("Failures: {}", errors_list_locked.len()), 1);
                 }
 
@@ -239,7 +236,17 @@ impl Window {
         );
 
         self.imp().repos_list.connect_row_activated(clone!(@weak self as window => move |_, row| {
-            let popover_box = Box::builder().hexpand(true).build();
+            let repos = window.imp().repos_filtered.borrow().clone();
+            let repo_pos = row.index();
+            let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
+            let popover_box = Box::builder().orientation(Orientation::Vertical).spacing(8).build();
+            let button_box = Box::builder().orientation(Orientation::Horizontal).halign(Align::Center).spacing(8).build();
+            let error = repo.error();
+            let error_box = Box::builder().tooltip_text(&error).tooltip_text(&error).orientation(Orientation::Horizontal).halign(Align::Center).build();
+            let error_text_box = Box::builder().orientation(Orientation::Vertical).hexpand(true).halign(Align::Start).build();
+            let error_heading = Label::builder().label("error").css_classes(["error", "heading"]).build();
+            let error_label = Label::builder().wrap(true).wrap_mode(WrapMode::Char).css_classes(["caption", "monospace"]).max_width_chars(15).lines(1).ellipsize(EllipsizeMode::End).build();
+            let error_frame = Frame::builder().child(&error_text_box).css_classes(["card"]).hexpand(true).build();
             let popover = Popover::builder()
                 .child(&popover_box)
                 .autohide(true)
@@ -248,12 +255,20 @@ impl Window {
 
             let edit_button = Button::builder()
                 .label("Edit")
+                .tooltip_text("Edit repository")
                 .build();
 
             let remove_button = Button::builder()
                 .label("Remove")
+                .tooltip_text("Remove repository")
                 .css_classes(["destructive-action"])
                 .build();
+
+            if error.is_empty() {
+                error_box.set_visible(false);
+            } else {
+                error_label.set_label(&error);
+            }
 
             edit_button.connect_clicked(clone!(@weak window, @weak row, @weak popover => move |_| {
                 let repos = window.imp().repos_filtered.borrow().clone();
@@ -365,9 +380,13 @@ impl Window {
                 popover.popdown();
             }));
 
-            popover_box.add_css_class("linked");
-            popover_box.append(&edit_button);
-            popover_box.append(&remove_button);
+            button_box.append(&edit_button);
+            button_box.append(&remove_button);
+            error_text_box.append(&error_heading);
+            error_text_box.append(&error_label);
+            error_box.append(&error_frame);
+            popover_box.append(&error_box);
+            popover_box.append(&button_box);
             popover.set_parent(row);
             popover.popup();
         }));
@@ -451,8 +470,6 @@ impl Window {
 
     fn process_targets(&self) {
         self.controls_disabled(true);
-        self.imp().banner.set_revealed(false);
-        self.imp().revealer_banner.set_reveal_child(false);
         self.imp().updated_list.lock().unwrap().clear();
         self.imp().errors_list.lock().unwrap().clear();
         self.imp().success_list.lock().unwrap().clear();
@@ -751,7 +768,7 @@ impl Window {
                     name.add_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
-                    status_image.set_from_icon_name(Some("dialog-error-symbolic"));
+                    status_image.set_from_icon_name(Some("dialog-warning-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(false);
                     revealer.set_reveal_child(false);
@@ -805,7 +822,7 @@ impl Window {
             let errors_list = &window.imp().errors_list;
             let error = repo.error();
 
-            errors_list.lock().unwrap().push(error);
+            errors_list.lock().unwrap().push(format!("{}: {error}", repo.link()));
         }));
 
         repo_object.connect_completed_notify(clone!(@weak self as window => move |_| {
@@ -1317,6 +1334,14 @@ mod tests {
             remove_file("/tmp/dorst_test_conf.yaml").unwrap();
         }
 
+        if Path::new("test-gui-src-backup").exists() {
+            remove_dir_all("test-gui-src-backup").unwrap();
+        }
+
+        if Path::new("/tmp/dorst_test-gui-backup").exists() {
+            remove_dir_all("/tmp/dorst_test-gui-backup").unwrap();
+        }
+
         let window = window();
 
         window
@@ -1330,12 +1355,50 @@ mod tests {
             window.imp().button_backup_state.emit_clicked();
         };
 
+        window.select_backup_directory(&PathBuf::from("/tmp/dorst_test-gui-backup"));
+        window.select_source_directory(&PathBuf::from("test-gui-src-backup"));
+
         window.imp().button_start.emit_clicked();
         wait_ui(2000);
 
+        let row = window.imp().repos_list.row_at_index(0).unwrap();
+
+        row.emit_activate();
+
+        let error = row
+            .last_child()
+            .unwrap()
+            .downcast::<Popover>()
+            .unwrap()
+            .child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .first_child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .first_child()
+            .unwrap()
+            .downcast::<Frame>()
+            .unwrap()
+            .child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .last_child()
+            .unwrap()
+            .downcast::<Label>()
+            .unwrap()
+            .text();
+
+        assert!(error.contains("unsupported URL"));
         assert!(window.imp().success_list.lock().unwrap().len() == 0);
         assert!(window.imp().updated_list.lock().unwrap().len() == 0);
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
+
+        remove_dir_all("/tmp/dorst_test-gui-backup").unwrap();
+        remove_dir_all("test-gui-src-backup").unwrap();
     }
 
     #[gtk::test]
@@ -1534,6 +1597,10 @@ mod tests {
             .unwrap()
             .downcast::<Box>()
             .unwrap()
+            .last_child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
             .first_child()
             .unwrap()
             .downcast::<Button>()
@@ -1597,6 +1664,10 @@ mod tests {
             .downcast::<Popover>()
             .unwrap()
             .child()
+            .unwrap()
+            .downcast::<Box>()
+            .unwrap()
+            .last_child()
             .unwrap()
             .downcast::<Box>()
             .unwrap()

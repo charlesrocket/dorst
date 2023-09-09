@@ -1,4 +1,4 @@
-use adw::{prelude::*, subclass::prelude::*, Banner, StyleManager, ToastOverlay};
+use adw::{prelude::*, subclass::prelude::*, StyleManager, ToastOverlay};
 use gtk::{
     gio, glib::subclass::InitializingObject, Button, CompositeTemplate, Entry, FileDialog,
     FilterListModel, ListBox, ProgressBar, Revealer, Stack, ToggleButton,
@@ -46,10 +46,6 @@ pub struct Window {
     #[template_child]
     pub toast_overlay: TemplateChild<ToastOverlay>,
     #[template_child]
-    pub banner: TemplateChild<Banner>,
-    #[template_child]
-    pub revealer_banner: TemplateChild<Revealer>,
-    #[template_child]
     pub revealer: TemplateChild<Revealer>,
     #[template_child]
     pub stack: TemplateChild<Stack>,
@@ -95,8 +91,6 @@ impl ObjectSubclass for Window {
             backup_directory: RefCell::new(PathBuf::new()),
             progress_bar: TemplateChild::default(),
             toast_overlay: TemplateChild::default(),
-            banner: TemplateChild::default(),
-            revealer_banner: TemplateChild::default(),
             revealer: TemplateChild::default(),
             stack: TemplateChild::default(),
             stack_list: TemplateChild::default(),

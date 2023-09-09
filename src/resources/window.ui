@@ -141,15 +141,6 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkRevealer" id="revealer_banner">
-                        <property name="child">
-                          <object class="AdwBanner" id="banner">
-                            <property name="margin-bottom">12</property>
-                          </object>
-                        </property>
-                      </object>
-                    </child>
-                    <child>
                       <object class="AdwClamp">
                         <property name="child">
                           <object class="GtkBox">
