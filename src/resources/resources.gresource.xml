@@ -3,5 +3,6 @@
   <gresource prefix="/org/hellbyte/dorst/">
     <file compressed="true" preprocess="xml-stripblanks" alias="gtk/help-overlay.ui">shortcuts.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">repo_box.ui</file>
   </gresource>
 </gresources>
