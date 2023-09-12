@@ -1647,6 +1647,18 @@ mod tests {
         window.imp().button_start.emit_clicked();
         wait_ui(1000);
 
+        let repo = window
+            .repos()
+            .item(0)
+            .unwrap()
+            .downcast::<RepoObject>()
+            .unwrap();
+
+        let name_label = repo.name();
+        let link_label = repo.link();
+
+        assert!(name_label == link_label);
+        assert!(link_label == "INVALID");
         assert!(window.imp().errors_list.lock().unwrap().len() > 0);
     }
 
