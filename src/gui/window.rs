@@ -787,10 +787,6 @@ impl Window {
             .sync_create()
             .build();
 
-        if &link.label() == "INVALID" {
-            name.add_css_class("error");
-        }
-
         ListBoxRow::builder().child(&repo_box).build()
     }
 

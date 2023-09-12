@@ -1,3 +1,4 @@
+use adw::prelude::WidgetExt;
 use gtk::{glib, subclass::prelude::*, CompositeTemplate, Image, Label, ProgressBar, Revealer};
 
 #[derive(Default, CompositeTemplate)]
@@ -36,7 +37,18 @@ impl ObjectSubclass for RepoBox {
     }
 }
 
-impl ObjectImpl for RepoBox {}
+impl ObjectImpl for RepoBox {
+    fn constructed(&self) {
+        self.link
+            .connect_label_notify(glib::clone!(@weak self as obj => move |link| {
+                if &link.label() == "INVALID" {
+                    obj.name.add_css_class("warning");
+                } else {
+                    obj.name.remove_css_class("warning");
+                }
+            }));
+    }
+}
 
 impl WidgetImpl for RepoBox {}
 
