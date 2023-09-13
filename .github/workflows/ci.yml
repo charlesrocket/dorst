@@ -87,26 +87,25 @@ jobs:
             gtk4/
             libadwaita/
           key: ${{ matrix.feature }}-${{ matrix.toolchain }}--cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: >-
-            build-essential
-            meson
-            ninja-build
-            libxkbcommon-dev
-            wayland-protocols
-            libwayland-dev
-            libxrandr-dev
-            libxi-dev
-            libxcursor-dev
-            libxdamage-dev
-            libxinerama-dev
-            libgstreamer-plugins-bad1.0-dev
-            libunwind-dev
-            libgirepository1.0-dev
-            gettext
-            valac
-          version: 1.0
+      - name: Install dependencies (gui)
+        run: >
+          sudo apt-get install -y
+          build-essential
+          meson
+          ninja-build
+          libxkbcommon-dev
+          wayland-protocols
+          libwayland-dev
+          libxrandr-dev
+          libxi-dev
+          libxcursor-dev
+          libxdamage-dev
+          libxinerama-dev
+          libgstreamer-plugins-bad1.0-dev
+          libunwind-dev
+          libgirepository1.0-dev
+          gettext
+          valac
         if: matrix.feature == 'gui' || matrix.feature == 'all'
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
