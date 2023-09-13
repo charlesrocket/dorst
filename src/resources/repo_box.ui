@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="DorstRepoBox" parent="GtkBox">
+    <child>
+      <object class="GtkBox">
+        <property name="orientation">vertical</property>
+        <property name="halign">fill</property>
+        <property name="valign">center</property>
+        <property name="margin-start">6</property>
+        <property name="margin-end">6</property>
+        <property name="margin-top">6</property>
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">horizontal</property>
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkBox">
+                    <property name="orientation">horizontal</property>
+                    <child>
+                      <object class="GtkLabel" id="name">
+                        <property name="ellipsize">end</property>
+                        <property name="margin-end">4</property>
+                        <style>
+                          <class name="heading"/>
+                        </style>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkRevealer" id="branch_revealer">
+                        <property name="transition-type">slide-right</property>
+                        <property name="transition-duration">142</property>
+                        <property name="child">
+                          <object class="GtkLabel" id="branch">
+                            <property name="ellipsize">end</property>
+                            <property name="margin-end">4</property>
+                            <style>
+                              <class name="caption-heading"/>
+                              <class name="monospace"/>
+                            </style>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="link">
+                    <property name="halign">start</property>
+                    <property name="ellipsize">end</property>
+                    <property name="margin-top">4</property>
+                    <style>
+                      <class name="body"/>
+                      <class name="caption"/>
+                      <class name="dim-label"/>
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">horizontal</property>
+                <property name="halign">end</property>
+                <property name="hexpand">True</property>
+                <child>
+                  <object class="GtkRevealer" id="status_revealer">
+                    <property name="margin-start">12</property>
+                    <property name="transition-type">crossfade</property>
+                    <property name="transition-duration">142</property>
+                    <property name="child">
+                      <object class="GtkImage" id="status_image">
+                        <style>
+                          <class name="dim-label"/>
+                        </style>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">horizontal</property>
+            <child>
+              <object class="GtkRevealer" id="pb_revealer">
+                <property name="margin-top">4</property>
+                <property name="transition-type">crossfade</property>
+                <property name="transition-duration">542</property>
+                <property name="child">
+                  <object class="GtkProgressBar" id="progress_bar">
+                    <property name="hexpand">True</property>
+                    <style>
+                      <class name="osd"/>
+                      <class name="row-progress"/>
+                    </style>
+                  </object>
+                </property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

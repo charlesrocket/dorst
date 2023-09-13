@@ -6,7 +6,7 @@ use gtk::{
     glib::{self, clone, ControlFlow, KeyFile, MainContext, Object, Priority},
     pango::{EllipsizeMode, WrapMode},
     Align, Box, Button, CustomFilter, FilterListModel, Frame, Label, License, ListBoxRow,
-    NoSelection, Orientation, Popover, ProgressBar, Revealer, RevealerTransitionType,
+    NoSelection, Orientation, Popover,
 };
 
 #[cfg(feature = "logs")]
@@ -23,7 +23,7 @@ mod imp;
 
 use crate::{
     git,
-    gui::{repo_object::RepoObject, RepoData},
+    gui::{repo_box::RepoBox, repo_object::RepoObject, RepoData},
     util,
 };
 
@@ -679,75 +679,15 @@ impl Window {
     }
 
     fn create_repo_row(&self, repo_object: &RepoObject) -> ListBoxRow {
-        let status_image = gtk::Image::builder().css_classes(["dim-label"]).build();
-
-        let name = Label::builder()
-            .halign(Align::Start)
-            .ellipsize(EllipsizeMode::End)
-            .css_classes(["heading"])
-            .margin_end(4)
-            .build();
-
-        let link = Label::builder()
-            .halign(Align::Start)
-            .ellipsize(EllipsizeMode::End)
-            .margin_top(4)
-            .css_classes(["body", "caption", "dim-label"])
-            .build();
-
-        let branch = Label::builder()
-            .halign(Align::Start)
-            .ellipsize(EllipsizeMode::End)
-            .css_classes(["caption-heading", "monospace"])
-            .build();
-
-        let pb = ProgressBar::builder()
-            .halign(Align::Start)
-            .pulse_step(1.0)
-            .hexpand(true)
-            .halign(Align::Fill)
-            .build();
-
-        let text_box = Box::builder().orientation(Orientation::Vertical).build();
-        let widget_box = Box::builder().orientation(Orientation::Horizontal).build();
-        let pb_box = Box::builder().orientation(Orientation::Horizontal).build();
-        let status_box = Box::builder()
-            .orientation(Orientation::Horizontal)
-            .halign(Align::End)
-            .hexpand(true)
-            .build();
-
-        let row_box = Box::builder().orientation(Orientation::Horizontal).build();
-        let repo_box = Box::builder()
-            .orientation(Orientation::Vertical)
-            .halign(Align::Fill)
-            .valign(Align::Center)
-            .margin_start(6)
-            .margin_end(6)
-            .margin_top(6)
-            .build();
-
-        let name_box = Box::builder().orientation(Orientation::Horizontal).build();
-
-        let revealer = Revealer::builder()
-            .margin_top(4)
-            .transition_type(RevealerTransitionType::Crossfade)
-            .transition_duration(542)
-            .child(&pb)
-            .build();
-
-        let branch_revealer = Revealer::builder()
-            .transition_type(RevealerTransitionType::SlideRight)
-            .transition_duration(142)
-            .child(&branch)
-            .build();
-
-        let status_revealer = Revealer::builder()
-            .margin_start(12)
-            .transition_type(RevealerTransitionType::Crossfade)
-            .transition_duration(142)
-            .child(&status_image)
-            .build();
+        let repo_box = RepoBox::new();
+        let status_image = repo_box.imp().status_image.get();
+        let name = repo_box.imp().name.get();
+        let link = repo_box.imp().link.get();
+        let branch = repo_box.imp().branch.get();
+        let pb = repo_box.imp().progress_bar.get();
+        let revealer = repo_box.imp().pb_revealer.get();
+        let branch_revealer = repo_box.imp().branch_revealer.get();
+        let status_revealer = repo_box.imp().status_revealer.get();
 
         repo_object.connect_status_notify(
             clone!(@weak self as window, @weak name, @weak pb, @weak revealer, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
@@ -847,25 +787,7 @@ impl Window {
             .sync_create()
             .build();
 
-        if &link.label() == "INVALID" {
-            name.add_css_class("error");
-        }
-
-        pb.add_css_class("osd");
-        pb.add_css_class("row-progress");
-        pb_box.append(&revealer);
-        name_box.append(&name);
-        name_box.append(&branch_revealer);
-        status_box.append(&status_revealer);
-        text_box.append(&name_box);
-        text_box.append(&link);
-        widget_box.append(&text_box);
-        widget_box.append(&status_box);
-        repo_box.append(&widget_box);
-        repo_box.append(&pb_box);
-        row_box.append(&repo_box);
-
-        ListBoxRow::builder().child(&row_box).build()
+        ListBoxRow::builder().child(&repo_box).build()
     }
 
     fn new_repo(&self, main_view: bool) {
@@ -1717,7 +1639,7 @@ mod tests {
     fn invalid_url() {
         let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
 
-        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x2f\x74\x6d\x70\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x49\x4e\x56\x41\x4c\x49\x44").unwrap();
+        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x2f\x74\x6d\x70\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x2f").unwrap();
         config.persist("/tmp/dorst_test_conf.yaml").unwrap();
 
         let window = window();
@@ -1725,6 +1647,18 @@ mod tests {
         window.imp().button_start.emit_clicked();
         wait_ui(1000);
 
+        let repo = window
+            .repos()
+            .item(0)
+            .unwrap()
+            .downcast::<RepoObject>()
+            .unwrap();
+
+        let name_label = repo.name();
+        let link_label = repo.link();
+
+        assert!(name_label == link_label);
+        assert!(link_label == "INVALID");
         assert!(window.imp().errors_list.lock().unwrap().len() > 0);
     }
 

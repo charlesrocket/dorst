@@ -4,6 +4,7 @@ use gtk::{gdk::Display, CssProvider};
 use repo_object::RepoData;
 use window::Window;
 
+mod repo_box;
 mod repo_object;
 pub mod window;
 
