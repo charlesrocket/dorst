@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.0] - 2023-09-14
+
+### Bug Fixes
+
+- Change error icon
+- Fix error wrapping
+- Change error formatting
+- Move error tooltip
+- Unlink popover buttons
+- Improve `GtkScrolledWindow` layout
+- Fix `INVALID` links
+- Improve handling of invalid links (#32)
+- Edit `empty` message
+- Adjust entry margin
+
+### CI/CD
+
+- Drop `cache-apt-pkgs-action`
+- Update `publish` job
+
+### Features
+
+- Drop `banner`
+- Add error heading
+- Add popover tooltips
+- Show errors in row popover (#30)
+
+### Miscellaneous tasks
+
+- Bump `git2` to 0.18
+- Bump `built` to 0.7
+
+### Refactor
+
+- Add `repo_box` template
+
+### Testing
+
+- Fix popover tests
+- Update `backup_error()`
+- Update `invalid_url()` config
+- Check invalid labels
+
 ## [0.12.1] - 2023-09-07
 
 ### Bug Fixes
