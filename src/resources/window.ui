@@ -243,7 +243,7 @@
                                   <object class="AdwStatusPage">
                                     <property name="icon-name">computer-fail-symbolic</property>
                                     <property name="title" translatable="yes">No repositories</property>
-                                    <property name="description" translatable="yes">Select a different filter or add a repository</property>
+                                    <property name="description" translatable="yes">Select a different filter</property>
                                     <style>
                                       <class name="dim-label"/>
                                     </style>
