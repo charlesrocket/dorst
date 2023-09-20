@@ -11,7 +11,10 @@ pub mod window;
 const APP_ID: &str = "org.hellbyte.dorst";
 
 fn builder() -> Application {
-    gio::resources_register_include!("dorst.gresource").expect("Failed to register resources.");
+    let bytes = glib::Bytes::from_static(include_bytes!("resources/dorst.gresource"));
+    let resource = gio::Resource::from_data(&bytes).expect("Failed to load resource");
+    gio::resources_register(&resource);
+
     let builder = Application::builder().application_id(APP_ID).build();
 
     builder.connect_startup(|_| load_css());
