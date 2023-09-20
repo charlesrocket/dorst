@@ -2,3 +2,4 @@
 /test-*
 
 *.dorst
+dorst.gresource
