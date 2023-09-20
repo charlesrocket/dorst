@@ -52,7 +52,6 @@ jobs:
         toolchain:
           - stable
           - beta
-          - nightly
         feature:
           - all
           - default
