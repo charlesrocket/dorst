@@ -1105,7 +1105,10 @@ mod tests {
     };
 
     pub fn window() -> Window {
-        gio::resources_register_include!("dorst.gresource").expect("Failed to register resources.");
+        let bytes = glib::Bytes::from_static(include_bytes!("../resources/dorst.gresource"));
+        let resource = gio::Resource::from_data(&bytes).expect("Failed to load resource");
+
+        gio::resources_register(&resource);
         Object::builder::<Window>().build()
     }
 
