@@ -10,6 +10,7 @@ keywords = ["backup", "git"]
 license = "MIT"
 readme = "README.md"
 exclude = [".github"]
+build = "prebuild.rs"
 
 [profile.release]
 debug = 0
