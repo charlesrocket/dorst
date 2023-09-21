@@ -9,7 +9,7 @@ categories = ["command-line-utilities", "development-tools", "gui"]
 keywords = ["backup", "git"]
 license = "MIT"
 readme = "README.md"
-exclude = [".github"]
+exclude = [".github", "/data"]
 build = "prebuild.rs"
 
 [profile.release]
