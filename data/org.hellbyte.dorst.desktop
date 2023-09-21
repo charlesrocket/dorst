@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Dorst
+Icon=org.hellbyte.dorst
+Exec=dorst
+Comment=Codebase bootstrap and backup utility
+Categories=Development;
+Terminal=false
+StartupNotify=true
