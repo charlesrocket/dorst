@@ -19,8 +19,10 @@ Bootstrap (and backup) codebases with Dørst.
 ## CLI
 ### Compilation
 
-```
-cargo install dorst
+```shell
+make
+#needs sudo
+make install
 ```
 
 ### Usage
@@ -45,8 +47,10 @@ The `-c`/`--config` flag allows the usage of an alterantive configuration file.
 ## GUI
 ### Compilation
 
-```
-cargo install dorst --features gui
+```shell
+make features=gui
+#needs sudo
+make install features=gui
 ```
 
 ### Usage
