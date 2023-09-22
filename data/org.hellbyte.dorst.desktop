@@ -2,7 +2,7 @@
 Type=Application
 Name=Dorst
 Icon=org.hellbyte.dorst
-Exec=dorst
+Exec=dorst --gui
 Comment=Codebase bootstrap and backup utility
 Categories=Development;
 Terminal=false
