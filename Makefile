@@ -1,7 +1,7 @@
-PREFIX=/usr/local
-INSTALL_DIR=$(PREFIX)/bin
-DEST=$(INSTALL_DIR)/dorst
-BIN=target/release/dorst
+PREFIX = /usr/local
+INSTALL_DIR = $(PREFIX)/bin
+DEST = $(INSTALL_DIR)/dorst
+BIN = target/release/dorst
 SOURCE_FILES = $(shell test -e src/ && find src -type f)
 
 all: build
@@ -9,29 +9,25 @@ all: build
 build: $(BIN)
 
 $(BIN): $(SOURCE_FILES)
-.ifdef features
-	@cargo build --features $(features) --release
-.else
-	@cargo build --release
-.endif
+	@if [ -n "$(features)" ]; then \
+		cargo build --features $(features) --release; \
+	else \
+		cargo build --release; \
+	fi
 
 install:
 	@rm -f $(DEST)
-	@cp $(BIN) $(DEST)
-	@echo "Installed!"
+	cp $(BIN) $(DEST)
 
-.ifdef features
-.if $(features) == gui
-	desktop-file-install data/org.hellbyte.dorst.desktop
-	update-desktop-database
-	install -Dm644 "data/org.hellbyte.dorst.png"\
-		"/usr/local/share/pixmaps/org.hellbyte.dorst.png"
-.endif
-.endif
+	@if [ -n "$(features)" ] && [ "$(features)" = "gui" ]; then \
+		desktop-file-install data/org.hellbyte.dorst.desktop; \
+		update-desktop-database; \
+		install -Dm644 "data/org.hellbyte.dorst.png" \
+			"/usr/local/share/pixmaps/org.hellbyte.dorst.png"; \
+	fi
 
 uninstall:
-	@rm -f $(DEST)
-	@echo "Removed!"
+	rm -f $(DEST)
 
 help:
 	@echo "Available targets:"
