@@ -14,7 +14,7 @@ Bootstrap (and backup) codebases with Dørst.
 
 ##### Optional
 
-* `gui`
+* `gui` _GTK4_
 
 ## CLI
 ### Compilation
