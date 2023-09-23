@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.1] - 2023-09-23
+
+### Bug Fixes
+
+- Use static gresource
+
+### CI/CD
+
+- Update package lists
+- Drop nightly builds
+
+### Documentation
+
+- Do not mention `sudo`
+- Add GTK4
+
+### Miscellaneous tasks
+
+- Ignore gresource
+- Add freedesktop files
+- Resize app icon
+- Set desktop entry flag
+
+### Refactor
+
+- Drop `Command` import
+
+### Testing
+
+- Fix `window()`
+
+### Build
+
+- Move custom script
+- Update glib command
+- Exclude data directory
+- Add Makefile
+- Improve compatability
+
 ## [0.13.0] - 2023-09-14
 
 ### Bug Fixes
