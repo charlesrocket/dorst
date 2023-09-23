@@ -21,8 +21,7 @@ Bootstrap (and backup) codebases with Dørst.
 
 ```shell
 make
-#needs sudo
-make install
+make install # as root
 ```
 
 ### Usage
@@ -49,8 +48,7 @@ The `-c`/`--config` flag allows the usage of an alterantive configuration file.
 
 ```shell
 make features=gui
-#needs sudo
-make install features=gui
+make install features=gui # as root
 ```
 
 ### Usage
