@@ -511,9 +511,7 @@ impl Window {
                 );
 
                 if self.task_limiter() {
-                    while *self.imp().active_threads.lock().unwrap()
-                        > *self.imp().thread_pool.lock().unwrap()
-                    {
+                    while *self.imp().active_threads.lock().unwrap() > self.thread_pool() {
                         let wait_loop = glib::MainLoop::new(None, false);
 
                         glib::timeout_add(
@@ -865,10 +863,6 @@ impl Window {
             .remove_css_class("suggested-action");
     }
 
-    fn set_thread_pool_limit(&self, value: u64) {
-        *self.imp().thread_pool.lock().unwrap() = value;
-    }
-
     fn restore_data(&self) {
         #[cfg(not(test))]
         let conf_file = util::xdg_path().unwrap();
@@ -985,7 +979,7 @@ impl Window {
         let dest = self.imp().backup_directory.borrow();
         let filter_option = &self.imp().filter_option.borrow();
         let backups_enabled = self.imp().backups_enabled.get();
-        let threads = *self.imp().thread_pool.lock().unwrap();
+        let threads = self.thread_pool();
         let task_limiter = self.task_limiter();
         #[cfg(feature = "logs")]
         let logs = self.logs();
@@ -1079,7 +1073,7 @@ impl Window {
             }
 
             if let Ok(threads) = keyfile.uint64("core", "threads") {
-                self.set_thread_pool_limit(threads);
+                self.set_thread_pool(threads);
             }
 
             if let Ok(task_limiter) = keyfile.boolean("core", "task-limiter") {
@@ -1218,7 +1212,7 @@ mod tests {
 
         wait_ui(500);
 
-        assert!(*window.imp().thread_pool.lock().unwrap() == 1);
+        assert!(window.thread_pool() == 1);
         assert!(window.task_limiter());
 
         window.imp().close_request();
@@ -1461,7 +1455,7 @@ mod tests {
 
         let window = window();
 
-        window.set_thread_pool_limit(1);
+        window.set_thread_pool(1);
 
         window
             .imp()
