@@ -42,3 +42,25 @@ impl Default for DorstPreferences {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gui::window::tests::window;
+
+    fn preferences_window() -> DorstPreferences {
+        glib::Object::builder::<DorstPreferences>().build()
+    }
+
+    #[gtk::test]
+    fn pool_limit() {
+        let window = window();
+        let pref_window = preferences_window();
+
+        pref_window.set_settings(&window);
+        window.set_thread_pool(3);
+
+        assert!(window.thread_pool() == 3);
+        assert!(pref_window.pool_limit() == 3);
+    }
+}

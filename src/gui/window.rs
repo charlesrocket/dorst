@@ -1104,7 +1104,7 @@ impl Window {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::gui::tests::{helper, wait_ui};
     use std::{
