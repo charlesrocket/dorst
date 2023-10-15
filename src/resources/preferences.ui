@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="DorstPreferences" parent="AdwPreferencesWindow">
+    <property name="title" translatable="yes">Preferences</property>
+    <child>
+      <object class="AdwPreferencesPage">
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">General</property>
+            <child>
+              <object class="AdwActionRow">
+                <property name="title" translatable="yes">Task limiter</property>
+                <property name="subtitle" translatable="yes">Limit concurrent tasks</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <object class="GtkSwitch" id="limiter_switch">
+                    <property name="valign">center</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkAdjustment" id="thread_pool_adj">
+                <property name="page-increment">3.0</property>
+                <property name="step-increment">1.0</property>
+                <property name="lower">1.0</property>
+                <property name="upper">65535.0</property>
+              </object>
+              <object class="AdwActionRow">
+                <property name="title" translatable="yes">Number of tasks</property>
+                <property name="subtitle" translatable="yes">Maximum number of concurrent tasks</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <object class="GtkSpinButton" id="limiter_button">
+                    <signal name="value-changed" handler="pool_limit" swapped="true"/>
+                    <property name="adjustment">thread_pool_adj</property>
+                    <property name="valign">center</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

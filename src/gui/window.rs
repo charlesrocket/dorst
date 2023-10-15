@@ -23,7 +23,7 @@ mod imp;
 
 use crate::{
     git,
-    gui::{repo_box::RepoBox, repo_object::RepoObject, RepoData},
+    gui::{preferences::DorstPreferences, repo_box::RepoBox, repo_object::RepoObject, RepoData},
     util,
 };
 
@@ -66,6 +66,11 @@ impl Window {
         let action_about = SimpleAction::new("about", None);
         action_about.connect_activate(clone!(@weak self as window => move |_, _| {
             window.show_about_dialog();
+        }));
+
+        let action_preferences = SimpleAction::new("preferences", None);
+        action_preferences.connect_activate(clone!(@weak self as window => move |_, _| {
+            window.show_preferences();
         }));
 
         let action_process_targets = SimpleAction::new("process-targets", None);
@@ -139,6 +144,7 @@ impl Window {
         let action_logs = gio::PropertyAction::new("logs", self, "logs");
 
         self.add_action(&action_about);
+        self.add_action(&action_preferences);
         self.add_action(&action_process_targets);
         self.add_action(&action_close);
         self.add_action(&action_color_scheme);
@@ -966,6 +972,15 @@ impl Window {
         );
 
         about_window.present();
+    }
+
+    fn show_preferences(&self) {
+        let preferences = DorstPreferences::default();
+
+        preferences.set_modal(true);
+        preferences.set_transient_for(Some(self));
+        preferences.set_settings(self);
+        preferences.present();
     }
 
     fn save_settings(&self) {
