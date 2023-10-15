@@ -11,6 +11,8 @@ pub struct DorstPreferences {
     #[property(get, set)]
     pub pool_limit: Arc<Mutex<u64>>,
     #[template_child]
+    pub logs_switch: TemplateChild<Switch>,
+    #[template_child]
     pub limiter_switch: TemplateChild<Switch>,
     #[template_child]
     pub limiter_button: TemplateChild<SpinButton>,

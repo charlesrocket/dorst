@@ -9,6 +9,18 @@
             <property name="title" translatable="yes">General</property>
             <child>
               <object class="AdwActionRow">
+                <property name="title" translatable="yes">Logging</property>
+                <property name="subtitle" translatable="yes">Enable task logs</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <object class="GtkSwitch" id="logs_switch">
+                    <property name="valign">center</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="AdwActionRow">
                 <property name="title" translatable="yes">Task limiter</property>
                 <property name="subtitle" translatable="yes">Limit concurrent tasks</property>
                 <property name="use_underline">True</property>

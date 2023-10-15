@@ -17,6 +17,22 @@ impl DorstPreferences {
     }
 
     pub fn set_settings(&self, window: &crate::gui::window::Window) {
+        let logs_switch = self.imp().logs_switch.get();
+
+        #[cfg(feature = "logs")]
+        {
+            window
+                .bind_property("logs", &logs_switch, "state")
+                .bidirectional()
+                .sync_create()
+                .build();
+
+            logs_switch.set_active(window.logs());
+        }
+
+        #[cfg(not(feature = "logs"))]
+        logs_switch.set_sensitive(false);
+
         let limiter_switch = self.imp().limiter_switch.get();
 
         window
@@ -52,16 +68,19 @@ mod tests {
         glib::Object::builder::<DorstPreferences>().build()
     }
 
+    #[cfg(feature = "logs")]
     #[gtk::test]
-    fn pool_limit() {
+    fn logging() {
         let window = window();
         let pref_window = preferences_window();
 
         pref_window.set_settings(&window);
-        window.set_thread_pool(3);
 
-        assert!(window.thread_pool() == 3);
-        assert!(pref_window.pool_limit() == 3);
+        window.set_logs(true);
+        assert!(pref_window.imp().logs_switch.state());
+
+        window.set_logs(false);
+        assert!(!pref_window.imp().logs_switch.state());
     }
 
     #[gtk::test]
@@ -76,5 +95,17 @@ mod tests {
 
         window.set_task_limiter(false);
         assert!(!pref_window.imp().limiter_switch.state());
+    }
+
+    #[gtk::test]
+    fn pool_limit() {
+        let window = window();
+        let pref_window = preferences_window();
+
+        pref_window.set_settings(&window);
+        window.set_thread_pool(3);
+
+        assert!(window.thread_pool() == 3);
+        assert!(pref_window.pool_limit() == 3);
     }
 }
