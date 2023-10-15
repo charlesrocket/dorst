@@ -63,4 +63,18 @@ mod tests {
         assert!(window.thread_pool() == 3);
         assert!(pref_window.pool_limit() == 3);
     }
+
+    #[gtk::test]
+    fn task_limiter() {
+        let window = window();
+        let pref_window = preferences_window();
+
+        pref_window.set_settings(&window);
+
+        window.set_task_limiter(true);
+        assert!(pref_window.imp().limiter_switch.state());
+
+        window.set_task_limiter(false);
+        assert!(!pref_window.imp().limiter_switch.state());
+    }
 }
