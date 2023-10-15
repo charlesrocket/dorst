@@ -65,6 +65,7 @@ pub struct Window {
     pub logs: Cell<bool>,
     #[property(get, set)]
     pub task_limiter: Cell<bool>,
+    #[property(get, set)]
     pub thread_pool: Arc<Mutex<u64>>,
     pub active_threads: Arc<Mutex<u64>>,
 }

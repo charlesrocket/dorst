@@ -2,6 +2,12 @@
 <interface>
   <menu id="main-menu">
     <section>
+      <item>
+        <attribute name="label" translatable="yes">_Preferences</attribute>
+        <attribute name="action">win.preferences</attribute>
+      </item>
+    </section>
+    <section>
       <submenu>
         <attribute name="label" translatable="yes">_Filter</attribute>
         <item>

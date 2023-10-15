@@ -23,7 +23,7 @@ mod imp;
 
 use crate::{
     git,
-    gui::{repo_box::RepoBox, repo_object::RepoObject, RepoData},
+    gui::{preferences::DorstPreferences, repo_box::RepoBox, repo_object::RepoObject, RepoData},
     util,
 };
 
@@ -66,6 +66,11 @@ impl Window {
         let action_about = SimpleAction::new("about", None);
         action_about.connect_activate(clone!(@weak self as window => move |_, _| {
             window.show_about_dialog();
+        }));
+
+        let action_preferences = SimpleAction::new("preferences", None);
+        action_preferences.connect_activate(clone!(@weak self as window => move |_, _| {
+            window.show_preferences();
         }));
 
         let action_process_targets = SimpleAction::new("process-targets", None);
@@ -139,6 +144,7 @@ impl Window {
         let action_logs = gio::PropertyAction::new("logs", self, "logs");
 
         self.add_action(&action_about);
+        self.add_action(&action_preferences);
         self.add_action(&action_process_targets);
         self.add_action(&action_close);
         self.add_action(&action_color_scheme);
@@ -511,9 +517,7 @@ impl Window {
                 );
 
                 if self.task_limiter() {
-                    while *self.imp().active_threads.lock().unwrap()
-                        > *self.imp().thread_pool.lock().unwrap()
-                    {
+                    while *self.imp().active_threads.lock().unwrap() > self.thread_pool() {
                         let wait_loop = glib::MainLoop::new(None, false);
 
                         glib::timeout_add(
@@ -865,10 +869,6 @@ impl Window {
             .remove_css_class("suggested-action");
     }
 
-    fn set_thread_pool_limit(&self, value: u64) {
-        *self.imp().thread_pool.lock().unwrap() = value;
-    }
-
     fn restore_data(&self) {
         #[cfg(not(test))]
         let conf_file = util::xdg_path().unwrap();
@@ -974,6 +974,15 @@ impl Window {
         about_window.present();
     }
 
+    fn show_preferences(&self) {
+        let preferences = DorstPreferences::default();
+
+        preferences.set_modal(true);
+        preferences.set_transient_for(Some(self));
+        preferences.set_settings(self);
+        preferences.present();
+    }
+
     fn save_settings(&self) {
         #[cfg(not(test))]
         let cache_dir = glib::user_cache_dir();
@@ -985,7 +994,7 @@ impl Window {
         let dest = self.imp().backup_directory.borrow();
         let filter_option = &self.imp().filter_option.borrow();
         let backups_enabled = self.imp().backups_enabled.get();
-        let threads = *self.imp().thread_pool.lock().unwrap();
+        let threads = self.thread_pool();
         let task_limiter = self.task_limiter();
         #[cfg(feature = "logs")]
         let logs = self.logs();
@@ -1079,7 +1088,7 @@ impl Window {
             }
 
             if let Ok(threads) = keyfile.uint64("core", "threads") {
-                self.set_thread_pool_limit(threads);
+                self.set_thread_pool(threads);
             }
 
             if let Ok(task_limiter) = keyfile.boolean("core", "task-limiter") {
@@ -1095,7 +1104,7 @@ impl Window {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::gui::tests::{helper, wait_ui};
     use std::{
@@ -1218,7 +1227,7 @@ mod tests {
 
         wait_ui(500);
 
-        assert!(*window.imp().thread_pool.lock().unwrap() == 1);
+        assert!(window.thread_pool() == 1);
         assert!(window.task_limiter());
 
         window.imp().close_request();
@@ -1461,7 +1470,7 @@ mod tests {
 
         let window = window();
 
-        window.set_thread_pool_limit(1);
+        window.set_thread_pool(1);
 
         window
             .imp()
