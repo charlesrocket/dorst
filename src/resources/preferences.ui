@@ -2,6 +2,7 @@
 <interface>
   <template class="DorstPreferences" parent="AdwPreferencesWindow">
     <property name="title" translatable="yes">Preferences</property>
+    <property name="default_height">0</property>
     <child>
       <object class="AdwPreferencesPage">
         <child>
