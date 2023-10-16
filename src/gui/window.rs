@@ -979,7 +979,7 @@ impl Window {
 
         preferences.set_modal(true);
         preferences.set_transient_for(Some(self));
-        preferences.set_settings(self);
+        preferences.setup_settings(self);
         preferences.present();
     }
 

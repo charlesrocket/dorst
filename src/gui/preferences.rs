@@ -16,7 +16,7 @@ impl DorstPreferences {
         glib::Object::new()
     }
 
-    pub fn set_settings(&self, window: &crate::gui::window::Window) {
+    pub fn setup_settings(&self, window: &crate::gui::window::Window) {
         let logs_switch = self.imp().logs_switch.get();
 
         #[cfg(feature = "logs")]
@@ -74,7 +74,7 @@ mod tests {
         let window = window();
         let pref_window = preferences_window();
 
-        pref_window.set_settings(&window);
+        pref_window.setup_settings(&window);
 
         window.set_logs(true);
         assert!(pref_window.imp().logs_switch.state());
@@ -88,7 +88,7 @@ mod tests {
         let window = window();
         let pref_window = preferences_window();
 
-        pref_window.set_settings(&window);
+        pref_window.setup_settings(&window);
 
         window.set_task_limiter(true);
         assert!(pref_window.imp().limiter_switch.state());
@@ -102,7 +102,7 @@ mod tests {
         let window = window();
         let pref_window = preferences_window();
 
-        pref_window.set_settings(&window);
+        pref_window.setup_settings(&window);
         window.set_thread_pool(3);
 
         assert!(window.thread_pool() == 3);
