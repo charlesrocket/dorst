@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.0] - 2023-10-25
+
+### Bug Fixes
+
+- Add default height to `DorstPreferences`
+
+### Features
+
+- Add `adw::PreferencesWindow`
+- Add `logs_switch`
+- Add `preferences` (#33)
+
+### Refactor
+
+- Convert `thread_pool` into property
+- Rearrange menu
+- `set_settings()` -> `setup_settings()`
+
+### Testing
+
+- Add `pool_limit()`
+- Add `task_limiter()`
+
 ## [0.13.1] - 2023-09-23
 
 ### Bug Fixes
