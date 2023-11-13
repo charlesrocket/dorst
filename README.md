@@ -54,3 +54,7 @@ make install features=gui # as root
 ### Usage
 
 `dorst --gui`
+
+## Backups
+
+Dorst's backups are (git) mirrors: `git clone example.dorst`
