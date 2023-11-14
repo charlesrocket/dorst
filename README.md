@@ -28,7 +28,7 @@ make install # as root
 
 To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` and set targets (the current directory is the default backup destination). Dørts supports `ssh-agent` and can use `gitconfig`'s credential helper for authentication.
 
-`dorst ~/backups/src`
+`dorst -b ~/backups/src`
 
 Example:
 
