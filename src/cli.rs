@@ -75,7 +75,7 @@ impl Config {
                 text_prompt("\x1b[7m Enter source storage  \n directory (~/src):    \x1b[0m ");
 
             let target_prompt =
-                text_prompt("\x1b[7m Enter backup targets  \n separated by a comma: \x1b[0m ");
+                text_prompt("\x1b[7m Enter repository URLs \n separated by a comma: \x1b[0m ");
 
             let source = source_prompt?;
 
