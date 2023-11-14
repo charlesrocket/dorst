@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.0] - 2023-11-14
+
+### Bug Fixes
+
+- Update target prompt
+
+### Documentation
+
+- Describe backups
+- Update `Usage`
+
+### Features
+
+- Change default behavior
+
+### Testing
+
+- Update tests
+
 ## [0.14.0] - 2023-10-25
 
 ### Bug Fixes
