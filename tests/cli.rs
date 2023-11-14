@@ -153,7 +153,6 @@ mod cli {
         thread::sleep(std::time::Duration::from_millis(300));
 
         clone
-            .arg("--bootstrap")
             .arg("--config")
             .arg(config.path())
             .assert()
@@ -198,6 +197,7 @@ mod cli {
         clone
             .arg("--config")
             .arg(config.path())
+            .arg("--backups")
             .arg("test-mirror")
             .assert()
             .success()
@@ -205,6 +205,8 @@ mod cli {
                 "COMPLETED\u{1b}[0m \
              \u{1b}[37m(\u{1b}[0m\u{1b}[1;92m1\u{1b}[0m\u{1b}[37m)\u{1b}[0m",
             ));
+
+        assert!(Path::new("test-mirror/localhost:7869.dorst").exists());
 
         commit(repo_dir);
         #[cfg(feature = "logs")]

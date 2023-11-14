@@ -154,11 +154,11 @@ fn args() -> ArgMatches {
                 .value_name("FILE")
                 .help("Use alternative config file")
                 .value_parser(value_parser!(PathBuf)),
-            Arg::new("bootstrap")
+            Arg::new("backups")
                 .short('b')
-                .long("bootstrap")
-                .help("Clone only (no backups)")
-                .action(ArgAction::SetFalse),
+                .long("backups")
+                .help("Enable backups")
+                .action(ArgAction::SetTrue),
             Arg::new("purge")
                 .short('p')
                 .long("purge")
@@ -199,7 +199,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
 
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let purge = matches.get_flag("purge");
-    let repo_mirror = matches.get_flag("bootstrap");
+    let repo_mirror = matches.get_flag("backups");
     let silent = matches.get_flag("silent");
     #[cfg(feature = "logs")]
     let logs = matches.get_flag("logs");
