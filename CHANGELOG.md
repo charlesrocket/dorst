@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.1] - 2024-02-12
+
+### Miscellaneous tasks
+
+- Update dependencies
+- Allow deprecated functions
+
 ## [0.15.0] - 2023-11-14
 
 ### Bug Fixes
@@ -50,11 +57,6 @@ All notable changes to this project will be documented in this file.
 
 - Use static gresource
 
-### CI/CD
-
-- Update package lists
-- Drop nightly builds
-
 ### Documentation
 
 - Do not mention `sudo`
@@ -66,6 +68,11 @@ All notable changes to this project will be documented in this file.
 - Add freedesktop files
 - Resize app icon
 - Set desktop entry flag
+
+### Operations
+
+- Update package lists
+- Drop nightly builds
 
 ### Refactor
 
@@ -98,11 +105,6 @@ All notable changes to this project will be documented in this file.
 - Edit `empty` message
 - Adjust entry margin
 
-### CI/CD
-
-- Drop `cache-apt-pkgs-action`
-- Update `publish` job
-
 ### Features
 
 - Drop `banner`
@@ -114,6 +116,11 @@ All notable changes to this project will be documented in this file.
 
 - Bump `git2` to 0.18
 - Bump `built` to 0.7
+
+### Operations
+
+- Drop `cache-apt-pkgs-action`
+- Update `publish` job
 
 ### Refactor
 
@@ -139,14 +146,14 @@ All notable changes to this project will be documented in this file.
 - Fix `update_rows()`
 - Set `repo_name` attribute
 
-### CI/CD
-
-- Update `checkout`
-- Disable `fail-fast`
-
 ### Documentation
 
 - Add `Features`
+
+### Operations
+
+- Update `checkout`
+- Disable `fail-fast`
 
 ### Refactor
 
@@ -178,15 +185,6 @@ All notable changes to this project will be documented in this file.
 - Status check behind `tx.is_some()`
 - Fix `status_revealer` margin
 
-### CI/CD
-
-- Add `cli` feature
-- Set codecov layout
-- Update features
-- Fix codecov conditions
-- Rename test job
-- Fix test conditions
-
 ### Features
 
 - Show updated targets
@@ -210,6 +208,15 @@ All notable changes to this project will be documented in this file.
 ### Miscellaneous tasks
 
 - Fix description
+
+### Operations
+
+- Add `cli` feature
+- Set codecov layout
+- Update features
+- Fix codecov conditions
+- Rename test job
+- Fix test conditions
 
 ### Refactor
 
@@ -361,7 +368,7 @@ All notable changes to this project will be documented in this file.
 
 - Fix target filter
 
-### CI/CD
+### Operations
 
 - Fix code coverage conditions
 - Add `flag_management`
@@ -385,7 +392,7 @@ All notable changes to this project will be documented in this file.
 
 - Properly indicate failures
 
-### CI/CD
+### Operations
 
 - Update `codecov`
 - Update coverage settings
@@ -421,14 +428,14 @@ All notable changes to this project will be documented in this file.
 - Edit `config` argument
 - Use `CARGO_PKG_DESCRIPTION`
 
-### CI/CD
-
-- Rename jobs
-- Add `features`
-
 ### Miscellaneous tasks
 
 - Update description
+
+### Operations
+
+- Rename jobs
+- Add `features`
 
 ### Testing
 
@@ -451,15 +458,6 @@ All notable changes to this project will be documented in this file.
 - Update layout
 - Change status page icon
 
-### CI/CD
-
-- Calculate checksums
-- Use `dtolnay/rust-toolchain`
-- Add `cross` builds
-- Update `release` requirements
-- Update `cross` setup
-- Add `build` (#18)
-
 ### Documentation
 
 - Update example
@@ -481,6 +479,15 @@ All notable changes to this project will be documented in this file.
 - Hide `button_backup_dest`
 - Add placeholder
 - Set status page (#17)
+
+### Operations
+
+- Calculate checksums
+- Use `dtolnay/rust-toolchain`
+- Add `cross` builds
+- Update `release` requirements
+- Update `cross` setup
+- Add `build` (#18)
 
 ### Refactor
 
@@ -543,12 +550,6 @@ All notable changes to this project will be documented in this file.
 - Align main progress bar
 - Update `progress_bar` container
 
-### CI/CD
-
-- Add pr labeler
-- Add codecov
-- Setup pr labeler (#13)
-
 ### Features
 
 - Add `CssProvider`
@@ -560,6 +561,12 @@ All notable changes to this project will be documented in this file.
 ### Miscellaneous tasks
 
 - Update categories
+
+### Operations
+
+- Add pr labeler
+- Add codecov
+- Setup pr labeler (#13)
 
 ### Refactor
 
@@ -599,18 +606,18 @@ All notable changes to this project will be documented in this file.
 - Do not update repos if `window` lists are empty
 - Handle color scheme setting
 
-### CI/CD
-
-- Add changelog
-- Move `rustfmt`
-- Fix `cache`
-
 ### Features
 
 - Add `repo_box` controller
 - Add `remove_button`
 - Indicate removed repo
 - Add row popover (#11)
+
+### Operations
+
+- Add changelog
+- Move `rustfmt`
+- Fix `cache`
 
 ### Refactor
 
@@ -702,11 +709,6 @@ All notable changes to this project will be documented in this file.
 - Set `default_width`
 - Update menu
 
-### CI/CD
-
-- Switch `lint` to macos
-- Update threshold
-
 ### Documentation
 
 - Update usage
@@ -725,6 +727,11 @@ All notable changes to this project will be documented in this file.
 ### Miscellaneous tasks
 
 - Update dependencies
+
+### Operations
+
+- Switch `lint` to macos
+- Update threshold
 
 ### Refactor
 
