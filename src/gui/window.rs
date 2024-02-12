@@ -633,7 +633,6 @@ impl Window {
     }
 
     fn set_row_channel(&self, row: Object) -> glib::Sender<RowMessage> {
-        #[allow(deprecated)]
         let (tx, rx) = MainContext::channel(Priority::DEFAULT);
         let repo = row.downcast::<RepoObject>().unwrap();
         let updated_list_clone = self.imp().updated_list.clone();
