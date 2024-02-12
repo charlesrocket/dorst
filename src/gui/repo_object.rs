@@ -75,6 +75,7 @@ impl RepoObject {
         let dest_clone = String::from(destination_clone);
         let dest_backup = String::from(destination_backup);
 
+        #[allow(deprecated)]
         let (tx_repo, rx_repo) = MainContext::channel(Priority::default());
 
         rx_repo.attach(None, move |x| match x {
