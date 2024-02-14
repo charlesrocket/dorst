@@ -20,12 +20,13 @@ lto = true
 [features]
 default = ["cli", "logs"]
 cli = ["dep:clap", "dep:indicatif"]
-gui = ["dep:adw", "dep:glib", "dep:gtk"]
+gui = ["dep:adw", "dep:async-channel", "dep:glib", "dep:gtk"]
 logs = ["dep:tracing", "tracing-appender", "tracing-subscriber"]
 
 [dependencies]
 adw = { version = "0.5", package = "libadwaita", features = ["v1_3"], optional = true }
 anyhow = "1.0"
+async-channel = { version = "2", optional = true }
 clap = { version = "4.3", features = ["string"], optional = true }
 git2 = { version = "0.18", features = ["vendored-openssl"] }
 glib = { version = "0.18", optional = true }

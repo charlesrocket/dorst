@@ -1,4 +1,4 @@
-use gtk::glib::{self, ControlFlow, MainContext, Object, Priority, Sender};
+use gtk::glib::{self, Object};
 use gtk::subclass::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -64,7 +64,7 @@ impl RepoObject {
         destination_clone: &str,
         destination_backup: &str,
         mirror: bool,
-        #[cfg(feature = "gui")] tx: Option<Sender<RowMessage>>,
+        #[cfg(feature = "gui")] tx: Option<async_channel::Sender<RowMessage>>,
         #[cfg(feature = "logs")] logs: bool,
         active_threads: Arc<Mutex<u64>>,
     ) {
@@ -75,29 +75,30 @@ impl RepoObject {
         let dest_clone = String::from(destination_clone);
         let dest_backup = String::from(destination_backup);
 
-        let (tx_repo, rx_repo) = MainContext::channel(Priority::default());
+        let (tx_repo, rx_repo) = async_channel::unbounded();
 
-        rx_repo.attach(None, move |x| match x {
-            RepoMessage::Ok => {
-                repo.set_status("ok");
-                ControlFlow::Continue
+        let event_handler = async move {
+            while let Ok(event) = rx_repo.recv().await {
+                match event {
+                    RepoMessage::Ok => {
+                        repo.set_status("ok");
+                    }
+                    RepoMessage::Error(value) => {
+                        repo.set_error(value);
+                        repo.set_status("err");
+                    }
+                    RepoMessage::Reset => {
+                        repo.set_status("started");
+                    }
+                    RepoMessage::Finish(value) => {
+                        repo.set_completed(value);
+                        repo.set_status("finished");
+                    }
+                }
             }
-            RepoMessage::Error(value) => {
-                repo.set_error(value);
-                repo.set_status("err");
-                ControlFlow::Continue
-            }
-            RepoMessage::Reset => {
-                repo.set_status("started");
-                ControlFlow::Continue
-            }
-            RepoMessage::Finish(value) => {
-                repo.set_completed(value);
-                repo.set_status("finished");
-                ControlFlow::Continue
-            }
-        });
+        };
 
+        glib::MainContext::default().spawn_local(event_handler);
         gtk::gio::spawn_blocking(move || {
             let mut err_string = String::new();
 
@@ -118,7 +119,7 @@ impl RepoObject {
                         info!("Completed: {repo_name}");
                     }
 
-                    tx_repo.send(RepoMessage::Ok).unwrap();
+                    let _ = tx_repo.send_blocking(RepoMessage::Ok);
                 }
                 Err(error) => {
                     #[cfg(feature = "logs")]
@@ -130,11 +131,11 @@ impl RepoObject {
                 }
             }
 
-            tx.clone().unwrap().send(RowMessage::Finish).unwrap();
+            let _ = tx.clone().unwrap().send_blocking(RowMessage::Finish);
 
             if mirror {
-                tx.clone().unwrap().send(RowMessage::Reset).unwrap();
-                tx_repo.send(RepoMessage::Reset).unwrap();
+                let _ = tx.clone().unwrap().send_blocking(RowMessage::Reset);
+                let _ = tx_repo.send_blocking(RepoMessage::Reset);
 
                 match git::process_target(
                     &dest_backup,
@@ -153,7 +154,7 @@ impl RepoObject {
                             info!("Completed (backup): {repo_name}");
                         }
 
-                        tx_repo.send(RepoMessage::Ok).unwrap();
+                        let _ = tx_repo.send_blocking(RepoMessage::Ok);
                     }
                     Err(error) => {
                         #[cfg(feature = "logs")]
@@ -165,14 +166,14 @@ impl RepoObject {
                     }
                 }
 
-                tx.clone().unwrap().send(RowMessage::Finish).unwrap();
+                let _ = tx.clone().unwrap().send_blocking(RowMessage::Finish);
             }
 
             if !err_string.is_empty() {
-                tx_repo.send(RepoMessage::Error(err_string)).unwrap();
+                let _ = tx_repo.send_blocking(RepoMessage::Error(err_string));
             }
 
-            tx_repo.send(RepoMessage::Finish(true)).unwrap();
+            let _ = tx_repo.send_blocking(RepoMessage::Finish(true));
             *active_threads.lock().unwrap() -= 1;
         });
     }

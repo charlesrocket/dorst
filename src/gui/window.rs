@@ -3,7 +3,7 @@ use adw::{
 };
 use gtk::{
     gio::{self, ListStore, SimpleAction},
-    glib::{self, clone, ControlFlow, KeyFile, MainContext, Object, Priority},
+    glib::{self, clone, ControlFlow, KeyFile, Object},
     pango::{EllipsizeMode, WrapMode},
     Align, Box, Button, CustomFilter, FilterListModel, Frame, Label, License, ListBoxRow,
     NoSelection, Orientation, Popover,
@@ -632,52 +632,49 @@ impl Window {
         }
     }
 
-    fn set_row_channel(&self, row: Object) -> glib::Sender<RowMessage> {
-        let (tx, rx) = MainContext::channel(Priority::DEFAULT);
+    fn set_row_channel(&self, row: Object) -> async_channel::Sender<RowMessage> {
+        let (tx, rx) = async_channel::unbounded();
         let repo = row.downcast::<RepoObject>().unwrap();
         let updated_list_clone = self.imp().updated_list.clone();
+        let event_handler = async move {
+            while let Ok(event) = rx.recv().await {
+                match event {
+                    RowMessage::Reset => {
+                        repo.set_progress(0.0);
+                    }
+                    RowMessage::Progress(value, progress) => {
+                        if value.is_nan() {
+                            repo.set_progress(1.0);
+                        } else {
+                            let fraction = match progress {
+                                Status::Deltas => (value / 2.0) + 0.5,
+                                Status::Data => value / 2.0,
+                                Status::Normal => value,
+                            };
 
-        rx.attach(None, move |x| match x {
-            RowMessage::Reset => {
-                repo.set_progress(0.0);
-                ControlFlow::Continue
-            }
-            RowMessage::Progress(value, progress) => {
-                if value.is_nan() {
-                    repo.set_progress(1.0);
-                } else {
-                    let fraction = match progress {
-                        Status::Deltas => (value / 2.0) + 0.5,
-                        Status::Data => value / 2.0,
-                        Status::Normal => value,
-                    };
-
-                    repo.set_progress(fraction);
+                            repo.set_progress(fraction);
+                        }
+                    }
+                    RowMessage::Clone => {
+                        repo.set_status("cloning");
+                    }
+                    RowMessage::Fetch => {
+                        repo.set_status("fetching");
+                    }
+                    RowMessage::Deltas => {
+                        repo.set_status("resolving");
+                    }
+                    RowMessage::Updated(link) => {
+                        updated_list_clone.lock().unwrap().push(link);
+                    }
+                    RowMessage::Finish => {
+                        repo.set_progress(1.0);
+                    }
                 }
+            }
+        };
 
-                ControlFlow::Continue
-            }
-            RowMessage::Clone => {
-                repo.set_status("cloning");
-                ControlFlow::Continue
-            }
-            RowMessage::Fetch => {
-                repo.set_status("fetching");
-                ControlFlow::Continue
-            }
-            RowMessage::Deltas => {
-                repo.set_status("resolving");
-                ControlFlow::Continue
-            }
-            RowMessage::Updated(link) => {
-                updated_list_clone.lock().unwrap().push(link);
-                ControlFlow::Continue
-            }
-            RowMessage::Finish => {
-                repo.set_progress(1.0);
-                ControlFlow::Continue
-            }
-        });
+        glib::MainContext::default().spawn_local(event_handler);
 
         tx
     }
