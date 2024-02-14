@@ -1,5 +1,5 @@
 use adw::subclass::prelude::*;
-use glib::{ObjectExt, Properties};
+use glib::{prelude::ObjectExt, Properties};
 use gtk::{CompositeTemplate, SpinButton, Switch};
 
 use std::sync::{Arc, Mutex};
