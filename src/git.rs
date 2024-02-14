@@ -1,7 +1,7 @@
 use anyhow::Result;
-use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
 #[cfg(feature = "gui")]
-use glib::Sender;
+use async_channel::Sender;
+use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
 #[cfg(feature = "cli")]
 use indicatif::{HumanBytes, ProgressBar};
 
@@ -103,18 +103,18 @@ pub fn clone_repo(
 
     #[cfg(feature = "gui")]
     if tx.is_some() {
-        let _ = tx.clone().unwrap().send(RowMessage::Clone);
+        let _ = tx.clone().unwrap().send_blocking(RowMessage::Clone);
 
         callbacks.transfer_progress(|stats| {
             if stats.received_objects() == stats.total_objects() {
-                let _ = tx.clone().unwrap().send(RowMessage::Deltas);
+                let _ = tx.clone().unwrap().send_blocking(RowMessage::Deltas);
                 let indexed = stats.indexed_deltas() as f64;
                 let total = stats.total_deltas() as f64;
                 let progress = indexed / total;
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(RowMessage::Progress(progress, Status::Deltas));
+                    .send_blocking(RowMessage::Progress(progress, Status::Deltas));
             } else if stats.total_objects() > 0 {
                 let received = stats.received_objects() as f64;
                 let total = stats.total_objects() as f64;
@@ -122,7 +122,7 @@ pub fn clone_repo(
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(RowMessage::Progress(progress, Status::Data));
+                    .send_blocking(RowMessage::Progress(progress, Status::Data));
             }
 
             true
@@ -237,18 +237,18 @@ pub fn fetch_repo(
 
         #[cfg(feature = "gui")]
         if tx.is_some() {
-            let _ = tx.clone().unwrap().send(RowMessage::Fetch);
+            let _ = tx.clone().unwrap().send_blocking(RowMessage::Fetch);
 
             callbacks.transfer_progress(|stats| {
                 if stats.received_objects() == stats.total_objects() {
-                    let _ = tx.clone().unwrap().send(RowMessage::Deltas);
+                    let _ = tx.clone().unwrap().send_blocking(RowMessage::Deltas);
                     let indexed = stats.indexed_deltas() as f64;
                     let total = stats.total_deltas() as f64;
                     let progress = indexed / total;
                     let _ = tx
                         .clone()
                         .unwrap()
-                        .send(RowMessage::Progress(progress, Status::Deltas));
+                        .send_blocking(RowMessage::Progress(progress, Status::Deltas));
                 } else if stats.total_objects() > 0 {
                     let received = stats.received_objects() as f64;
                     let total = stats.total_objects() as f64;
@@ -256,7 +256,7 @@ pub fn fetch_repo(
                     let _ = tx
                         .clone()
                         .unwrap()
-                        .send(RowMessage::Progress(progress, Status::Data));
+                        .send_blocking(RowMessage::Progress(progress, Status::Data));
                 }
 
                 true
@@ -300,7 +300,7 @@ pub fn fetch_repo(
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(RowMessage::Progress(progress, Status::Normal));
+                    .send_blocking(RowMessage::Progress(progress, Status::Normal));
             }
         }
 
@@ -320,7 +320,7 @@ pub fn fetch_repo(
                 let _ = tx
                     .clone()
                     .unwrap()
-                    .send(RowMessage::Updated(String::from(target)));
+                    .send_blocking(RowMessage::Updated(String::from(target)));
             }
         }
     }
