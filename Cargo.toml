@@ -24,13 +24,13 @@ gui = ["dep:adw", "dep:async-channel", "dep:glib", "dep:gtk"]
 logs = ["dep:tracing", "tracing-appender", "tracing-subscriber"]
 
 [dependencies]
-adw = { version = "0.5", package = "libadwaita", features = ["v1_3"], optional = true }
+adw = { version = "0.6", package = "libadwaita", features = ["v1_3"], optional = true }
 anyhow = "1.0"
 async-channel = { version = "2", optional = true }
 clap = { version = "4.3", features = ["string"], optional = true }
 git2 = { version = "0.18", features = ["vendored-openssl"] }
-glib = { version = "0.18", optional = true }
-gtk = { version = "0.7", package = "gtk4", features = ["v4_10"], optional = true }
+glib = { version = "0.19", optional = true }
+gtk = { version = "0.8", package = "gtk4", features = ["v4_10"], optional = true }
 indicatif = { version = "0.17", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
@@ -47,4 +47,4 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 
 [build-dependencies]
 built = { version = "0.7", features = ["git2"] }
-glib-build-tools = "0.18"
+glib-build-tools = "0.19"
