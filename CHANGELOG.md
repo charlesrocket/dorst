@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.2] - 2024-02-15
+
+### Bug Fixes
+
+- Update `ObjectExt` import
+
+### Miscellaneous tasks
+
+- Disallow deprecated functions
+- Update LICENSE
+- Add `async-channel`
+- Update GTK dependencies
+
+### Refactor
+
+- Switch to `async-channel`
+
 ## [0.15.1] - 2024-02-12
 
 ### Miscellaneous tasks
