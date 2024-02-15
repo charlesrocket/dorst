@@ -20,7 +20,7 @@ lto = true
 [features]
 default = ["cli", "logs"]
 cli = ["dep:clap", "dep:indicatif"]
-gui = ["dep:adw", "dep:async-channel", "dep:glib", "dep:gtk"]
+gui = ["dep:adw", "dep:async-channel", "dep:glib", "dep:gtk", "dep:glib-build-tools"]
 logs = ["dep:tracing", "tracing-appender", "tracing-subscriber"]
 
 [dependencies]
@@ -47,4 +47,4 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 
 [build-dependencies]
 built = { version = "0.7", features = ["git2"] }
-glib-build-tools = "0.19"
+glib-build-tools = { version = "0.19", optional = true }
