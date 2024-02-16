@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.3] - 2024-02-16
+
+### Build
+
+- Make glib-build-tools optional
+
 ## [0.15.2] - 2024-02-15
 
 ### Bug Fixes
