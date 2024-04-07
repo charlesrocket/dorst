@@ -30,7 +30,7 @@ async-channel = { version = "2", optional = true }
 clap = { version = "4.3", features = ["string"], optional = true }
 git2 = { version = "0.18", features = ["vendored-openssl"] }
 glib = { version = "0.19", optional = true }
-gtk = { version = "0.8", package = "gtk4", features = ["v4_10"], optional = true }
+gtk = { version = "0.8", package = "gtk4", features = ["v4_12"], optional = true }
 indicatif = { version = "0.17", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
