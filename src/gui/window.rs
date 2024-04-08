@@ -882,7 +882,7 @@ impl Window {
             let config: Config = match toml::from_str(&config_str) {
                 Ok(toml) => toml,
                 Err(error) => {
-                    self.show_message(&format!("Some fields in the configuration file are missing, falling back to default values."), 5);
+                    self.show_message("Some fields in the configuration file are missing, falling back to default values.", 5);
 
                     #[cfg(feature = "logs")]
                     if self.logs() {
@@ -899,8 +899,7 @@ impl Window {
             let toml_table = config_str.parse::<Table>().unwrap();
 
             if !config.source_directory.is_empty() {
-                *self.imp().source_directory.borrow_mut() =
-                    String::from(config.source_directory.to_string());
+                *self.imp().source_directory.borrow_mut() = config.source_directory;
                 self.imp()
                     .button_source_dest
                     .remove_css_class("suggested-action");
