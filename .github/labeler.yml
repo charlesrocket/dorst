@@ -1,5 +1,9 @@
 ---
 
+documentation:
+- changed-files:
+  - any-glob-to-any-file: 'README.md'
+
 build:
 - changed-files:
   - any-glob-to-any-file: ['build.rs', 'prebuild.rs', 'Makefile']
@@ -7,6 +11,10 @@ build:
 cargo:
 - changed-files:
   - any-glob-to-any-file: 'Cargo.toml'
+
+config:
+- changed-files:
+  - any-glob-to-any-file: 'src/config.rs'
 
 cli:
 - changed-files:
