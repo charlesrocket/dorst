@@ -1,25 +1,32 @@
 ---
 
 build:
-  - 'build.rs'
+- changed-files:
+  - any-glob-to-any-file: ['build.rs', 'prebuild.rs', 'Makefile']
 
 cargo:
-  - 'Cargo.toml'
-
-ci:
-  - '.github/**/*'
-  - 'codecov.yml'
+- changed-files:
+  - any-glob-to-any-file: 'Cargo.toml'
 
 cli:
-  - 'src/cli.rs'
-
-git:
-  - 'src/git.rs'
+- changed-files:
+  - any-glob-to-any-file: 'src/cli.rs'
 
 gui:
-  - 'src/gui/**/*'
-  - 'src/resources/**/*'
-  - 'src/gui.rs'
+- changed-files:
+  - any-glob-to-any-file: ['src/gui/**/*', 'src/resources/**/*', 'src/gui.rs']
+
+git:
+- changed-files:
+  - any-glob-to-any-file: 'src/git.rs'
 
 test:
-  - 'tests/**/*'
+- changed-files:
+  - any-glob-to-any-file: 'tests/**/*'
+
+ops:
+- changed-files:
+  - any-glob-to-any-file: ['.github/**/*', 'codecov.yml']
+
+feature:
+ - head-branch: ['^feature', 'feature']
