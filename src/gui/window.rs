@@ -8,6 +8,7 @@ use gtk::{
     Align, Box, Button, CustomFilter, FilterListModel, Frame, Label, License, ListBoxRow,
     NoSelection, Orientation, Popover,
 };
+use toml::Table;
 
 #[cfg(feature = "logs")]
 use tracing::info;
@@ -15,6 +16,7 @@ use tracing::info;
 use std::{
     cell::Ref,
     fs,
+    io::Read,
     path::{Path, PathBuf},
     time,
 };
@@ -22,6 +24,7 @@ use std::{
 mod imp;
 
 use crate::{
+    config::Config,
     git,
     gui::{preferences::DorstPreferences, repo_box::RepoBox, repo_object::RepoObject, RepoData},
     util,
@@ -872,18 +875,25 @@ impl Window {
         #[cfg(test)]
         let conf_file = PathBuf::from("/tmp/dorst_test_conf.yaml");
 
-        if let Ok(file) = fs::File::open(conf_file) {
-            let config: serde_yaml::Value = serde_yaml::from_reader(file).unwrap();
+        if let Ok(mut file) = fs::File::open(conf_file) {
+            let mut config_str = String::new();
+            file.read_to_string(&mut config_str).unwrap();
 
-            if let Some(source_directory) = config["source_directory"].as_str() {
-                *self.imp().source_directory.borrow_mut() = String::from(source_directory);
+            let config: Config = toml::from_str(&config_str).unwrap();
+            let toml_table = config_str.parse::<Table>().unwrap();
+
+            if !config.source_directory.is_empty() {
+                *self.imp().source_directory.borrow_mut() =
+                    String::from(config.source_directory.to_string());
                 self.imp()
                     .button_source_dest
                     .remove_css_class("suggested-action");
             }
 
-            if let Some(targets) = config["targets"].as_sequence() {
+            if let Some(targets) = toml_table.get("targets") {
                 let repo_objects: Vec<RepoObject> = targets
+                    .as_array()
+                    .unwrap()
                     .iter()
                     .filter_map(|target| {
                         target.as_str().map(|link| {

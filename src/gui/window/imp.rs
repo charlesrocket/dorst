@@ -5,7 +5,6 @@ use gtk::{
 };
 
 use glib::Properties;
-use serde_yaml::{Mapping, Sequence, Value};
 use std::{
     cell::{Cell, RefCell},
     fs::File,
@@ -16,7 +15,7 @@ use std::{
 
 use crate::gui::window::RepoObject;
 use crate::gui::RepoData;
-use crate::util;
+use crate::{config::Config, util};
 
 #[derive(CompositeTemplate, Properties)]
 #[properties(wrapper_type = super::Window)]
@@ -192,25 +191,18 @@ impl WindowImpl for Window {
             .map(RepoObject::repo_data)
             .collect();
 
-        let mut target_sequence = Sequence::new();
+        let mut config = Config {
+            source_directory: self.source_directory.borrow().to_owned(),
+            targets: [].to_vec(),
+        };
+
         for repo_data in backup_data {
-            target_sequence.push(Value::String(repo_data.link));
+            config.targets.push(repo_data.link.to_owned());
         }
 
-        let mut yaml_mapping = Mapping::new();
-        yaml_mapping.insert(
-            Value::String("source_directory".to_owned()),
-            Value::String(self.source_directory.borrow().to_string()),
-        );
-
-        yaml_mapping.insert(
-            Value::String("targets".to_owned()),
-            Value::Sequence(target_sequence),
-        );
-
-        let yaml_data = serde_yaml::to_string(&yaml_mapping).unwrap();
+        let toml_data = toml::to_string(&config).unwrap();
         let mut file = File::create(util::xdg_path().unwrap()).unwrap();
-        file.write_all(yaml_data.as_bytes()).unwrap();
+        file.write_all(toml_data.as_bytes()).unwrap();
         self.obj().save_settings();
         self.parent_close_request()
     }

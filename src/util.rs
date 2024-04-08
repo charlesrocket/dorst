@@ -51,9 +51,9 @@ pub fn xdg_path() -> Result<PathBuf> {
 
     let config_path = format!("{xdg_config_home}/dorst");
     #[cfg(not(test))]
-    let file_path = format!("{config_path}/config.yaml");
+    let file_path = format!("{config_path}/config.toml");
     #[cfg(test)]
-    let file_path = "/tmp/dorst_test_conf.yaml";
+    let file_path = "/tmp/dorst_test_conf.toml";
 
     if !Path::new(&config_path).exists() {
         fs::create_dir_all(config_path)?;

@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Result};
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "logs")]
 use tracing::{error, info};
@@ -14,6 +13,7 @@ use std::{
 };
 
 use crate::{
+    config::Config,
     git,
     util::{expand_path, get_dir, get_name, version_string, xdg_path},
 };
@@ -37,20 +37,10 @@ const SPINNER: [&str; 2] = ["\u{2591}", "\u{2592}"];
 const BAR_1: [&str; 3] = ["\u{25a0}", "\u{25a0}", "\u{25a1}"];
 const BAR_2: [&str; 3] = ["+", "+", "-"];
 
-#[derive(Default, Serialize, Deserialize)]
-struct Config {
-    source_directory: String,
-    targets: Vec<String>,
-    #[serde(skip_serializing)]
-    #[serde(skip_deserializing)]
-    count: u64,
-}
-
 impl Config {
     fn read(path: &PathBuf) -> Result<Self> {
         let config_data = fs::read_to_string(path)?;
-        let config: Self = serde_yaml::from_str(&config_data)?;
-        let config_count = config.targets.len().try_into().unwrap();
+        let config: Self = toml::from_str(&config_data)?;
 
         for target in &config.targets {
             if target.ends_with('/') {
@@ -61,7 +51,6 @@ impl Config {
         Ok(Self {
             source_directory: config.source_directory,
             targets: config.targets,
-            count: config_count,
         })
     }
 
@@ -94,12 +83,11 @@ impl Config {
             let config = Self {
                 source_directory: source,
                 targets: target,
-                count: 0,
             };
 
             std::fs::create_dir_all(dir).unwrap();
 
-            let new_config = serde_yaml::to_string(&config)?;
+            let new_config = toml::to_string(&config)?;
             let mut file = fs::File::create(file_path)?;
 
             file.write_all(new_config.as_bytes())?;
@@ -115,7 +103,6 @@ impl Config {
         let config = Self::read(path)?;
         self.source_directory = config.source_directory;
         self.targets = config.targets;
-        self.count = config.count;
 
         Ok(())
     }
@@ -223,7 +210,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
 
     let mut err_count = 0;
     let mut compl_count = 0;
-    let progress_bar = indicat.add(ProgressBar::new(config.count));
+    let progress_bar = indicat.add(ProgressBar::new(config.targets.len().try_into().unwrap()));
 
     progress_bar.set_style(indicat_template);
     progress_bar.set_position(0);
