@@ -11,7 +11,7 @@ use gtk::{
 use toml::Table;
 
 #[cfg(feature = "logs")]
-use tracing::info;
+use tracing::{info, warn};
 
 use std::{
     cell::Ref,
@@ -873,13 +873,29 @@ impl Window {
         #[cfg(not(test))]
         let conf_file = util::xdg_path().unwrap();
         #[cfg(test)]
-        let conf_file = PathBuf::from("/tmp/dorst_test_conf.yaml");
+        let conf_file = PathBuf::from("/tmp/dorst_test_conf.toml");
 
         if let Ok(mut file) = fs::File::open(conf_file) {
             let mut config_str = String::new();
             file.read_to_string(&mut config_str).unwrap();
 
-            let config: Config = toml::from_str(&config_str).unwrap();
+            let config: Config = match toml::from_str(&config_str) {
+                Ok(toml) => toml,
+                Err(error) => {
+                    self.show_message(&format!("Some fields in the configuration file are missing, falling back to default values."), 5);
+
+                    #[cfg(feature = "logs")]
+                    if self.logs() {
+                        warn!("{}", error.message());
+                    }
+
+                    Config {
+                        source_directory: String::new(),
+                        targets: [].to_vec(),
+                    }
+                }
+            };
+
             let toml_table = config_str.parse::<Table>().unwrap();
 
             if !config.source_directory.is_empty() {
@@ -1198,24 +1214,26 @@ pub mod tests {
 
     #[gtk::test]
     fn config() {
-        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
-            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        if Path::new("/tmp/dorst_test_conf.toml").exists() {
+            remove_file("/tmp/dorst_test_conf.toml").unwrap();
         }
 
         let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
 
-        config.write_all(b"\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x66\x6f\x6f\x62\x61\x72\x2f\x0a\x20\x20\x2d\x20\x2f").unwrap();
-        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x20\x3d\x20\x22\x22\x0a\x74\x61\x72\x67\x65\x74\x73\x20\x3d\x20\x5b\x22\x66\x6f\x6f\x62\x61\x72\x2f\x22\x2c\x20\x22\x2f\x22\x5d").unwrap();
+        config.persist("/tmp/dorst_test_conf.toml").unwrap();
 
         let window = window();
+
+        wait_ui(1000);
 
         assert!(window.imp().stack.visible_child_name() == Some("main".into()));
         assert!(window.get_repo_data().len() == 2);
 
         window.imp().close_request();
 
-        assert!(Path::new("/tmp/dorst_test_conf.yaml").exists());
-        remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        assert!(Path::new("/tmp/dorst_test_conf.toml").exists());
+        remove_file("/tmp/dorst_test_conf.toml").unwrap();
     }
 
     #[gtk::test]
@@ -1245,8 +1263,8 @@ pub mod tests {
 
     #[gtk::test]
     fn entries() {
-        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
-            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        if Path::new("/tmp/dorst_test_conf.toml").exists() {
+            remove_file("/tmp/dorst_test_conf.toml").unwrap();
         }
 
         let window = window();
@@ -1271,8 +1289,8 @@ pub mod tests {
 
     #[gtk::test]
     fn backup_error() {
-        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
-            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        if Path::new("/tmp/dorst_test_conf.toml").exists() {
+            remove_file("/tmp/dorst_test_conf.toml").unwrap();
         }
 
         if Path::new("test-gui-src-backup").exists() {
@@ -1360,8 +1378,8 @@ pub mod tests {
             .build()
             .unwrap();
 
-        config.write_all(b"\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x37\x30").unwrap();
-        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x20\x3d\x20\x22\x74\x65\x73\x74\x2d\x67\x75\x69\x2d\x73\x72\x63\x22\x0a\x74\x61\x72\x67\x65\x74\x73\x20\x3d\x20\x5b\x22\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x37\x30\x22\x5d").unwrap();
+        config.persist("/tmp/dorst_test_conf.toml").unwrap();
         runtime.spawn(async move {
             helper::serve(repo, 7870);
         });
@@ -1373,7 +1391,6 @@ pub mod tests {
         };
 
         window.select_backup_directory(&PathBuf::from("/tmp/dorst_test-gui"));
-        window.select_source_directory(&PathBuf::from("test-gui-src"));
         window.imp().button_start.emit_clicked();
         wait_ui(1000);
         helper::commit(repo_dir);
@@ -1393,8 +1410,8 @@ pub mod tests {
 
     #[gtk::test]
     fn ssh_filter() {
-        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
-            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        if Path::new("/tmp/dorst_test_conf.toml").exists() {
+            remove_file("/tmp/dorst_test_conf.toml").unwrap();
         }
 
         if Path::new("test-gui-src-filter").exists() {
@@ -1409,8 +1426,8 @@ pub mod tests {
             .build()
             .unwrap();
 
-        config.write_all(b"\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x37\x31").unwrap();
-        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x20\x3d\x20\x22\x22\x0a\x74\x61\x72\x67\x65\x74\x73\x20\x3d\x20\x5b\x22\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x37\x31\x22\x5d").unwrap();
+        config.persist("/tmp/dorst_test_conf.toml").unwrap();
         runtime.spawn(async move {
             helper::serve(repo, 7871);
         });
@@ -1471,8 +1488,8 @@ pub mod tests {
 
     #[gtk::test]
     fn task_limiter() {
-        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
-            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        if Path::new("/tmp/dorst_test_conf.toml").exists() {
+            remove_file("/tmp/dorst_test_conf.toml").unwrap();
         }
 
         let window = window();
@@ -1512,8 +1529,8 @@ pub mod tests {
 
     #[gtk::test]
     fn edit_target() {
-        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
-            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        if Path::new("/tmp/dorst_test_conf.toml").exists() {
+            remove_file("/tmp/dorst_test_conf.toml").unwrap();
         }
 
         let window = window();
@@ -1579,8 +1596,8 @@ pub mod tests {
 
     #[gtk::test]
     fn remove_target() {
-        if Path::new("/tmp/dorst_test_conf.yaml").exists() {
-            remove_file("/tmp/dorst_test_conf.yaml").unwrap();
+        if Path::new("/tmp/dorst_test_conf.toml").exists() {
+            remove_file("/tmp/dorst_test_conf.toml").unwrap();
         }
 
         let window = window();
@@ -1634,8 +1651,8 @@ pub mod tests {
     fn main_view() {
         let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
 
-        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x2f\x74\x6d\x70\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x49\x4e\x56\x41\x4c\x49\x44").unwrap();
-        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x20\x3d\x20\x22\x2f\x74\x6d\x70\x22\x0a\x74\x61\x72\x67\x65\x74\x73\x20\x3d\x20\x5b\x22\x49\x4e\x56\x41\x4c\x49\x44\x22\x5d").unwrap();
+        config.persist("/tmp/dorst_test_conf.toml").unwrap();
 
         let window = window();
 
@@ -1646,8 +1663,8 @@ pub mod tests {
     fn empty_view() {
         let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
 
-        config.write_all(b"\x2d\x2d\x2d\x0a").unwrap();
-        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+        config.write_all(b"\x23\x20\x74\x65\x73\x74").unwrap();
+        config.persist("/tmp/dorst_test_conf.toml").unwrap();
 
         let window = window();
 
@@ -1658,8 +1675,8 @@ pub mod tests {
     fn invalid_url() {
         let mut config = tempfile::Builder::new().tempfile_in("/tmp").unwrap();
 
-        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x3a\x20\x2f\x74\x6d\x70\x0a\x74\x61\x72\x67\x65\x74\x73\x3a\x0a\x20\x20\x2d\x20\x2f").unwrap();
-        config.persist("/tmp/dorst_test_conf.yaml").unwrap();
+        config.write_all(b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x20\x3d\x20\x22\x2f\x74\x6d\x70\x22\x0a\x74\x61\x72\x67\x65\x74\x73\x20\x3d\x20\x5b\x22\x2f\x22\x5d").unwrap();
+        config.persist("/tmp/dorst_test_conf.toml").unwrap();
 
         let window = window();
 
