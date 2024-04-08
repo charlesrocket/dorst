@@ -882,7 +882,12 @@ impl Window {
             let config: Config = match toml::from_str(&config_str) {
                 Ok(toml) => toml,
                 Err(error) => {
-                    self.show_message("Some fields in the configuration file are missing, falling back to default values.", 5);
+                    let alert_dialog = gtk::AlertDialog::builder()
+                        .modal(true)
+                        .detail(format!("Configuration file: {}", error.message()))
+                        .build();
+
+                    alert_dialog.show(Some(self));
 
                     #[cfg(feature = "logs")]
                     if self.logs() {
