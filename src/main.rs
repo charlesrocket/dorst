@@ -2,6 +2,7 @@
 
 #[cfg(feature = "cli")]
 mod cli;
+mod config;
 #[cfg(any(feature = "cli", feature = "gui"))]
 mod git;
 #[cfg(feature = "gui")]

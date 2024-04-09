@@ -32,13 +32,14 @@ To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` an
 
 Example:
 
-```yaml
+```toml
 ---
-source_directory: ~/src
-targets:
-  - https://github.com/charlesrocket/dotfiles
-  - https://github.com/charlesrocket/freebsd-station
-  - git@gitlab.com:charlesrocket/openbsd-station.git
+source_directory = "~/src"
+targets = [
+  "https://github.com/charlesrocket/dotfiles",
+  "https://github.com/charlesrocket/freebsd-station",
+  "git@gitlab.com:charlesrocket/openbsd-station.git",
+]
 ```
 
 The `-c`/`--config` flag allows the usage of an alterantive configuration file.
