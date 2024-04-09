@@ -33,7 +33,6 @@ To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` an
 Example:
 
 ```toml
----
 source_directory = "~/src"
 targets = [
   "https://github.com/charlesrocket/dotfiles",
