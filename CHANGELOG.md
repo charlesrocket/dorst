@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.0] - 2024-04-09
+
+### Bug Fixes
+
+- Update `load_css()`
+- Handle missing fields
+- Change `edit_button` confirmation
+
+### Documentation
+
+- Update example config
+- Fix example line
+
+### Features
+
+- [**breaking**] Switch to TOML
+- Show config alert
+
+### Miscellaneous tasks
+
+- Update dependencies
+- Add funding info
+- Add PR template
+
+### Operations
+
+- Bump `codecov-action` to v4
+- Bump `gtk4` to 4.12.5
+- Use `gtk4-rs` container
+- Bump `labeler` to v5
+- Update labels
+
+### Refactor
+
+- Fix `restore_data()` redundancies
+
+### Testing
+
+- Update `cli::files`
+
+### Build
+
+- Fix `tracing` dependencies
+- Bump gtk features to 4.12
+
 ## [0.15.3] - 2024-02-16
 
 ### Build
@@ -575,6 +620,7 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
+- Track `fetch_repo()` progress
 - Add `CssProvider`
 - Set progress bar colors
 - Set progress bar transition
@@ -598,6 +644,7 @@ All notable changes to this project will be documented in this file.
 
 ### Styling
 
+- Fix formatting
 - Fix `pb_box` formatting
 
 ## [0.8.1] - 2023-07-01
@@ -607,18 +654,10 @@ All notable changes to this project will be documented in this file.
 - Update `constructed()`
 - Add `StyleManager` to `imp`
 
-### Features
-
-- Track `fetch_repo()` progress
-
 ### Refactor
 
 - Drop `setup_debug()`
 - Add `Window::new()`
-
-### Styling
-
-- Fix formatting
 
 ## [0.8.0] - 2023-06-29
 
@@ -778,4 +817,5 @@ All notable changes to this project will be documented in this file.
 - Bump git2 to 0.17
 - Bump clap to 4.2
 - Update dependencies
+
 
