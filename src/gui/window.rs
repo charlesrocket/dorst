@@ -303,7 +303,7 @@ impl Window {
                     .extra_child(&entry)
                     .build();
 
-                dialog.add_responses(&[(cancel_response, "Cancel"), (edit_response, "Edit")]);
+                dialog.add_responses(&[(cancel_response, "Cancel"), (edit_response, "Confirm")]);
                 dialog.set_response_enabled(edit_response, false);
                 dialog.set_response_appearance(edit_response, ResponseAppearance::Suggested);
 
