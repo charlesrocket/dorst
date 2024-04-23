@@ -894,10 +894,7 @@ impl Window {
                         warn!("{}", error.message());
                     }
 
-                    Config {
-                        source_directory: String::new(),
-                        targets: [].to_vec(),
-                    }
+                    Config::default()
                 }
             };
 
