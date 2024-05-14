@@ -520,7 +520,7 @@ impl Window {
                 );
 
                 if self.task_limiter() {
-                    while *self.imp().active_threads.lock().unwrap() > self.thread_pool() {
+                    while *self.imp().active_threads.lock().unwrap() >= self.thread_pool() {
                         let wait_loop = glib::MainLoop::new(None, false);
 
                         glib::timeout_add(
