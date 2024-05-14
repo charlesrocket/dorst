@@ -50,6 +50,54 @@ impl DorstPreferences {
             .bidirectional()
             .sync_create()
             .build();
+
+        window
+            .bind_property(
+                "source-directory",
+                &self.clone().upcast::<Window>(),
+                "src-dir",
+            )
+            .bidirectional()
+            .sync_create()
+            .build();
+
+        window
+            .bind_property(
+                "backup-directory",
+                &self.clone().upcast::<Window>(),
+                "bkp-dir",
+            )
+            .bidirectional()
+            .sync_create()
+            .build();
+
+        let source_setting = self.imp().src_row.get();
+
+        self.bind_property("src-dir", &source_setting, "subtitle")
+            .bidirectional()
+            .sync_create()
+            .build();
+
+        let backup_setting = self.imp().bkp_row.get();
+
+        self.bind_property("bkp-dir", &backup_setting, "subtitle")
+            .bidirectional()
+            .sync_create()
+            .build();
+
+        let source_button = self.imp().src_button.get();
+        let window_source_button = window.imp().button_source_dest.get();
+
+        source_button.connect_clicked(move |_| {
+            window_source_button.emit_clicked();
+        });
+
+        let backup_button = self.imp().bkp_button.get();
+        let window_backup_button = window.imp().button_backup_dest.get();
+
+        backup_button.connect_clicked(move |_| {
+            window_backup_button.emit_clicked();
+        });
     }
 }
 

@@ -38,7 +38,9 @@ pub struct Window {
     pub repos_list_count: Cell<u32>,
     pub repos: RefCell<Option<gio::ListStore>>,
     pub repos_filtered: RefCell<FilterListModel>,
+    #[property(get, set)]
     pub source_directory: RefCell<String>,
+    #[property(get, set)]
     pub backup_directory: RefCell<PathBuf>,
     #[template_child]
     pub progress_bar: TemplateChild<ProgressBar>,

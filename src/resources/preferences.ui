@@ -54,6 +54,35 @@
             </child>
           </object>
         </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Directories</property>
+            <child>
+              <object class="AdwActionRow" id="src_row">
+                <property name="title" translatable="yes">Source</property>
+                <property name="subtitle" translatable="yes">n/a</property>
+                <child>
+                  <object class="GtkButton" id="src_button">
+                    <property name="icon-name">folder-open-symbolic</property>
+                    <property name="valign">center</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="AdwActionRow" id="bkp_row">
+                <property name="title" translatable="yes">Backup</property>
+                <property name="subtitle" translatable="yes">n/a</property>
+                <child>
+                  <object class="GtkButton" id="bkp_button">
+                    <property name="icon-name">folder-open-symbolic</property>
+                    <property name="valign">center</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
       </object>
     </child>
   </template>

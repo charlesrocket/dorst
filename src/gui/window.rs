@@ -830,17 +830,8 @@ impl Window {
         self.repos().append(&repo);
     }
 
-    fn set_source_directory(&self, directory: &Path) {
-        let mut source_dir = self.imp().source_directory.borrow_mut();
-        *source_dir = directory
-            .to_path_buf()
-            .into_os_string()
-            .into_string()
-            .unwrap();
-    }
-
     fn select_source_directory(&self, directory: &Path) {
-        self.set_source_directory(directory);
+        self.set_source_directory(directory.to_string_lossy());
         self.show_message(
             &format!("Source directory: {}", directory.to_str().unwrap()),
             3,
@@ -849,12 +840,6 @@ impl Window {
         self.imp()
             .button_source_dest
             .remove_css_class("suggested-action");
-    }
-
-    fn set_backup_directory(&self, directory: &Path) {
-        let mut dir = self.imp().backup_directory.borrow_mut();
-        dir.clear();
-        dir.push(directory);
     }
 
     fn select_backup_directory(&self, directory: &Path) {
@@ -1095,7 +1080,7 @@ impl Window {
 
             if let Ok(dest) = keyfile.string("backup", "destination") {
                 if !dest.is_empty() {
-                    self.set_backup_directory(&PathBuf::from(dest.as_str()));
+                    self.set_backup_directory(PathBuf::from(dest.as_str()));
                     self.imp()
                         .button_backup_dest
                         .remove_css_class("suggested-action");

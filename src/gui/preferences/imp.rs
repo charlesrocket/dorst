@@ -1,6 +1,6 @@
-use adw::subclass::prelude::*;
+use adw::{subclass::prelude::*, ActionRow};
 use glib::{prelude::ObjectExt, Properties};
-use gtk::{CompositeTemplate, SpinButton, Switch};
+use gtk::{Button, CompositeTemplate, SpinButton, Switch};
 
 use std::sync::{Arc, Mutex};
 
@@ -16,6 +16,18 @@ pub struct DorstPreferences {
     pub limiter_switch: TemplateChild<Switch>,
     #[template_child]
     pub limiter_button: TemplateChild<SpinButton>,
+    #[template_child]
+    pub src_row: TemplateChild<ActionRow>,
+    #[template_child]
+    pub bkp_row: TemplateChild<ActionRow>,
+    #[property(get, set)]
+    pub src_dir: Arc<Mutex<String>>,
+    #[property(get, set)]
+    pub bkp_dir: Arc<Mutex<String>>,
+    #[template_child]
+    pub src_button: TemplateChild<Button>,
+    #[template_child]
+    pub bkp_button: TemplateChild<Button>,
 }
 
 #[glib::object_subclass]
