@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.0] - 2024-05-15
+
+### Bug Fixes
+
+- Fix task queue
+
+### Features
+
+- Handle directories via preferences window
+- Allow directory path selection
+
+### Miscellaneous tasks
+
+- Update `clap` to 4.5
+
+### Refactor
+
+- Use `Config::default()`
+- Drop `DorstPreferences` directory properties
+
 ## [0.16.0] - 2024-04-09
 
 ### Bug Fixes
