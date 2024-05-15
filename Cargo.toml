@@ -27,7 +27,7 @@ logs = ["dep:tracing", "dep:tracing-appender", "dep:tracing-subscriber"]
 adw = { version = "0.6", package = "libadwaita", features = ["v1_3"], optional = true }
 anyhow = "1.0"
 async-channel = { version = "2", optional = true }
-clap = { version = "4.3", features = ["string"], optional = true }
+clap = { version = "4.5", features = ["string"], optional = true }
 git2 = { version = "0.18", features = ["vendored-openssl"] }
 glib = { version = "0.19", optional = true }
 gtk = { version = "0.8", package = "gtk4", features = ["v4_12"], optional = true }
