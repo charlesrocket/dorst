@@ -51,36 +51,18 @@ impl DorstPreferences {
             .sync_create()
             .build();
 
-        window
-            .bind_property(
-                "source-directory",
-                &self.clone().upcast::<Window>(),
-                "src-dir",
-            )
-            .bidirectional()
-            .sync_create()
-            .build();
+        let source_row = self.imp().src_row.get();
 
         window
-            .bind_property(
-                "backup-directory",
-                &self.clone().upcast::<Window>(),
-                "bkp-dir",
-            )
+            .bind_property("source-directory", &source_row, "subtitle")
             .bidirectional()
             .sync_create()
             .build();
 
-        let source_setting = self.imp().src_row.get();
+        let backup_row = self.imp().bkp_row.get();
 
-        self.bind_property("src-dir", &source_setting, "subtitle")
-            .bidirectional()
-            .sync_create()
-            .build();
-
-        let backup_setting = self.imp().bkp_row.get();
-
-        self.bind_property("bkp-dir", &backup_setting, "subtitle")
+        window
+            .bind_property("backup-directory", &backup_row, "subtitle")
             .bidirectional()
             .sync_create()
             .build();

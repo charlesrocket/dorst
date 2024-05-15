@@ -20,10 +20,6 @@ pub struct DorstPreferences {
     pub src_row: TemplateChild<ActionRow>,
     #[template_child]
     pub bkp_row: TemplateChild<ActionRow>,
-    #[property(get, set)]
-    pub src_dir: Arc<Mutex<String>>,
-    #[property(get, set)]
-    pub bkp_dir: Arc<Mutex<String>>,
     #[template_child]
     pub src_button: TemplateChild<Button>,
     #[template_child]
