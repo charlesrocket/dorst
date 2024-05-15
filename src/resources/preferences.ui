@@ -61,6 +61,7 @@
               <object class="AdwActionRow" id="src_row">
                 <property name="title" translatable="yes">Source</property>
                 <property name="subtitle" translatable="yes">n/a</property>
+                <property name="subtitle-selectable">True</property>
                 <child>
                   <object class="GtkButton" id="src_button">
                     <property name="icon-name">folder-open-symbolic</property>
@@ -73,6 +74,7 @@
               <object class="AdwActionRow" id="bkp_row">
                 <property name="title" translatable="yes">Backup</property>
                 <property name="subtitle" translatable="yes">n/a</property>
+                <property name="subtitle-selectable">True</property>
                 <child>
                   <object class="GtkButton" id="bkp_button">
                     <property name="icon-name">folder-open-symbolic</property>
