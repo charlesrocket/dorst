@@ -1,7 +1,7 @@
 use anyhow::Result;
 #[cfg(feature = "gui")]
 use async_channel::Sender;
-use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, Repository};
+use git2::{AutotagOption, Cred, FetchOptions, RemoteCallbacks, RemoteUpdateFlags, Repository};
 #[cfg(feature = "cli")]
 use indicatif::{HumanBytes, ProgressBar};
 
@@ -305,7 +305,12 @@ pub fn fetch_repo(
         }
 
         remote.disconnect()?;
-        remote.update_tips(None, true, AutotagOption::Unspecified, None)?;
+        remote.update_tips(
+            None,
+            RemoteUpdateFlags::UPDATE_FETCHHEAD,
+            AutotagOption::Unspecified,
+            None,
+        )?;
 
         let local_oid = repo.refname_to_id("HEAD")?;
         let remote_oid = repo.refname_to_id("FETCH_HEAD")?;
