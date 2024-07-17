@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.1] - 2024-07-17
+
+### Bug Fixes
+
+- `set_from_icon_name()` -> `set_icon_name()`
+- Update `remote.update_tips()`
+- Update `clone!`
+
+### Miscellaneous tasks
+
+- Update dependencies
+- Bump `git2` to 0.19
+
+### Operations
+
+- Bump `cache` to v4
+
 ## [0.17.0] - 2024-05-15
 
 ### Bug Fixes
