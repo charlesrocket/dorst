@@ -699,7 +699,7 @@ impl Window {
                     name.add_css_class("success");
                     name.remove_css_class("error");
                     name.remove_css_class("accent");
-                    status_image.set_from_icon_name(Some("emblem-ok-symbolic"));
+                    status_image.set_icon_name(Some("emblem-ok-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(true);
                     revealer.set_reveal_child(false);
@@ -707,12 +707,12 @@ impl Window {
                     name.add_css_class("accent");
                     name.remove_css_class("success");
                     name.remove_css_class("error");
-                    status_image.set_from_icon_name(Some("emblem-default-symbolic"));
+                    status_image.set_icon_name(Some("emblem-default-symbolic"));
                 } else if repo_object.status() == "err" {
                     name.add_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
-                    status_image.set_from_icon_name(Some("dialog-warning-symbolic"));
+                    status_image.set_icon_name(Some("dialog-warning-symbolic"));
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(false);
                     revealer.set_reveal_child(false);
