@@ -39,14 +39,17 @@ impl ObjectSubclass for RepoBox {
 
 impl ObjectImpl for RepoBox {
     fn constructed(&self) {
-        self.link
-            .connect_label_notify(glib::clone!(@weak self as obj => move |link| {
+        self.link.connect_label_notify(glib::clone!(
+            #[weak(rename_to = obj)]
+            self,
+            move |link| {
                 if &link.label() == "INVALID" {
                     obj.name.add_css_class("warning");
                 } else {
                     obj.name.remove_css_class("warning");
                 }
-            }));
+            }
+        ));
     }
 }
 

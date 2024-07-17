@@ -67,24 +67,40 @@ impl Window {
 
     fn setup_actions(&self) {
         let action_about = SimpleAction::new("about", None);
-        action_about.connect_activate(clone!(@weak self as window => move |_, _| {
-            window.show_about_dialog();
-        }));
+        action_about.connect_activate(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.show_about_dialog();
+            }
+        ));
 
         let action_preferences = SimpleAction::new("preferences", None);
-        action_preferences.connect_activate(clone!(@weak self as window => move |_, _| {
-            window.show_preferences();
-        }));
+        action_preferences.connect_activate(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.show_preferences();
+            }
+        ));
 
         let action_process_targets = SimpleAction::new("process-targets", None);
-        action_process_targets.connect_activate(clone!(@weak self as window => move |_, _| {
-            window.process_targets();
-        }));
+        action_process_targets.connect_activate(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.process_targets();
+            }
+        ));
 
         let action_close = SimpleAction::new("close", None);
-        action_close.connect_activate(clone!(@weak self as window => move |_, _| {
-            window.close();
-        }));
+        action_close.connect_activate(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
+                window.close();
+            }
+        ));
 
         let action_color_scheme = SimpleAction::new_stateful(
             "color-scheme",
@@ -92,12 +108,11 @@ impl Window {
             &"Default".to_variant(),
         );
 
-        action_color_scheme.connect_activate(
-            clone!(@weak self as window => move |action, parameter| {
-                let parameter = parameter
-                    .unwrap()
-                    .get::<String>()
-                    .unwrap();
+        action_color_scheme.connect_activate(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |action, parameter| {
+                let parameter = parameter.unwrap().get::<String>().unwrap();
 
                 let value = match parameter.as_str() {
                     "Force Light" => {
@@ -139,8 +154,8 @@ impl Window {
 
                 *window.imp().color_scheme.lock().unwrap() = String::from(value);
                 action.set_state(&value.to_variant());
-            }),
-        );
+            }
+        ));
 
         let action_task_limiter = gio::PropertyAction::new("task-limiter", self, "task_limiter");
         #[cfg(feature = "logs")]
@@ -157,29 +172,37 @@ impl Window {
     }
 
     fn setup_callbacks(&self) {
-        self.imp()
-            .repo_entry_empty
-            .connect_activate(clone!(@weak self as window => move |_| {
+        self.imp().repo_entry_empty.connect_activate(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_| {
                 window.new_repo(false);
-            }));
+            }
+        ));
 
-        self.imp().repo_entry_empty.connect_icon_release(
-            clone!(@weak self as window => move |_,_| {
+        self.imp().repo_entry_empty.connect_icon_release(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
                 window.new_repo(false);
-            }),
-        );
+            }
+        ));
 
-        self.imp()
-            .repo_entry
-            .connect_activate(clone!(@weak self as window => move |_| {
+        self.imp().repo_entry.connect_activate(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_| {
                 window.new_repo(true);
-            }));
+            }
+        ));
 
-        self.imp()
-            .repo_entry
-            .connect_icon_release(clone!(@weak self as window => move |_,_| {
+        self.imp().repo_entry.connect_icon_release(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, _| {
                 window.new_repo(true);
-            }));
+            }
+        ));
 
         self.connect_completed_notify(|window| {
             let error_margin = f64::EPSILON;
@@ -237,179 +260,278 @@ impl Window {
 
         self.imp().repos_list.bind_model(
             Some(&selection_model),
-            clone!(@weak self as window => @default-panic, move |obj| {
-                let repo_object = obj.downcast_ref().expect("The object should be of type `RepoObject`.");
-                let row = window.create_repo_row(repo_object);
-                row.upcast()
-            }),
+            clone!(
+                #[weak(rename_to = window)]
+                self,
+                #[upgrade_or_panic]
+                move |obj| {
+                    let repo_object = obj
+                        .downcast_ref()
+                        .expect("The object should be of type `RepoObject`.");
+                    let row = window.create_repo_row(repo_object);
+                    row.upcast()
+                }
+            ),
         );
 
-        self.imp().repos_list.connect_row_activated(clone!(@weak self as window => move |_, row| {
-            let repos = window.imp().repos_filtered.borrow().clone();
-            let repo_pos = row.index();
-            let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
-            let popover_box = Box::builder().orientation(Orientation::Vertical).spacing(8).build();
-            let button_box = Box::builder().orientation(Orientation::Horizontal).halign(Align::Center).spacing(8).build();
-            let error = repo.error();
-            let error_box = Box::builder().tooltip_text(&error).tooltip_text(&error).orientation(Orientation::Horizontal).halign(Align::Center).build();
-            let error_text_box = Box::builder().orientation(Orientation::Vertical).hexpand(true).halign(Align::Start).build();
-            let error_heading = Label::builder().label("error").css_classes(["error", "heading"]).build();
-            let error_label = Label::builder().wrap(true).wrap_mode(WrapMode::Char).css_classes(["caption", "monospace"]).max_width_chars(15).lines(1).ellipsize(EllipsizeMode::End).build();
-            let error_frame = Frame::builder().child(&error_text_box).css_classes(["card"]).hexpand(true).build();
-            let popover = Popover::builder()
-                .child(&popover_box)
-                .autohide(true)
-                .has_arrow(true)
-                .build();
-
-            let edit_button = Button::builder()
-                .label("Edit")
-                .tooltip_text("Edit repository")
-                .build();
-
-            let remove_button = Button::builder()
-                .label("Remove")
-                .tooltip_text("Remove repository")
-                .css_classes(["destructive-action"])
-                .build();
-
-            if error.is_empty() {
-                error_box.set_visible(false);
-            } else {
-                error_label.set_label(&error);
-            }
-
-            edit_button.connect_clicked(clone!(@weak window, @weak row, @weak popover => move |_| {
+        self.imp().repos_list.connect_row_activated(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_, row| {
                 let repos = window.imp().repos_filtered.borrow().clone();
                 let repo_pos = row.index();
-                let repo = repos.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
-                let entry = gtk::Entry::builder()
-                    .placeholder_text(repo.link())
-                    .activates_default(true)
+                let repo = repos
+                    .item(repo_pos.try_into().unwrap())
+                    .unwrap()
+                    .downcast::<RepoObject>()
+                    .unwrap();
+                let popover_box = Box::builder()
+                    .orientation(Orientation::Vertical)
+                    .spacing(8)
+                    .build();
+                let button_box = Box::builder()
+                    .orientation(Orientation::Horizontal)
+                    .halign(Align::Center)
+                    .spacing(8)
+                    .build();
+                let error = repo.error();
+                let error_box = Box::builder()
+                    .tooltip_text(&error)
+                    .tooltip_text(&error)
+                    .orientation(Orientation::Horizontal)
+                    .halign(Align::Center)
+                    .build();
+                let error_text_box = Box::builder()
+                    .orientation(Orientation::Vertical)
+                    .hexpand(true)
+                    .halign(Align::Start)
+                    .build();
+                let error_heading = Label::builder()
+                    .label("error")
+                    .css_classes(["error", "heading"])
+                    .build();
+                let error_label = Label::builder()
+                    .wrap(true)
+                    .wrap_mode(WrapMode::Char)
+                    .css_classes(["caption", "monospace"])
+                    .max_width_chars(15)
+                    .lines(1)
+                    .ellipsize(EllipsizeMode::End)
+                    .build();
+                let error_frame = Frame::builder()
+                    .child(&error_text_box)
+                    .css_classes(["card"])
+                    .hexpand(true)
+                    .build();
+                let popover = Popover::builder()
+                    .child(&popover_box)
+                    .autohide(true)
+                    .has_arrow(true)
                     .build();
 
-                let cancel_response = "cancel";
-                let edit_response = "edit";
-                let dialog = MessageDialog::builder()
-                    .default_width(350)
-                    .heading("Edit link")
-                    .body(format!("<tt>{}</tt>", repo.name()))
-                    .body_use_markup(true)
-                    .transient_for(&window)
-                    .modal(true)
-                    .destroy_with_parent(true)
-                    .close_response(cancel_response)
-                    .default_response(edit_response)
-                    .extra_child(&entry)
+                let edit_button = Button::builder()
+                    .label("Edit")
+                    .tooltip_text("Edit repository")
                     .build();
 
-                dialog.add_responses(&[(cancel_response, "Cancel"), (edit_response, "Confirm")]);
-                dialog.set_response_enabled(edit_response, false);
-                dialog.set_response_appearance(edit_response, ResponseAppearance::Suggested);
-
-                entry.connect_changed(clone!(@weak dialog => move |entry| {
-                    let text = entry.text();
-                    let empty = text.is_empty();
-
-                    dialog.set_response_enabled(edit_response, !empty);
-
-                    if empty {
-                        entry.add_css_class("error");
-                    } else {
-                        entry.remove_css_class("error");
-                    }
-                }));
-
-                dialog.connect_response(
-                    None,
-                    clone!(@weak entry => move |dialog, response| {
-                        dialog.destroy();
-
-                        if response != edit_response {
-                            return;
-                        }
-
-                        repo.set_link(entry.text().to_string());
-                        repo.set_name(util::get_name(&entry.text()));
-                    }),
-                );
-
-                dialog.present();
-                popover.popdown();
-            }));
-
-            remove_button.connect_clicked(clone!(@weak window, @strong row, @weak popover=> move |_| {
-                let repos_filtered = window.imp().repos_filtered.borrow().clone();
-                let repo_pos = row.index();
-                let repo = repos_filtered.item(repo_pos.try_into().unwrap()).unwrap().downcast::<RepoObject>().unwrap();
-
-                let cancel_response = "cancel";
-                let remove_response = "remove";
-                let dialog = MessageDialog::builder()
-                    .heading("Remove repository")
-                    .body(format!("<tt>{}</tt>", repo.name()))
-                    .body_use_markup(true)
-                    .transient_for(&window)
-                    .modal(true)
-                    .destroy_with_parent(true)
-                    .close_response(cancel_response)
-                    .default_response(cancel_response)
+                let remove_button = Button::builder()
+                    .label("Remove")
+                    .tooltip_text("Remove repository")
+                    .css_classes(["destructive-action"])
                     .build();
 
-                dialog.add_responses(&[(cancel_response, "Cancel"), (remove_response, "Remove")]);
-                dialog.set_response_appearance(remove_response, ResponseAppearance::Destructive);
+                if error.is_empty() {
+                    error_box.set_visible(false);
+                } else {
+                    error_label.set_label(&error);
+                }
 
-                dialog.connect_response(
-                    None,
-                    clone!(@weak window => move |dialog, response| {
-                        dialog.destroy();
+                edit_button.connect_clicked(clone!(
+                    #[weak]
+                    window,
+                    #[weak]
+                    row,
+                    #[weak]
+                    popover,
+                    move |_| {
+                        let repos = window.imp().repos_filtered.borrow().clone();
+                        let repo_pos = row.index();
+                        let repo = repos
+                            .item(repo_pos.try_into().unwrap())
+                            .unwrap()
+                            .downcast::<RepoObject>()
+                            .unwrap();
+                        let entry = gtk::Entry::builder()
+                            .placeholder_text(repo.link())
+                            .activates_default(true)
+                            .build();
 
-                        if response != remove_response {
-                            return;
-                        }
+                        let cancel_response = "cancel";
+                        let edit_response = "edit";
+                        let dialog = MessageDialog::builder()
+                            .default_width(350)
+                            .heading("Edit link")
+                            .body(format!("<tt>{}</tt>", repo.name()))
+                            .body_use_markup(true)
+                            .transient_for(&window)
+                            .modal(true)
+                            .destroy_with_parent(true)
+                            .close_response(cancel_response)
+                            .default_response(edit_response)
+                            .extra_child(&entry)
+                            .build();
 
-                        let link = repo.link();
-                        let repos = window.repos();
-                        let mut position = 0;
-                        while let Some(item) = repos.item(position) {
-                            let repo_object = item.downcast_ref::<RepoObject>().unwrap();
+                        dialog.add_responses(&[
+                            (cancel_response, "Cancel"),
+                            (edit_response, "Confirm"),
+                        ]);
+                        dialog.set_response_enabled(edit_response, false);
+                        dialog
+                            .set_response_appearance(edit_response, ResponseAppearance::Suggested);
 
-                            if repo_object.link() == link {
-                                repos.remove(position);
-                            } else {
-                                position += 1;
+                        entry.connect_changed(clone!(
+                            #[weak]
+                            dialog,
+                            move |entry| {
+                                let text = entry.text();
+                                let empty = text.is_empty();
+
+                                dialog.set_response_enabled(edit_response, !empty);
+
+                                if empty {
+                                    entry.add_css_class("error");
+                                } else {
+                                    entry.remove_css_class("error");
+                                }
                             }
-                        }
+                        ));
 
-                        window.show_message(&format!("Removed: {}", repo.name()), 3);
-                    }),
-                );
+                        dialog.connect_response(
+                            None,
+                            clone!(
+                                #[weak]
+                                entry,
+                                move |dialog, response| {
+                                    dialog.destroy();
 
-                dialog.present();
-                popover.popdown();
-            }));
+                                    if response != edit_response {
+                                        return;
+                                    }
 
-            button_box.append(&edit_button);
-            button_box.append(&remove_button);
-            error_text_box.append(&error_heading);
-            error_text_box.append(&error_label);
-            error_box.append(&error_frame);
-            popover_box.append(&error_box);
-            popover_box.append(&button_box);
-            popover.set_parent(row);
-            popover.popup();
-        }));
+                                    repo.set_link(entry.text().to_string());
+                                    repo.set_name(util::get_name(&entry.text()));
+                                }
+                            ),
+                        );
+
+                        dialog.present();
+                        popover.popdown();
+                    }
+                ));
+
+                remove_button.connect_clicked(clone!(
+                    #[weak]
+                    window,
+                    #[strong]
+                    row,
+                    #[weak]
+                    popover,
+                    move |_| {
+                        let repos_filtered = window.imp().repos_filtered.borrow().clone();
+                        let repo_pos = row.index();
+                        let repo = repos_filtered
+                            .item(repo_pos.try_into().unwrap())
+                            .unwrap()
+                            .downcast::<RepoObject>()
+                            .unwrap();
+
+                        let cancel_response = "cancel";
+                        let remove_response = "remove";
+                        let dialog = MessageDialog::builder()
+                            .heading("Remove repository")
+                            .body(format!("<tt>{}</tt>", repo.name()))
+                            .body_use_markup(true)
+                            .transient_for(&window)
+                            .modal(true)
+                            .destroy_with_parent(true)
+                            .close_response(cancel_response)
+                            .default_response(cancel_response)
+                            .build();
+
+                        dialog.add_responses(&[
+                            (cancel_response, "Cancel"),
+                            (remove_response, "Remove"),
+                        ]);
+                        dialog.set_response_appearance(
+                            remove_response,
+                            ResponseAppearance::Destructive,
+                        );
+
+                        dialog.connect_response(
+                            None,
+                            clone!(
+                                #[weak]
+                                window,
+                                move |dialog, response| {
+                                    dialog.destroy();
+
+                                    if response != remove_response {
+                                        return;
+                                    }
+
+                                    let link = repo.link();
+                                    let repos = window.repos();
+                                    let mut position = 0;
+                                    while let Some(item) = repos.item(position) {
+                                        let repo_object =
+                                            item.downcast_ref::<RepoObject>().unwrap();
+
+                                        if repo_object.link() == link {
+                                            repos.remove(position);
+                                        } else {
+                                            position += 1;
+                                        }
+                                    }
+
+                                    window.show_message(&format!("Removed: {}", repo.name()), 3);
+                                }
+                            ),
+                        );
+
+                        dialog.present();
+                        popover.popdown();
+                    }
+                ));
+
+                button_box.append(&edit_button);
+                button_box.append(&remove_button);
+                error_text_box.append(&error_heading);
+                error_text_box.append(&error_label);
+                error_box.append(&error_frame);
+                popover_box.append(&error_box);
+                popover_box.append(&button_box);
+                popover.set_parent(row);
+                popover.popup();
+            }
+        ));
 
         self.set_repo_list_visible(&self.repos());
-        self.repos()
-            .connect_items_changed(clone!(@weak self as window => move |repos, _, _, _| {
+        self.repos().connect_items_changed(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |repos, _, _, _| {
                 window.set_repo_list_visible(repos);
                 window.set_repo_list_stack();
-            }));
+            }
+        ));
 
-        filter_model.connect_items_changed(clone!(@weak self as window => move |model, _, _, _| {
-            window.imp().repos_list_count.set(model.n_items());
-        }));
+        filter_model.connect_items_changed(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |model, _, _, _| {
+                window.imp().repos_list_count.set(model.n_items());
+            }
+        ));
 
         let action_filter = SimpleAction::new_stateful(
             "filter",
@@ -417,23 +539,26 @@ impl Window {
             &"All".to_variant(),
         );
 
-        action_filter.connect_activate(clone!(@weak self as window => move |action, parameter| {
-            let parameter = parameter
-                .unwrap()
-                .get::<String>()
-                .unwrap();
+        action_filter.connect_activate(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |action, parameter| {
+                let parameter = parameter.unwrap().get::<String>().unwrap();
 
-            *window.imp().filter_option.borrow_mut() = String::from(&parameter);
+                *window.imp().filter_option.borrow_mut() = String::from(&parameter);
 
-            filter_model.set_filter(window.filter().as_ref());
+                filter_model.set_filter(window.filter().as_ref());
 
-            if window.imp().errors_list.lock().unwrap().len() > 0 || window.imp().success_list.lock().unwrap().len() > 0 {
-                window.update_rows();
+                if window.imp().errors_list.lock().unwrap().len() > 0
+                    || window.imp().success_list.lock().unwrap().len() > 0
+                {
+                    window.update_rows();
+                }
+
+                window.set_repo_list_stack();
+                action.set_state(&parameter.to_variant());
             }
-
-            window.set_repo_list_stack();
-            action.set_state(&parameter.to_variant());
-        }));
+        ));
 
         self.add_action(&action_filter);
     }
@@ -525,10 +650,14 @@ impl Window {
 
                         glib::timeout_add(
                             time::Duration::from_millis(50),
-                            glib::clone!(@strong wait_loop => move || {
-                                wait_loop.quit();
-                                ControlFlow::Break
-                            }),
+                            glib::clone!(
+                                #[strong]
+                                wait_loop,
+                                move || {
+                                    wait_loop.quit();
+                                    ControlFlow::Break
+                                }
+                            ),
                         );
 
                         wait_loop.run();
@@ -693,8 +822,22 @@ impl Window {
         let branch_revealer = repo_box.imp().branch_revealer.get();
         let status_revealer = repo_box.imp().status_revealer.get();
 
-        repo_object.connect_status_notify(
-            clone!(@weak self as window, @weak name, @weak pb, @weak revealer, @weak status_image, @weak status_revealer, @weak branch_revealer => move |repo_object| {
+        repo_object.connect_status_notify(clone!(
+            #[weak(rename_to = window)]
+            self,
+            #[weak]
+            name,
+            #[weak]
+            pb,
+            #[weak]
+            revealer,
+            #[weak]
+            status_image,
+            #[weak]
+            status_revealer,
+            #[weak]
+            branch_revealer,
+            move |repo_object| {
                 if repo_object.status() == "ok" {
                     name.add_css_class("success");
                     name.remove_css_class("error");
@@ -716,7 +859,7 @@ impl Window {
                     status_revealer.set_reveal_child(true);
                     branch_revealer.set_reveal_child(false);
                     revealer.set_reveal_child(false);
-                } else if repo_object.status() == "started"{
+                } else if repo_object.status() == "started" {
                     name.remove_css_class("error");
                     name.remove_css_class("success");
                     name.remove_css_class("accent");
@@ -724,7 +867,7 @@ impl Window {
                     status_revealer.set_reveal_child(false);
                     branch_revealer.set_reveal_child(false);
                     revealer.set_reveal_child(true);
-                } else if repo_object.status() == "finished"{
+                } else if repo_object.status() == "finished" {
                     if repo_object.error().is_empty() {
                         let success_list = &window.imp().success_list;
                         let link = repo_object.link();
@@ -737,44 +880,64 @@ impl Window {
                         let branch = git::current_branch(path).unwrap();
                         repo_object.set_branch(branch);
 
-                        if window.imp().updated_list.lock().unwrap().contains(&repo_object.link()) {
+                        if window
+                            .imp()
+                            .updated_list
+                            .lock()
+                            .unwrap()
+                            .contains(&repo_object.link())
+                        {
                             repo_object.set_status("updated");
                         }
                     }
-                } else if repo_object.status() == "cloning"{
+                } else if repo_object.status() == "cloning" {
                     pb.add_css_class("clone");
                     pb.remove_css_class("deltas");
                     pb.remove_css_class("fetch");
-                } else if repo_object.status() == "fetching"{
+                } else if repo_object.status() == "fetching" {
                     pb.add_css_class("fetch");
                     pb.remove_css_class("clone");
                     pb.remove_css_class("deltas");
-                } else if repo_object.status() == "resolving"{
+                } else if repo_object.status() == "resolving" {
                     pb.add_css_class("deltas");
                     pb.remove_css_class("clone");
                     pb.remove_css_class("fetch");
                 }
-            }),
-        );
+            }
+        ));
 
-        repo_object.connect_progress_notify(clone!(@weak pb => move |repo| {
-            let value = repo.progress();
-            pb.set_fraction(value);
-        }));
+        repo_object.connect_progress_notify(clone!(
+            #[weak]
+            pb,
+            move |repo| {
+                let value = repo.progress();
+                pb.set_fraction(value);
+            }
+        ));
 
-        repo_object.connect_error_notify(clone!(@weak self as window => move |repo| {
-            let errors_list = &window.imp().errors_list;
-            let error = repo.error();
+        repo_object.connect_error_notify(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |repo| {
+                let errors_list = &window.imp().errors_list;
+                let error = repo.error();
 
-            errors_list.lock().unwrap().push(format!("{}: {error}", repo.link()));
-        }));
+                errors_list
+                    .lock()
+                    .unwrap()
+                    .push(format!("{}: {error}", repo.link()));
+            }
+        ));
 
-        repo_object.connect_completed_notify(clone!(@weak self as window => move |_| {
-            let completed = window.completed() + 1;
+        repo_object.connect_completed_notify(clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_| {
+                let completed = window.completed() + 1;
 
-            window.set_completed(completed);
-
-        }));
+                window.set_completed(completed);
+            }
+        ));
 
         repo_object
             .bind_property("name", &name, "label")
