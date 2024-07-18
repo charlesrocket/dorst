@@ -1,5 +1,5 @@
 use adw::{
-    prelude::*, subclass::prelude::*, AboutWindow, ColorScheme, MessageDialog, ResponseAppearance,
+    prelude::*, subclass::prelude::*, AboutDialog, ColorScheme, MessageDialog, ResponseAppearance,
 };
 use gtk::{
     gio::{self, ListStore, SimpleAction},
@@ -71,7 +71,8 @@ impl Window {
             #[weak(rename_to = window)]
             self,
             move |_, _| {
-                window.show_about_dialog();
+                let dialog = Window::about_dialog();
+                dialog.present(Some(&window));
             }
         ));
 
@@ -1126,8 +1127,8 @@ impl Window {
         self.add_toast(toast);
     }
 
-    fn show_about_dialog(&self) {
-        let about_window = AboutWindow::builder()
+    fn about_dialog() -> AboutDialog {
+        let about_dialog = AboutDialog::builder()
             .application_name("DØRST")
             .version(util::version_string())
             .license_type(License::MitX11)
@@ -1135,15 +1136,14 @@ impl Window {
             .issue_url("https://github.com/charlesrocket/dorst/issues")
             .website(env!("CARGO_PKG_REPOSITORY"))
             .comments(env!("CARGO_PKG_DESCRIPTION"))
-            .transient_for(self)
             .build();
 
-        about_window.add_link(
+        about_dialog.add_link(
             "Release Notes",
             "https://github.com/charlesrocket/dorst/blob/trunk/CHANGELOG.md",
         );
 
-        about_window.present();
+        about_dialog
     }
 
     fn show_preferences(&self) {
@@ -1866,23 +1866,17 @@ pub mod tests {
     }
 
     #[gtk::test]
-    fn about_window() {
+    fn about_dialog() {
         let window = window();
         let version = env!("CARGO_PKG_VERSION");
+        let about_dialog = Window::about_dialog();
 
-        window
-            .imp()
-            .stack
-            .activate_action("win.about", None)
-            .unwrap();
+        about_dialog.present(Some(&window));
 
-        let about_window = &gtk::Window::list_toplevels()[0]
-            .clone()
-            .downcast::<AboutWindow>()
-            .unwrap();
+        wait_ui(100);
 
-        assert!(about_window.version().contains(version));
+        assert!(about_dialog.version().contains(version));
 
-        about_window.clone().close();
+        about_dialog.clone().close();
     }
 }
