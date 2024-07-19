@@ -1,13 +1,13 @@
 use gtk::{
     glib, prelude::*, subclass::prelude::*, Accessible, Buildable, ConstraintTarget, Native, Root,
-    Widget, Window,
+    Widget,
 };
 
 mod imp;
 
 glib::wrapper! {
     pub struct DorstPreferences(ObjectSubclass<imp::DorstPreferences>)
-        @extends Widget, Window, adw::Window,
+        @extends Widget, adw::Dialog, adw::PreferencesDialog,
         @implements Accessible, Buildable, ConstraintTarget, Native, Root;
 }
 

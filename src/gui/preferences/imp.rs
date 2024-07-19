@@ -30,7 +30,7 @@ pub struct DorstPreferences {
 impl ObjectSubclass for DorstPreferences {
     const NAME: &'static str = "DorstPreferences";
     type Type = super::DorstPreferences;
-    type ParentType = adw::PreferencesWindow;
+    type ParentType = adw::PreferencesDialog;
 
     fn class_init(klass: &mut Self::Class) {
         klass.bind_template();
@@ -58,6 +58,5 @@ impl DorstPreferences {
 }
 
 impl WidgetImpl for DorstPreferences {}
-impl WindowImpl for DorstPreferences {}
-impl AdwWindowImpl for DorstPreferences {}
-impl PreferencesWindowImpl for DorstPreferences {}
+impl AdwDialogImpl for DorstPreferences {}
+impl PreferencesDialogImpl for DorstPreferences {}

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="DorstPreferences" parent="AdwPreferencesWindow">
+  <template class="DorstPreferences" parent="AdwPreferencesDialog">
     <property name="title" translatable="yes">Preferences</property>
-    <property name="default_height">0</property>
     <child>
       <object class="AdwPreferencesPage">
         <child>

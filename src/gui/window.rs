@@ -81,7 +81,10 @@ impl Window {
             #[weak(rename_to = window)]
             self,
             move |_, _| {
-                window.show_preferences();
+                let preferences = DorstPreferences::default();
+
+                preferences.setup_settings(&window);
+                preferences.present(Some(&window));
             }
         ));
 
@@ -1144,15 +1147,6 @@ impl Window {
         );
 
         about_dialog
-    }
-
-    fn show_preferences(&self) {
-        let preferences = DorstPreferences::default();
-
-        preferences.set_modal(true);
-        preferences.set_transient_for(Some(self));
-        preferences.setup_settings(self);
-        preferences.present();
     }
 
     fn save_settings(&self) {
