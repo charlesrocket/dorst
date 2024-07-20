@@ -1,0 +1,29 @@
+---
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    open-pull-requests-limit: 2
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+
+    reviewers:
+      - "charlesrocket"
+
+    commit-message:
+      prefix: "ops"
+      include: "scope"
+
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+    reviewers:
+      - "charlesrocket"
+
+    commit-message:
+      prefix: "build"
+      include: "scope"
