@@ -15,15 +15,3 @@ updates:
     commit-message:
       prefix: "ops"
       include: "scope"
-
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-
-    reviewers:
-      - "charlesrocket"
-
-    commit-message:
-      prefix: "build"
-      include: "scope"
