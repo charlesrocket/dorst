@@ -87,7 +87,7 @@ impl Config {
 
             std::fs::create_dir_all(dir).unwrap();
 
-            let new_config = toml::to_string(&config)?;
+            let new_config = toml::to_string_pretty(&config)?;
             let mut file = fs::File::create(file_path)?;
 
             file.write_all(new_config.as_bytes())?;

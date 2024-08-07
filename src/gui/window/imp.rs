@@ -202,7 +202,7 @@ impl WindowImpl for Window {
             config.targets.push(repo_data.link.to_owned());
         }
 
-        let toml_data = toml::to_string(&config).unwrap();
+        let toml_data = toml::to_string_pretty(&config).unwrap();
         let mut file = File::create(util::xdg_path().unwrap()).unwrap();
         file.write_all(toml_data.as_bytes()).unwrap();
         self.obj().save_settings();
