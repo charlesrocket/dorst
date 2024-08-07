@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.18.0] - 2024-08-07
+
+### Bug Fixes
+
+- Normalize `toml` output
+
+### Features
+
+- Migrate to `AboutDialog`
+- Migrate to `PreferencesDialog`
+
+### Operations
+
+- Configure dependabot
+- Update dependabot settings
+
+### Build
+
+- Bump clap from 4.5.9 to 4.5.11
+- Bump predicates from 3.1.0 to 3.1.2
+- Bump tokio from 1.38.1 to 1.39.2
+- Bump toml from 0.8.15 to 0.8.16
+- Bump assert_cmd from 2.0.14 to 2.0.15
+- Bump clap from 4.5.11 to 4.5.13
+- Bump toml from 0.8.16 to 0.8.19
+- Bump tempfile from 3.10.1 to 3.11.0
+
 ## [0.17.1] - 2024-07-17
 
 ### Bug Fixes
