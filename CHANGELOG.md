@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.18.1] - 2024-08-13
+
+### Bug Fixes
+
+- Rename `task-limiter` menu item
+
 ## [0.18.0] - 2024-08-07
 
 ### Bug Fixes
