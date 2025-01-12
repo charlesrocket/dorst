@@ -235,11 +235,11 @@ fn cli(matches: &ArgMatches) -> Result<()> {
         let destination_clone = format!(
             "{}/{}",
             PathBuf::from(expand_path(&config.source_directory)).display(),
-            get_name(&target)
+            get_name(target)
         );
 
-        let destination_backup = format!("{}/{}.dorst", &path.display(), get_name(&target));
-        let target_name = get_name(&target);
+        let destination_backup = format!("{}/{}.dorst", &path.display(), get_name(target));
+        let target_name = get_name(target);
 
         if !silent {
             spinner.tick();
@@ -260,7 +260,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
         match process_repo(
             &destination_clone,
             &destination_backup,
-            &target,
+            target,
             repo_mirror,
             Some(&spinner),
             Some(silent),
