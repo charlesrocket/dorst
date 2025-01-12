@@ -19,7 +19,7 @@ lto = true
 
 [features]
 default = ["cli", "logs"]
-cli = ["dep:clap", "dep:indicatif"]
+cli = ["dep:clap", "dep:indicatif", "dep:rayon"]
 gui = ["dep:adw", "dep:async-channel", "dep:glib", "dep:gtk", "dep:glib-build-tools"]
 logs = ["dep:tracing", "dep:tracing-appender", "dep:tracing-subscriber"]
 
@@ -32,6 +32,7 @@ git2 = { version = "0.19", features = ["vendored-openssl"] }
 glib = { version = "0.20", optional = true }
 gtk = { version = "0.9", package = "gtk4", features = ["v4_12"], optional = true }
 indicatif = { version = "0.17", optional = true }
+rayon = { version = "1.10", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
 tracing = { version = "0.1", optional = true }

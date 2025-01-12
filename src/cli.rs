@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use rayon::prelude::*;
 
 #[cfg(feature = "logs")]
 use tracing::{error, info};
@@ -9,7 +10,7 @@ use std::{
     env, fs,
     io::Write,
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{Arc, Mutex},
 };
 
 use crate::{
@@ -129,11 +130,11 @@ fn args() -> ArgMatches {
         )
         .args([
             Arg::new("path")
-                .action(ArgAction::Set)
                 .value_name("PATH")
                 .help("Backup destination")
                 .value_parser(value_parser!(PathBuf))
                 .hide_default_value(true)
+                .action(ArgAction::Set)
                 .default_value(get_dir()),
             Arg::new("config")
                 .short('c')
@@ -141,6 +142,14 @@ fn args() -> ArgMatches {
                 .value_name("FILE")
                 .help("Use alternative config file")
                 .value_parser(value_parser!(PathBuf)),
+            Arg::new("jobs")
+                .value_name("JOBS")
+                .short('j')
+                .long("jobs")
+                .help("Concurrent jobs")
+                .value_parser(value_parser!(usize))
+                .action(ArgAction::Set)
+                .default_value(1.to_string()),
             Arg::new("backups")
                 .short('b')
                 .long("backups")
@@ -184,6 +193,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
 
     println!("{BANNER}");
 
+    let jobs = matches.get_one::<usize>("jobs").unwrap();
     let path = matches.get_one::<PathBuf>("path").unwrap();
     let purge = matches.get_flag("purge");
     let repo_mirror = matches.get_flag("backups");
@@ -208,14 +218,19 @@ fn cli(matches: &ArgMatches) -> Result<()> {
         .unwrap()
         .progress_chars(&bar_chars().join(""));
 
-    let mut err_count = 0;
-    let mut compl_count = 0;
+    let err_count = Arc::new(Mutex::new(0));
+    let compl_count = Arc::new(Mutex::new(0));
     let progress_bar = indicat.add(ProgressBar::new(config.targets.len().try_into().unwrap()));
 
     progress_bar.set_style(indicat_template);
     progress_bar.set_position(0);
 
-    for target in config.targets {
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(*jobs)
+        .build_global()
+        .unwrap();
+
+    config.targets.par_iter().for_each(|target| {
         let spinner = indicat.insert_before(&progress_bar, ProgressBar::new_spinner());
         let destination_clone = format!(
             "{}/{}",
@@ -235,11 +250,11 @@ fn cli(matches: &ArgMatches) -> Result<()> {
         }
 
         if purge && Path::new(&destination_clone).exists() {
-            fs::remove_dir_all(&destination_clone)?;
+            fs::remove_dir_all(&destination_clone).unwrap();
         }
 
         if purge && Path::new(&destination_backup).exists() {
-            fs::remove_dir_all(&destination_backup)?;
+            fs::remove_dir_all(&destination_backup).unwrap();
         }
 
         match process_repo(
@@ -256,10 +271,10 @@ fn cli(matches: &ArgMatches) -> Result<()> {
                     info!("Completed: {target_name}");
                 }
 
-                compl_count += 1;
+                *compl_count.lock().unwrap() += 1;
                 if !silent {
                     let status = spinner.prefix();
-                    let branch = git::current_branch(destination_clone.into())?;
+                    let branch = git::current_branch(destination_clone.into()).unwrap();
                     spinner.finish_with_message(format!(
                         "\x1b[1;96mdone\x1b[0m \x1b[0;93m{target_name}\x1b[0m \x1b[4;36m{branch}\x1b[0m{status}"
                     ));
@@ -274,7 +289,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
 
                 let err = format!("\x1b[1;31mError:\x1b[0m {target_name}: {error}");
 
-                err_count += 1;
+                *err_count.lock().unwrap() += 1;
                 if !silent {
                     if spinner.is_hidden() {
                         eprintln!("{}", &err);
@@ -286,7 +301,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
         };
 
         progress_bar.inc(1);
-    }
+    });
 
     progress_bar.finish();
 
@@ -295,18 +310,21 @@ fn cli(matches: &ArgMatches) -> Result<()> {
         info!("Finished");
     }
 
-    if err_count > 0 {
+    let completed = compl_count.lock().unwrap();
+    let errs = err_count.lock().unwrap();
+
+    if *errs > 0 {
         eprintln!(
             "\u{2517}\u{2578}\x1b[1mCOMPLETED\x1b[0m \
-             \x1b[37m(\x1b[0m\x1b[1;92m{compl_count}\
-             \x1b[0m\x1b[37m/\x1b[0m\x1b[1;91m{err_count}\x1b[0m\x1b[37m)\x1b[0m"
+             \x1b[37m(\x1b[0m\x1b[1;92m{completed}\
+             \x1b[0m\x1b[37m/\x1b[0m\x1b[1;91m{errs}\x1b[0m\x1b[37m)\x1b[0m"
         );
 
         std::process::exit(1);
     } else {
         println!(
             "\u{2517}\u{2578}\x1b[1mCOMPLETED\x1b[0m \
-             \x1b[37m(\x1b[0m\x1b[1;92m{compl_count}\
+             \x1b[37m(\x1b[0m\x1b[1;92m{completed}\
              \x1b[0m\x1b[37m)\x1b[0m"
         );
     }
