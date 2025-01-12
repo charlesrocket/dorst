@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0] - 2025-01-12
+
+### Bug Fixes
+
+- Drop redundant `target` references
+- Import `property::PropertySet`
+
+### Features
+
+- Add concurrent processing
+
+### Miscellaneous tasks
+
+- Update LICENSE
+
+### Operations
+
+- Bump codecov/codecov-action from 4 to 5
+- Fix build job
+- Update target list
+
 ## [0.18.1] - 2024-08-13
 
 ### Bug Fixes
