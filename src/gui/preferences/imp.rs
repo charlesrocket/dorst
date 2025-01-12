@@ -1,5 +1,5 @@
 use adw::{subclass::prelude::*, ActionRow};
-use glib::{prelude::ObjectExt, Properties};
+use glib::{prelude::ObjectExt, property::PropertySet, Properties};
 use gtk::{Button, CompositeTemplate, SpinButton, Switch};
 
 use std::sync::{Arc, Mutex};
