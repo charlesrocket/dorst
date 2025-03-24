@@ -112,7 +112,8 @@ mod cli {
 
     #[test]
     fn init() -> Result<(), Box<dyn Error>> {
-        env::set_var("XDG_CONFIG_HOME", "test-init");
+        // TODO: Audit that the environment access only happens in single-threaded code.
+        unsafe { env::set_var("XDG_CONFIG_HOME", "test-init") };
 
         if Path::new("test-init").exists() {
             remove_dir_all("test-init")?;

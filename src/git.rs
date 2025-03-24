@@ -53,11 +53,11 @@ pub fn current_branch(destination: std::path::PathBuf) -> Result<String, git2::E
     let head = repo.head()?;
 
     if head.is_branch() {
-        if let Some(branch) = head.shorthand() {
+        match head.shorthand() { Some(branch) => {
             Ok(String::from(branch))
-        } else {
+        } _ => {
             Ok(String::from("*INVALID"))
-        }
+        }}
     } else {
         Ok(String::from("*DETACHED"))
     }
