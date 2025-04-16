@@ -557,8 +557,8 @@ impl Window {
 
                 filter_model.set_filter(window.filter().as_ref());
 
-                if window.imp().errors_list.lock().unwrap().len() > 0
-                    || window.imp().success_list.lock().unwrap().len() > 0
+                if !window.imp().errors_list.lock().unwrap().is_empty()
+                    || !window.imp().success_list.lock().unwrap().is_empty()
                 {
                     window.update_rows();
                 }
