@@ -1,12 +1,12 @@
 use adw::{
-    prelude::*, subclass::prelude::*, AboutDialog, ColorScheme, MessageDialog, ResponseAppearance,
+    AboutDialog, ColorScheme, MessageDialog, ResponseAppearance, prelude::*, subclass::prelude::*,
 };
 use gtk::{
-    gio::{self, ListStore, SimpleAction},
-    glib::{self, clone, ControlFlow, KeyFile, Object},
-    pango::{EllipsizeMode, WrapMode},
     Align, Box, Button, CustomFilter, FilterListModel, Frame, Label, License, ListBoxRow,
     NoSelection, Orientation, Popover,
+    gio::{self, ListStore, SimpleAction},
+    glib::{self, ControlFlow, KeyFile, Object, clone},
+    pango::{EllipsizeMode, WrapMode},
 };
 use toml::Table;
 
@@ -26,7 +26,7 @@ mod imp;
 use crate::{
     config::Config,
     git,
-    gui::{preferences::DorstPreferences, repo_box::RepoBox, repo_object::RepoObject, RepoData},
+    gui::{RepoData, preferences::DorstPreferences, repo_box::RepoBox, repo_object::RepoObject},
     util,
 };
 

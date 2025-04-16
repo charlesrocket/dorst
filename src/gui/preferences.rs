@@ -1,6 +1,6 @@
 use gtk::{
-    glib, prelude::*, subclass::prelude::*, Accessible, Buildable, ConstraintTarget, Native, Root,
-    Widget,
+    Accessible, Buildable, ConstraintTarget, Native, Root, Widget, glib, prelude::*,
+    subclass::prelude::*,
 };
 
 mod imp;

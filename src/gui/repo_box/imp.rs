@@ -1,5 +1,5 @@
 use adw::prelude::WidgetExt;
-use gtk::{glib, subclass::prelude::*, CompositeTemplate, Image, Label, ProgressBar, Revealer};
+use gtk::{CompositeTemplate, Image, Label, ProgressBar, Revealer, glib, subclass::prelude::*};
 
 #[derive(Default, CompositeTemplate)]
 #[template(resource = "/org/hellbyte/dorst/repo_box.ui")]

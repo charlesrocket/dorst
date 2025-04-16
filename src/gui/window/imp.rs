@@ -1,7 +1,7 @@
-use adw::{prelude::*, subclass::prelude::*, StyleManager, ToastOverlay};
+use adw::{StyleManager, ToastOverlay, prelude::*, subclass::prelude::*};
 use gtk::{
-    gio, glib::subclass::InitializingObject, Button, CompositeTemplate, Entry, FileDialog,
-    FilterListModel, ListBox, ProgressBar, Revealer, Stack, ToggleButton,
+    Button, CompositeTemplate, Entry, FileDialog, FilterListModel, ListBox, ProgressBar, Revealer,
+    Stack, ToggleButton, gio, glib::subclass::InitializingObject,
 };
 
 use glib::Properties;

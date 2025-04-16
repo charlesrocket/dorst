@@ -22,7 +22,7 @@ mod cli {
 
     mod helper {
         use git2::{Commit, ObjectType, Repository, Signature};
-        use rouille::{cgi::CgiRun, Server};
+        use rouille::{Server, cgi::CgiRun};
         use tempfile::TempDir;
 
         use std::{fs::File, path::Path, process::Command, thread};

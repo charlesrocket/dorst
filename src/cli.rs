@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Result};
-use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
+use anyhow::{Result, anyhow};
+use clap::{Arg, ArgAction, ArgMatches, Command, value_parser};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 

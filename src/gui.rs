@@ -1,5 +1,5 @@
-use adw::{gio, prelude::*, Application};
-use gtk::{gdk::Display, CssProvider};
+use adw::{Application, gio, prelude::*};
+use gtk::{CssProvider, gdk::Display};
 
 use repo_object::RepoData;
 use window::Window;
@@ -57,7 +57,7 @@ pub fn start() {
 mod tests {
     pub mod helper {
         use git2::{Commit, ObjectType, Repository, Signature};
-        use rouille::{cgi::CgiRun, Server};
+        use rouille::{Server, cgi::CgiRun};
         use tempfile::TempDir;
 
         use std::{fs::File, path::Path, process::Command, thread};
