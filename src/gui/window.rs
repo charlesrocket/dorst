@@ -16,7 +16,7 @@ use tracing::{info, warn};
 use std::{
     cell::Ref,
     fs,
-    io::Read,
+    io::{Read, Write},
     path::{Path, PathBuf},
     time,
 };
@@ -415,6 +415,8 @@ impl Window {
                             clone!(
                                 #[weak]
                                 entry,
+                                #[weak]
+                                window,
                                 move |dialog, response| {
                                     dialog.destroy();
 
@@ -424,6 +426,7 @@ impl Window {
 
                                     repo.set_link(entry.text().to_string());
                                     repo.set_name(util::get_name(&entry.text()));
+                                    window.save_settings();
                                 }
                             ),
                         );
@@ -498,6 +501,7 @@ impl Window {
                                     }
 
                                     window.show_message(&format!("Removed: {}", repo.name()), 3);
+                                    window.save_settings();
                                 }
                             ),
                         );
@@ -1007,6 +1011,8 @@ impl Window {
         self.imp()
             .button_source_dest
             .remove_css_class("suggested-action");
+
+        self.save_settings();
     }
 
     fn select_backup_directory(&self, directory: &Path) {
@@ -1019,6 +1025,31 @@ impl Window {
         self.imp()
             .button_backup_dest
             .remove_css_class("suggested-action");
+
+        self.save_settings();
+    }
+
+    fn save_data(&self) {
+        let backup_data: Vec<RepoData> = self
+            .repos()
+            .snapshot()
+            .iter()
+            .filter_map(Cast::downcast_ref::<RepoObject>)
+            .map(RepoObject::repo_data)
+            .collect();
+
+        let mut config = Config {
+            source_directory: self.imp().source_directory.borrow().to_owned(),
+            targets: [].to_vec(),
+        };
+
+        for repo_data in backup_data {
+            config.targets.push(repo_data.link.to_owned());
+        }
+
+        let toml_data = toml::to_string_pretty(&config).unwrap();
+        let mut file = fs::File::create(util::xdg_path().unwrap()).unwrap();
+        file.write_all(toml_data.as_bytes()).unwrap();
     }
 
     fn restore_data(&self) {
@@ -1150,6 +1181,8 @@ impl Window {
     }
 
     fn save_settings(&self) {
+        self.save_data();
+
         #[cfg(not(test))]
         let cache_dir = glib::user_cache_dir();
         #[cfg(test)]

@@ -7,15 +7,9 @@ use gtk::{
 use glib::Properties;
 use std::{
     cell::{Cell, RefCell},
-    fs::File,
-    io::Write,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
-
-use crate::gui::window::RepoObject;
-use crate::gui::RepoData;
-use crate::{config::Config, util};
 
 #[derive(CompositeTemplate, Properties)]
 #[properties(wrapper_type = super::Window)]
@@ -184,27 +178,6 @@ impl WidgetImpl for Window {}
 
 impl WindowImpl for Window {
     fn close_request(&self) -> glib::Propagation {
-        let backup_data: Vec<RepoData> = self
-            .obj()
-            .repos()
-            .snapshot()
-            .iter()
-            .filter_map(Cast::downcast_ref::<RepoObject>)
-            .map(RepoObject::repo_data)
-            .collect();
-
-        let mut config = Config {
-            source_directory: self.source_directory.borrow().to_owned(),
-            targets: [].to_vec(),
-        };
-
-        for repo_data in backup_data {
-            config.targets.push(repo_data.link.to_owned());
-        }
-
-        let toml_data = toml::to_string_pretty(&config).unwrap();
-        let mut file = File::create(util::xdg_path().unwrap()).unwrap();
-        file.write_all(toml_data.as_bytes()).unwrap();
         self.obj().save_settings();
         self.parent_close_request()
     }
