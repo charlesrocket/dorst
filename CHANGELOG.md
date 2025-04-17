@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.1] - 2025-04-17
+
+### Bug Fixes
+
+- Prevent data loss on crash
+- Use explicit result list checks
+
+### Refactor
+
+- Prepare for rust 2024
+
+### Styling
+
+- Fix `current_branch()` formatting
+- Fix project formatting
+
+### Build
+
+- Set `async-channel` version
+- Bump `git2` to 0.20
+- Bump rust edition to 2024
+- Bump version to 0.19.1
+
 ## [0.19.0] - 2025-01-12
 
 ### Bug Fixes
