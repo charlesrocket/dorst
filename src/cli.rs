@@ -265,7 +265,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
             Some(&spinner),
             Some(silent),
         ) {
-            Ok(_) => {
+            Ok(()) => {
                 #[cfg(feature = "logs")]
                 if logs {
                     info!("Completed: {target_name}");
