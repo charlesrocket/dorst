@@ -303,9 +303,9 @@ pub fn fetch_repo(
                 spinner.unwrap().set_prefix(" ø");
             }
             #[cfg(feature = "gui")]
-            let _ = tx
-                .unwrap()
-                .send_blocking(RowMessage::Updated(String::from(target)));
+            if let Some(tx) = tx {
+                let _ = tx.send_blocking(RowMessage::Updated(String::from(target)));
+            }
         }
     }
 
