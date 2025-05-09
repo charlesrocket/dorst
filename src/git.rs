@@ -233,25 +233,21 @@ pub fn fetch_repo(
         }
 
         #[cfg(feature = "gui")]
-        {
-            let _ = tx.unwrap().send_blocking(RowMessage::Fetch);
+        if let Some(tx) = tx {
+            let _ = tx.send_blocking(RowMessage::Fetch);
 
             callbacks.transfer_progress(|stats| {
                 if stats.received_objects() == stats.total_objects() {
-                    let _ = tx.unwrap().send_blocking(RowMessage::Deltas);
+                    let _ = tx.send_blocking(RowMessage::Deltas);
                     let indexed = stats.indexed_deltas() as f64;
                     let total = stats.total_deltas() as f64;
                     let progress = indexed / total;
-                    let _ = tx
-                        .unwrap()
-                        .send_blocking(RowMessage::Progress(progress, Status::Deltas));
+                    let _ = tx.send_blocking(RowMessage::Progress(progress, Status::Deltas));
                 } else if stats.total_objects() > 0 {
                     let received = stats.received_objects() as f64;
                     let total = stats.total_objects() as f64;
                     let progress = received / total;
-                    let _ = tx
-                        .unwrap()
-                        .send_blocking(RowMessage::Progress(progress, Status::Data));
+                    let _ = tx.send_blocking(RowMessage::Progress(progress, Status::Data));
                 }
 
                 true
@@ -261,41 +257,36 @@ pub fn fetch_repo(
         fetch_options.remote_callbacks(callbacks);
         remote.download(&[] as &[&str], Some(&mut fetch_options))?;
 
-        {
-            #[cfg(feature = "cli")]
-            if silent == Some(false) {
-                let stats = remote.stats();
+        #[cfg(feature = "cli")]
+        if silent == Some(false) {
+            let stats = remote.stats();
 
-                if stats.local_objects() > 0 {
-                    spinner.unwrap().set_message(format!(
-                        "\x1b[1;94mpulling\x1b[0m \x1b[93m{target_name}\
+            if stats.local_objects() > 0 {
+                spinner.unwrap().set_message(format!(
+                    "\x1b[1;94mpulling\x1b[0m \x1b[93m{target_name}\
                          \x1b[0m received {}/{} in {} (used {} local objects)",
-                        stats.indexed_objects(),
-                        stats.total_objects(),
-                        HumanBytes(stats.received_bytes().try_into().unwrap()),
-                        stats.local_objects()
-                    ));
-                } else {
-                    spinner.unwrap().set_message(format!(
-                        "\x1b[1;94mpulling\x1b[0m \x1b[93m{target_name}\
+                    stats.indexed_objects(),
+                    stats.total_objects(),
+                    HumanBytes(stats.received_bytes().try_into().unwrap()),
+                    stats.local_objects()
+                ));
+            } else {
+                spinner.unwrap().set_message(format!(
+                    "\x1b[1;94mpulling\x1b[0m \x1b[93m{target_name}\
                          \x1b[0m received {}/{} in {}",
-                        stats.indexed_objects(),
-                        stats.total_objects(),
-                        HumanBytes(stats.received_bytes().try_into().unwrap())
-                    ));
-                }
+                    stats.indexed_objects(),
+                    stats.total_objects(),
+                    HumanBytes(stats.received_bytes().try_into().unwrap())
+                ));
             }
+        }
 
-            #[cfg(feature = "gui")]
-            if tx.is_some() {
-                let stats = remote.stats();
-                let indexed = stats.indexed_objects() as f64;
-                let total = stats.total_objects() as f64;
-                let progress = indexed / total;
-                let _ = tx
-                    .unwrap()
-                    .send_blocking(RowMessage::Progress(progress, Status::Normal));
-            }
+        if let Some(tx) = tx {
+            let stats = remote.stats();
+            let indexed = stats.indexed_objects() as f64;
+            let total = stats.total_objects() as f64;
+            let progress = indexed / total;
+            let _ = tx.send_blocking(RowMessage::Progress(progress, Status::Normal));
         }
 
         remote.disconnect()?;
