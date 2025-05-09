@@ -1044,7 +1044,7 @@ impl Window {
         };
 
         for repo_data in backup_data {
-            config.targets.push(repo_data.link.to_owned());
+            config.targets.push(repo_data.link.clone());
         }
 
         let toml_data = toml::to_string_pretty(&config).unwrap();
