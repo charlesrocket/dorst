@@ -281,6 +281,7 @@ pub fn fetch_repo(
             }
         }
 
+        #[cfg(feature = "gui")]
         if let Some(tx) = tx {
             let stats = remote.stats();
             let indexed = stats.indexed_objects() as f64;
