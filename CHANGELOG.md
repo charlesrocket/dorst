@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.2] - 2025-05-09
+
+### Bug Fixes
+
+- Fix `repo_data.link` clone
+- Drop redundant allocations
+- Drop redundant clones
+- Use explicit match with `process_repo`
+- Improve `tx` optional
+- Set missing feature
+- Set `clone_repo` feature
+- Set `fetch_repo` feature
+
+### Miscellaneous tasks
+
+- Remove makefile
+
+### Styling
+
+- Remove extra semicolons
+
+### Build
+
+- Bump `built` to 0.8
+- Bump version to 0.19.2
+
 ## [0.19.1] - 2025-04-17
 
 ### Bug Fixes
