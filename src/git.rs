@@ -101,25 +101,21 @@ pub fn clone_repo(
     }
 
     #[cfg(feature = "gui")]
-    {
-        let _ = tx.unwrap().send_blocking(RowMessage::Clone);
+    if let Some(tx) = tx {
+        let _ = tx.send_blocking(RowMessage::Clone);
 
         callbacks.transfer_progress(|stats| {
             if stats.received_objects() == stats.total_objects() {
-                let _ = tx.unwrap().send_blocking(RowMessage::Deltas);
+                let _ = tx.send_blocking(RowMessage::Deltas);
                 let indexed = stats.indexed_deltas() as f64;
                 let total = stats.total_deltas() as f64;
                 let progress = indexed / total;
-                let _ = tx
-                    .unwrap()
-                    .send_blocking(RowMessage::Progress(progress, Status::Deltas));
+                let _ = tx.send_blocking(RowMessage::Progress(progress, Status::Deltas));
             } else if stats.total_objects() > 0 {
                 let received = stats.received_objects() as f64;
                 let total = stats.total_objects() as f64;
                 let progress = received / total;
-                let _ = tx
-                    .unwrap()
-                    .send_blocking(RowMessage::Progress(progress, Status::Data));
+                let _ = tx.send_blocking(RowMessage::Progress(progress, Status::Data));
             }
 
             true
