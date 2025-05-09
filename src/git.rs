@@ -370,7 +370,7 @@ pub fn process_target(
             #[cfg(feature = "cli")]
             silent,
         )?;
-    };
+    }
 
     Ok(())
 }

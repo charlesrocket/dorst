@@ -298,7 +298,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
                     spinner.finish_with_message(err);
                 }
             }
-        };
+        }
 
         progress_bar.inc(1);
     });

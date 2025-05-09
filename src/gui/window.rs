@@ -984,7 +984,7 @@ impl Window {
             content.pop();
             if content.is_empty() {
                 return;
-            };
+            }
         }
 
         let name = util::get_name(&content).to_owned();

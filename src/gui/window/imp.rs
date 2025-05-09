@@ -170,7 +170,7 @@ impl Window {
         } else {
             self.button_backup_dest.set_visible(false);
             self.backups_enabled.set(false);
-        };
+        }
     }
 }
 
