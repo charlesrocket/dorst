@@ -346,7 +346,7 @@ fn process_repo(
         false,
         spinner,
         #[cfg(feature = "gui")]
-        &None,
+        None,
         silent,
     )?;
 
@@ -364,7 +364,7 @@ fn process_repo(
             true,
             spinner,
             #[cfg(feature = "gui")]
-            &None,
+            None,
             silent,
         )?;
     }

@@ -112,7 +112,7 @@ impl RepoObject {
                 #[cfg(feature = "cli")]
                 None,
                 #[cfg(feature = "gui")]
-                &tx,
+                tx.as_ref(),
                 #[cfg(feature = "cli")]
                 None,
             ) {
@@ -147,7 +147,7 @@ impl RepoObject {
                     #[cfg(feature = "cli")]
                     None,
                     #[cfg(feature = "gui")]
-                    &tx,
+                    tx.as_ref(),
                     #[cfg(feature = "cli")]
                     None,
                 ) {
