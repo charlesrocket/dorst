@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "logs")]
 use tracing::{error, info};
 
-use std::sync::{Arc, Mutex};
+use std::{
+    fmt::Write as _,
+    sync::{Arc, Mutex},
+};
 
 use crate::{git, gui::window::RowMessage};
 
@@ -127,7 +130,7 @@ impl RepoObject {
                         error!("Failed: {repo_name} - {error}");
                     }
 
-                    err_string.push_str(&format!("{error}"));
+                    write!(err_string, "{error}").expect("The error string should be updated.");
                 }
             }
 
@@ -162,7 +165,8 @@ impl RepoObject {
                             error!("Failed (backup): {repo_name} - {error}");
                         }
 
-                        err_string.push_str(&format!(" backup: {error}"));
+                        write!(err_string, " backup: {error}")
+                            .expect("The error string should be updated.");
                     }
                 }
 
