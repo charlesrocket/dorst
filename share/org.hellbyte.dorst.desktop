@@ -4,6 +4,5 @@ Name=Dorst
 Icon=org.hellbyte.dorst
 Exec=dorst --gui
 Comment=Codebase bootstrap and backup utility
-Categories=Development;
+Categories=Development;GTK;
 Terminal=false
-StartupNotify=true
