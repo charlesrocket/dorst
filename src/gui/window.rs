@@ -1,5 +1,5 @@
 use adw::{
-    AboutDialog, ColorScheme, MessageDialog, ResponseAppearance, prelude::*, subclass::prelude::*,
+    AboutDialog, AlertDialog, ColorScheme, ResponseAppearance, prelude::*, subclass::prelude::*,
 };
 use gtk::{
     Align, Box, Button, CustomFilter, FilterListModel, Frame, Label, License, ListBoxRow,
@@ -372,14 +372,10 @@ impl Window {
 
                         let cancel_response = "cancel";
                         let edit_response = "edit";
-                        let dialog = MessageDialog::builder()
-                            .default_width(350)
+                        let dialog = AlertDialog::builder()
                             .heading("Edit link")
                             .body(format!("<tt>{}</tt>", repo.name()))
                             .body_use_markup(true)
-                            .transient_for(&window)
-                            .modal(true)
-                            .destroy_with_parent(true)
                             .close_response(cancel_response)
                             .default_response(edit_response)
                             .extra_child(&entry)
@@ -417,9 +413,7 @@ impl Window {
                                 entry,
                                 #[weak]
                                 window,
-                                move |dialog, response| {
-                                    dialog.destroy();
-
+                                move |_, response| {
                                     if response != edit_response {
                                         return;
                                     }
@@ -431,7 +425,7 @@ impl Window {
                             ),
                         );
 
-                        dialog.present();
+                        dialog.present(Some(&window));
                         popover.popdown();
                     }
                 ));
@@ -454,13 +448,10 @@ impl Window {
 
                         let cancel_response = "cancel";
                         let remove_response = "remove";
-                        let dialog = MessageDialog::builder()
+                        let dialog = AlertDialog::builder()
                             .heading("Remove repository")
                             .body(format!("<tt>{}</tt>", repo.name()))
                             .body_use_markup(true)
-                            .transient_for(&window)
-                            .modal(true)
-                            .destroy_with_parent(true)
                             .close_response(cancel_response)
                             .default_response(cancel_response)
                             .build();
@@ -479,9 +470,7 @@ impl Window {
                             clone!(
                                 #[weak]
                                 window,
-                                move |dialog, response| {
-                                    dialog.destroy();
-
+                                move |_, response| {
                                     if response != remove_response {
                                         return;
                                     }
@@ -506,7 +495,7 @@ impl Window {
                             ),
                         );
 
-                        dialog.present();
+                        dialog.present(Some(&window));
                         popover.popdown();
                     }
                 ));
@@ -1744,7 +1733,7 @@ pub mod tests {
 
         let dialog = &gtk::Window::list_toplevels()[0]
             .clone()
-            .downcast::<MessageDialog>()
+            .downcast::<AlertDialog>()
             .unwrap();
 
         let entry = dialog
@@ -1814,7 +1803,7 @@ pub mod tests {
 
         let dialog = &gtk::Window::list_toplevels()[0]
             .clone()
-            .downcast::<MessageDialog>()
+            .downcast::<AlertDialog>()
             .unwrap();
 
         dialog.response("remove");
