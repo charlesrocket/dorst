@@ -23,7 +23,7 @@ gui = ["dep:adw", "dep:async-channel", "dep:glib", "dep:gtk", "dep:glib-build-to
 logs = ["dep:tracing", "dep:tracing-appender", "dep:tracing-subscriber"]
 
 [dependencies]
-adw = { version = "0.7", package = "libadwaita", features = ["v1_5"], optional = true }
+adw = { version = "0.7", package = "libadwaita", features = ["v1_7"], optional = true }
 anyhow = "1.0"
 async-channel = { version = "2.3", optional = true }
 clap = { version = "4.5", features = ["string"], optional = true }
