@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.3] - 2025-05-11
+
+### Bug Fixes
+
+- Update desktop entry
+
+### Miscellaneous tasks
+
+- Move desktop files
+
+### Build
+
+- Add lto profile
+- Update `exclude`
+- Bump gtk features to 4.18
+
 ## [0.19.2] - 2025-05-09
 
 ### Bug Fixes
