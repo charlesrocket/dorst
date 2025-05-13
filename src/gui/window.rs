@@ -1745,7 +1745,7 @@ pub mod tests {
         let buffer = entry.buffer();
 
         buffer.set_text("invalid23");
-        dialog.response("edit");
+        dialog.emit_by_name::<()>("response", &[&"edit"]);
 
         let link = window
             .repos()
@@ -1806,7 +1806,7 @@ pub mod tests {
             .downcast::<AlertDialog>()
             .unwrap();
 
-        dialog.response("remove");
+        dialog.emit_by_name::<()>("response", &[&"remove"]);
 
         assert!(window.repos().n_items() == 0);
         assert!(window.imp().stack.visible_child_name() == Some("empty".into()));
