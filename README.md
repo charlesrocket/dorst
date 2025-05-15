@@ -2,29 +2,20 @@
 [![Crates.io](https://img.shields.io/crates/v/dorst)](https://crates.io/crates/dorst)
 [![Tests](https://github.com/charlesrocket/dorst/actions/workflows/ci.yml/badge.svg?branch=trunk)](https://github.com/charlesrocket/dorst/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/charlesrocket/dorst/branch/trunk/graph/badge.svg)](https://codecov.io/gh/charlesrocket/dorst)
-### Intro
+## Intro
 
 Bootstrap (and backup) codebases with Dørst.
 
 ### Features
-##### Default
 
 * `logs`
 * `cli`
-
-##### Optional
-
 * `gui` _GTK4_
 
-## CLI
-### Compilation
+## Usage
+### CLI
 
-```shell
-make
-make install # as root
-```
-
-### Usage
+`cargo install dorst`
 
 To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` and set targets (the current directory is the default backup destination). Dørts supports `ssh-agent` and can use `gitconfig`'s credential helper for authentication.
 
@@ -41,20 +32,14 @@ targets = [
 ]
 ```
 
-The `-c`/`--config` flag allows the usage of an alterantive configuration file.
+The `-c`/`--config` flag allows the usage of an alternative configuration file.
 
-## GUI
-### Compilation
+### GUI
 
-```shell
-make features=gui
-make install features=gui # as root
-```
-
-### Usage
+`cargo install dorst --features gui`
 
 `dorst --gui`
 
-## Backups
+### Backups
 
 Dorst's backups are (git) mirrors: `git clone example.dorst`
