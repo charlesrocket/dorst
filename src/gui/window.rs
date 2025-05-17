@@ -1731,8 +1731,9 @@ pub mod tests {
 
         button.emit_clicked();
 
-        let dialog = &gtk::Window::list_toplevels()[0]
-            .clone()
+        let dialog = &window
+            .visible_dialog()
+            .unwrap()
             .downcast::<AlertDialog>()
             .unwrap();
 
@@ -1801,8 +1802,9 @@ pub mod tests {
 
         button.emit_clicked();
 
-        let dialog = &gtk::Window::list_toplevels()[0]
-            .clone()
+        let dialog = &window
+            .visible_dialog()
+            .unwrap()
             .downcast::<AlertDialog>()
             .unwrap();
 
