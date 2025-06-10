@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.4] - 2025-06-10
+
+### Bug Fixes
+
+- `MessageDialog` -> `AlertDialog`
+- Edit version string
+
+### Documentation
+
+- Update README
+
+### Testing
+
+- Emit dialog signals
+- Fix dialogs
+
+### Build
+
+- Bump adw features to 1.7
+
 ## [0.19.3] - 2025-05-11
 
 ### Bug Fixes
@@ -42,7 +62,6 @@ All notable changes to this project will be documented in this file.
 ### Build
 
 - Bump `built` to 0.8
-- Bump version to 0.19.2
 
 ## [0.19.1] - 2025-04-17
 
@@ -65,7 +84,6 @@ All notable changes to this project will be documented in this file.
 - Set `async-channel` version
 - Bump `git2` to 0.20
 - Bump rust edition to 2024
-- Bump version to 0.19.1
 
 ## [0.19.0] - 2025-01-12
 
@@ -973,5 +991,7 @@ All notable changes to this project will be documented in this file.
 - Bump git2 to 0.17
 - Bump clap to 4.2
 - Update dependencies
+
+## [0.1.0] - 2023-02-03
 
 
