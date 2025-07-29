@@ -13,6 +13,8 @@ Bootstrap (and backup) codebases with Dørst.
 * `gui` _GTK4_
 
 ## Usage
+[![Packaging status](https://repology.org/badge/vertical-allrepos/dorst.svg)](https://repology.org/project/dorst/versions)
+
 ### CLI
 
 `cargo install dorst`
