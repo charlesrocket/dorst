@@ -44,4 +44,4 @@ The `-c`/`--config` flag allows the usage of an alternative configuration file.
 
 ### Backups
 
-Dorst's backups are (git) mirrors: `git clone example.dorst`
+Dorst's backups are `git` mirrors: `git clone example.dorst`
