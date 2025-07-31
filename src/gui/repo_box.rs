@@ -4,7 +4,8 @@ mod imp;
 
 glib::wrapper! {
     pub struct RepoBox(ObjectSubclass<imp::RepoBox>)
-        @extends gtk::Box, gtk::Widget;
+        @extends gtk::Box, gtk::Widget,
+        @implements gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::ConstraintTarget;
 }
 
 impl RepoBox {
