@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.5] - 2025-08-04
+
+### Bug Fixes
+
+- Update wrappers
+
+### Documentation
+
+- Add packaging status
+- Fix `Backups`
+
+### Build
+
+- Update GTK dependencies
+- Bump `indicatif` to 0.18
+- Bump `toml` to 0.9
+
 ## [0.19.4] - 2025-06-10
 
 ### Bug Fixes
