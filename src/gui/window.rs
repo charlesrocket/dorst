@@ -685,30 +685,30 @@ impl Window {
         let repos = self.repos();
 
         for i in 0..repos.n_items() {
-            if let Some(obj) = repos.item(i) {
-                if let Some(repo_object) = obj.downcast_ref::<RepoObject>() {
-                    let link = repo_object.link().clone();
-                    if self.imp().success_list.lock().unwrap().contains(&link) {
-                        let mut path = self.get_dest_clone();
-                        path.push(repo_object.name());
+            if let Some(obj) = repos.item(i)
+                && let Some(repo_object) = obj.downcast_ref::<RepoObject>()
+            {
+                let link = repo_object.link().clone();
+                if self.imp().success_list.lock().unwrap().contains(&link) {
+                    let mut path = self.get_dest_clone();
+                    path.push(repo_object.name());
 
-                        let branch = git::current_branch(path).unwrap();
-                        repo_object.set_branch(branch);
-                        repo_object.set_status("ok");
+                    let branch = git::current_branch(path).unwrap();
+                    repo_object.set_branch(branch);
+                    repo_object.set_status("ok");
 
-                        if self.imp().updated_list.lock().unwrap().contains(&link) {
-                            repo_object.set_status("updated");
-                        }
-                    } else if self
-                        .imp()
-                        .errors_list
-                        .lock()
-                        .unwrap()
-                        .iter()
-                        .any(|x| x.contains(&link))
-                    {
-                        repo_object.set_status("err");
+                    if self.imp().updated_list.lock().unwrap().contains(&link) {
+                        repo_object.set_status("updated");
                     }
+                } else if self
+                    .imp()
+                    .errors_list
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .any(|x| x.contains(&link))
+                {
+                    repo_object.set_status("err");
                 }
             }
         }
@@ -1257,13 +1257,13 @@ impl Window {
                     .unwrap();
             }
 
-            if let Ok(dest) = keyfile.string("backup", "destination") {
-                if !dest.is_empty() {
-                    self.set_backup_directory(PathBuf::from(dest.as_str()));
-                    self.imp()
-                        .button_backup_dest
-                        .remove_css_class("suggested-action");
-                }
+            if let Ok(dest) = keyfile.string("backup", "destination")
+                && !dest.is_empty()
+            {
+                self.set_backup_directory(PathBuf::from(dest.as_str()));
+                self.imp()
+                    .button_backup_dest
+                    .remove_css_class("suggested-action");
             }
 
             if let Ok(backup_state) = keyfile.boolean("backup", "enabled") {
