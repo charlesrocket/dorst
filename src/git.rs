@@ -14,7 +14,7 @@ use crate::util::get_name;
 use std::io::{self, Write};
 use std::path::Path;
 
-pub fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks {
+pub fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks<'_> {
     let mut callbacks = RemoteCallbacks::new();
 
     callbacks.credentials(move |url, username_from_url, allowed_types| {

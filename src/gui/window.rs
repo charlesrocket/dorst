@@ -729,7 +729,7 @@ impl Window {
         PathBuf::from(util::expand_path(&path))
     }
 
-    fn get_dest_backup(&self) -> Ref<PathBuf> {
+    fn get_dest_backup(&self) -> Ref<'_, PathBuf> {
         self.imp().backup_directory.borrow()
     }
 
