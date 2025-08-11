@@ -17,7 +17,7 @@ Bootstrap (and backup) codebases with Dørst.
 
 ### CLI
 
-`cargo install dorst`
+> `cargo install dorst`
 
 To begin, run `dorst` to create a configuration file in `$HOME/.config/dorst` and set targets (the current directory is the default backup destination). Dørts supports `ssh-agent` and can use `gitconfig`'s credential helper for authentication.
 
@@ -38,7 +38,7 @@ The `-c`/`--config` flag allows the usage of an alternative configuration file.
 
 ### GUI
 
-`cargo install dorst --features gui`
+> `cargo install dorst --features gui`
 
 `dorst --gui`
 
