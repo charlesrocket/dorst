@@ -18,8 +18,9 @@ pub fn version_string() -> String {
         built_info::GIT_COMMIT_HASH_SHORT.map_or_else(String::new, |hash| format!(" {hash}"));
 
     let version = env!("CARGO_PKG_VERSION");
+    let os = std::env::consts::OS;
 
-    format!("{version}{commit_hash}{dirty}")
+    format!("{version}-{os}{commit_hash}{dirty}")
 }
 
 pub fn expand_path(path: &str) -> String {
