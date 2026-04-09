@@ -2,6 +2,8 @@
 [![Crates.io](https://img.shields.io/crates/v/dorst)](https://crates.io/crates/dorst)
 [![Tests](https://github.com/charlesrocket/dorst/actions/workflows/ci.yml/badge.svg?branch=trunk)](https://github.com/charlesrocket/dorst/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/charlesrocket/dorst/branch/trunk/graph/badge.svg)](https://codecov.io/gh/charlesrocket/dorst)
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/dorst.svg)](https://repology.org/project/dorst/versions)
 ## Intro
 
 Bootstrap (and backup) codebases with Dørst.
@@ -13,8 +15,6 @@ Bootstrap (and backup) codebases with Dørst.
 * `gui` _GTK4_
 
 ## Usage
-[![Packaging status](https://repology.org/badge/vertical-allrepos/dorst.svg)](https://repology.org/project/dorst/versions)
-
 ### CLI
 
 > `cargo install dorst`
