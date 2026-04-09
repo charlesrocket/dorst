@@ -97,7 +97,7 @@ mod cli {
             .unwrap();
         }
 
-        fn last_commit(repo: &Repository) -> Commit {
+        fn last_commit(repo: &Repository) -> Commit<'_> {
             let obj = repo
                 .head()
                 .unwrap()
