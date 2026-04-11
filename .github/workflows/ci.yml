@@ -8,42 +8,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    name: Build on ${{ matrix.target }}
-    strategy:
-      matrix:
-        include:
-          - target: aarch64-unknown-linux-gnu
-          - target: aarch64-unknown-linux-musl
-          - target: aarch64-apple-darwin
-            os: macos-latest
-          - target: x86_64-unknown-linux-gnu
-          - target: x86_64-unknown-linux-musl
-          - target: x86_64-apple-darwin
-            os: macos-latest
-          #- target: x86_64-unknown-freebsd
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Setup cross toolchain
-        uses: taiki-e/setup-cross-toolchain-action@v1
-        with:
-          target: ${{ matrix.target }}
-      - uses: actions/cache@v5
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Build
-        run: cargo build
-
   test:
-    name: Test / ${{ matrix.feature }} / ${{ matrix.toolchain }}
+    name: Test ${{ matrix.feature }} | ${{ matrix.toolchain }}
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/gtk-rs/gtk4-rs/gtk4:latest
@@ -58,38 +24,49 @@ jobs:
           - cli
           - gui
       fail-fast: false
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.toolchain }}
+
       - name: Install llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Install dependencies
-        run: dnf install -y perl-FindBin perl-IPC-Cmd
+        run: dnf install -y perl-FindBin perl-IPC-Cmd openssl-devel pkgconf
+
       - name: Build
         run: cargo build --no-default-features --features ${{ matrix.feature }} --verbose
         if: matrix.feature != 'all'
+
       - name: Build (all features)
         run: cargo build --all-features --verbose
         if: matrix.feature == 'all'
+
       - name: Test
         run: cargo test --no-default-features --features ${{ matrix.feature }} --verbose
         if: matrix.feature != 'gui' && matrix.feature != 'all'
+
       - name: Test (all features)
         run: xvfb-run --auto-servernum cargo test --all-features -- --test-threads=1
         if: matrix.feature == 'all'
+
       - name: Test gui
         run: xvfb-run --auto-servernum cargo test --no-default-features --features ${{ matrix.feature }} -- --test-threads=1
         if: matrix.feature == 'gui' && matrix.feature != 'all'
+
       - name: Generate code coverage
         run: xvfb-run --auto-servernum cargo llvm-cov --workspace --no-default-features --features ${{ matrix.feature }} --lcov --output-path lcov.info
         if: "${{ (!startsWith(github.ref, 'refs/tags/')) && (matrix.feature != 'all') }}"
+
       - name: Generate code coverage (all features)
         run: xvfb-run --auto-servernum cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
         if: "${{ (!startsWith(github.ref, 'refs/tags/')) && (matrix.feature == 'all') }}"
+
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v6
         with:
@@ -114,12 +91,13 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: features-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-hack
         uses: taiki-e/install-action@cargo-hack
       - name: Install dependencies
-        run: brew install gtk4 libadwaita
+        run: brew install gtk4 libadwaita openssl
       - name: Check features
         run: cargo hack check --feature-powerset --no-dev-deps
 
@@ -139,10 +117,12 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: rustfmt-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
+
       - name: Check formatting
         run: cargo fmt --all -- --check --verbose
 
@@ -162,18 +142,21 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: clippy-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: brew install gtk4 libadwaita
+
+      - run: brew install gtk4 libadwaita openssl
       - run: cargo clippy --all-features -- -D clippy::all -D warnings
 
   release:
-    needs: [features, build, test]
+    needs: [features, test]
     name: Release
     permissions:
       contents: write
+
     if: github.repository_owner == 'charlesrocket' && startsWith(github.ref, 'refs/tags/')
     uses: ./.github/workflows/cd.yml
     secrets:
