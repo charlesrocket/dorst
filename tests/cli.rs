@@ -7,7 +7,7 @@ mod cli {
     use std::{env, error::Error, fs::remove_dir_all, io::Write, path::Path, thread};
 
     use files::{CONFIG_BOOTSTRAP, CONFIG_EMPTY, CONFIG_INVALID_URL, CONFIG_MIRROR};
-    use helper::{commit, serve, test_repo};
+    use libdorst::helper::{commit, serve, test_repo};
 
     mod files {
         pub const CONFIG_BOOTSTRAP: &[u8; 71] = b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x20\x3d\x20\x22\x74\x65\x73\x74\x2d\x62\x6f\x6f\x74\x73\x74\x72\x61\x70\x22\x0a\x74\x61\x72\x67\x65\x74\x73\x20\x3d\x20\x5b\x22\x68\x74\x74\x70\x3a\x2f\x2f\x6c\x6f\x63\x61\x6c\x68\x6f\x73\x74\x3a\x37\x38\x36\x38\x22\x5d";
@@ -18,96 +18,6 @@ mod cli {
 
         pub const CONFIG_INVALID_URL: &[u8; 42] =
         b"\x73\x6f\x75\x72\x63\x65\x5f\x64\x69\x72\x65\x63\x74\x6f\x72\x79\x20\x3d\x20\x22\x7e\x2f\x73\x72\x63\x22\x0a\x74\x61\x72\x67\x65\x74\x73\x20\x3d\x20\x5b\x22\x2f\x22\x5d";
-    }
-
-    mod helper {
-        use git2::{Commit, ObjectType, Repository, Signature};
-        use rouille::{Server, cgi::CgiRun};
-        use tempfile::TempDir;
-
-        use std::{fs::File, path::Path, process::Command, thread};
-
-        pub fn test_repo() -> TempDir {
-            let dir = TempDir::new().unwrap();
-            let sig = Signature::now("foo", "bar").unwrap();
-            let repo = Repository::init(&dir).unwrap();
-
-            File::create(dir.path().join(".git").join("git-daemon-export-ok")).unwrap();
-            File::create(dir.path().join("foo")).unwrap();
-            File::create(dir.path().join("bar")).unwrap();
-
-            {
-                let mut index = repo.index().unwrap();
-
-                index.add_path(Path::new("foo")).unwrap();
-                index.write().unwrap();
-
-                let tree_id = index.write_tree().unwrap();
-
-                repo.commit(
-                    Some("HEAD"),
-                    &sig,
-                    &sig,
-                    "test1",
-                    &repo.find_tree(tree_id).unwrap(),
-                    &[],
-                )
-                .unwrap();
-            }
-
-            dir
-        }
-
-        pub fn serve(dir: TempDir, port: u32) {
-            let server = Server::new(format!("localhost:{port}"), move |request| {
-                let mut cmd = Command::new("git");
-
-                cmd.arg("http-backend");
-                cmd.env("GIT_PROJECT_ROOT", dir.path());
-                cmd.start_cgi(request).unwrap()
-            })
-            .unwrap();
-
-            let (_handle, sender) = server.stoppable();
-
-            thread::spawn(move || {
-                thread::sleep(std::time::Duration::from_secs(10));
-                sender.send(()).unwrap();
-            });
-        }
-
-        pub fn commit(dir: String) {
-            let repo = Repository::open(dir).unwrap();
-            let mut index = repo.index().unwrap();
-
-            index.add_path(Path::new("bar")).unwrap();
-
-            let oid = index.write_tree().unwrap();
-            let sig = Signature::now("foo", "bar").unwrap();
-            let parent = last_commit(&repo);
-
-            repo.commit(
-                Some("HEAD"),
-                &sig,
-                &sig,
-                "test2",
-                &repo.find_tree(oid).unwrap(),
-                &[&parent],
-            )
-            .unwrap();
-        }
-
-        fn last_commit(repo: &Repository) -> Commit<'_> {
-            let obj = repo
-                .head()
-                .unwrap()
-                .resolve()
-                .unwrap()
-                .peel(ObjectType::Commit)
-                .unwrap();
-
-            obj.into_commit().unwrap()
-        }
     }
 
     #[test]

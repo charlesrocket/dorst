@@ -7,8 +7,6 @@ mod config;
 mod git;
 #[cfg(feature = "gui")]
 mod gui;
-#[cfg(any(feature = "cli", feature = "gui"))]
-mod util;
 
 fn main() {
     if gui_flag() {

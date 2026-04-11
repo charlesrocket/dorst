@@ -27,7 +27,6 @@ use crate::{
     config::Config,
     git,
     gui::{RepoData, preferences::DorstPreferences, repo_box::RepoBox, repo_object::RepoObject},
-    util,
 };
 
 glib::wrapper! {
@@ -419,7 +418,7 @@ impl Window {
                                     }
 
                                     repo.set_link(entry.text().to_string());
-                                    repo.set_name(util::get_name(&entry.text()));
+                                    repo.set_name(libdorst::get_name(&entry.text()));
                                     window.save_settings();
                                 }
                             ),
@@ -633,12 +632,12 @@ impl Window {
                 let destination_clone = format!(
                     "{}/{}",
                     &dest_clone.clone().display().to_string(),
-                    util::get_name(&repo_link)
+                    libdorst::get_name(&repo_link)
                 );
                 let destination_backup = format!(
                     "{}/{}.dorst",
                     &dest_backup.clone().display().to_string(),
-                    util::get_name(&repo_link)
+                    libdorst::get_name(&repo_link)
                 );
 
                 if self.task_limiter() {
@@ -726,7 +725,7 @@ impl Window {
         let dest = self.imp().source_directory.borrow();
         let path = dest.to_string();
 
-        PathBuf::from(util::expand_path(&path))
+        PathBuf::from(libdorst::expand_path(&path))
     }
 
     fn get_dest_backup(&self) -> Ref<'_, PathBuf> {
@@ -976,7 +975,7 @@ impl Window {
             }
         }
 
-        let name = util::get_name(&content).to_owned();
+        let name = libdorst::get_name(&content).to_owned();
         let repo = RepoObject::new(
             name,
             content,
@@ -1037,13 +1036,13 @@ impl Window {
         }
 
         let toml_data = toml::to_string_pretty(&config).unwrap();
-        let mut file = fs::File::create(util::xdg_path().unwrap()).unwrap();
+        let mut file = fs::File::create(libdorst::xdg_path().unwrap()).unwrap();
         file.write_all(toml_data.as_bytes()).unwrap();
     }
 
     fn restore_data(&self) {
         #[cfg(not(test))]
-        let conf_file = util::xdg_path().unwrap();
+        let conf_file = libdorst::xdg_path().unwrap();
         #[cfg(test)]
         let conf_file = PathBuf::from("/tmp/dorst_test_conf.toml");
 
@@ -1096,7 +1095,7 @@ impl Window {
                             }
 
                             RepoData {
-                                name: util::get_name(&link_string).to_owned(),
+                                name: libdorst::get_name(&link_string).to_owned(),
                                 link: link_string,
                                 branch: String::new(),
                                 progress: 0.0,
@@ -1153,7 +1152,7 @@ impl Window {
     fn about_dialog() -> AboutDialog {
         let about_dialog = AboutDialog::builder()
             .application_name("DØRST")
-            .version(util::version_string())
+            .version(libdorst::version_string())
             .license_type(License::MitX11)
             .support_url("https://github.com/charlesrocket/dorst/discussions")
             .issue_url("https://github.com/charlesrocket/dorst/issues")
@@ -1294,7 +1293,8 @@ impl Window {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::gui::tests::{helper, wait_ui};
+    use crate::gui::wait_ui;
+    use libdorst::helper;
     use std::{
         fs::{remove_dir_all, remove_file},
         io::Write,

@@ -8,7 +8,7 @@ use indicatif::{HumanBytes, ProgressBar};
 #[cfg(feature = "gui")]
 use crate::gui::window::{RowMessage, Status};
 #[cfg(feature = "cli")]
-use crate::util::get_name;
+use libdorst::get_name;
 
 #[cfg(feature = "cli")]
 use std::io::{self, Write};

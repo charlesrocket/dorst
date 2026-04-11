@@ -13,11 +13,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{
-    config::Config,
-    git,
-    util::{expand_path, get_dir, get_name, version_string, xdg_path},
-};
+use crate::{config::Config, git};
+
+use libdorst::{expand_path, get_dir, get_name, version_string, xdg_path};
 
 const BANNER: &str = "\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\
                       \u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\u{2584}\
@@ -189,7 +187,7 @@ fn bar_chars() -> [&'static str; 3] {
 
 fn cli(matches: &ArgMatches) -> Result<()> {
     #[cfg(feature = "logs")]
-    let _logger = crate::util::init_logs();
+    let _logger = libdorst::init_logs();
 
     println!("{BANNER}");
 
