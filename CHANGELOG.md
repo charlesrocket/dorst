@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0] - 2026-04-13
+
+### Bug Fixes
+
+- Add missing lifetime syntax
+- Hide header bar icon
+- Improve credential loop
+- Consistent errors
+- Drop `updated` icon
+
+### Documentation
+
+- Quote cargo commands
+- Move packaging status
+
+### Features
+
+- Add OS string
+
+### Operations
+
+- Bump actions/checkout from 4 to 5
+- Bump actions/labeler from 5 to 6
+- Bump actions/checkout from 5 to 6
+- Bump actions/cache from 4 to 5
+- Bump codecov/codecov-action from 5 to 6
+
+### Refactor
+
+- Drop redundant `if`
+
+### Styling
+
+- Fix `set_callbacks()` formatting
+
+### Testing
+
+- Use explicit lifetime with `Commit`
+- Move helper
+
+### Build
+
+- Bump slab from 0.4.10 to 0.4.11
+- Update gtk
+- Bump `toml` to 1.1
+- Drop `vendored-openssl`
+
 ## [0.19.5] - 2025-08-04
 
 ### Bug Fixes
