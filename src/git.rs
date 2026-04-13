@@ -38,7 +38,7 @@ pub fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks<'_> {
             return git2::Cred::default();
         }
 
-        Err(git2::Error::from_str("no valid auth method found"))
+        Err(git2::Error::from_str("No valid auth method found"))
     });
 
     callbacks
