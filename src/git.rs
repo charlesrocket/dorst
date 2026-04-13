@@ -16,18 +16,31 @@ use std::path::Path;
 
 pub fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks<'_> {
     let mut callbacks = RemoteCallbacks::new();
+    let mut tried_ssh_agent = false;
+    let mut tried_cred_helper = false;
 
     callbacks.credentials(move |url, username_from_url, allowed_types| {
-        if allowed_types.is_user_pass_plaintext() {
-            Cred::credential_helper(git_config, url, username_from_url)
-        } else if allowed_types.is_ssh_key() {
-            match username_from_url {
-                Some(username) => Cred::ssh_key_from_agent(username),
-                None => Err(git2::Error::from_str("Could not extract username from URL")),
-            }
-        } else {
-            Cred::default()
+        if allowed_types.contains(git2::CredentialType::USERNAME) {
+            return Cred::username(username_from_url.unwrap_or("git"));
         }
+
+        if allowed_types.contains(git2::CredentialType::SSH_KEY) && !tried_ssh_agent {
+            tried_ssh_agent = true;
+            return Cred::ssh_key_from_agent(username_from_url.unwrap_or("git"));
+        }
+
+        if allowed_types.contains(git2::CredentialType::USER_PASS_PLAINTEXT) && !tried_cred_helper {
+            tried_cred_helper = true;
+            return Cred::credential_helper(git_config, url, username_from_url);
+        }
+
+        if allowed_types.contains(git2::CredentialType::DEFAULT) {
+            return git2::Cred::default();
+        }
+
+        Err(git2::Error::from_str(
+            "no valid auth method found",
+        ))
     });
 
     callbacks
