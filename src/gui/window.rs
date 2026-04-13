@@ -846,7 +846,6 @@ impl Window {
                     name.add_css_class("accent");
                     name.remove_css_class("success");
                     name.remove_css_class("error");
-                    status_image.set_icon_name(Some("emblem-default-symbolic"));
                 } else if repo_object.status() == "err" {
                     name.add_css_class("error");
                     name.remove_css_class("success");
