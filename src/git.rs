@@ -35,7 +35,7 @@ pub fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks<'_> {
         }
 
         if allowed_types.contains(git2::CredentialType::DEFAULT) {
-            return git2::Cred::default();
+            return Cred::default();
         }
 
         Err(git2::Error::from_str("No valid auth method found"))
