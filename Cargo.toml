@@ -1,8 +1,8 @@
 [package]
 name = "dorst"
-version = "0.20.0"
+version = "0.20.1"
 edition = "2024"
-repository = "https://github.com/charlesrocket/dorst"
+repository = "https://codeberg.org/charlesrocket/dorst"
 authors = ["charlesrocket"]
 description = "Codebase bootstrap and backup utility"
 categories = ["command-line-utilities", "development-tools", "gui"]
