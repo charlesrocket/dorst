@@ -46,13 +46,12 @@ pub fn set_callbacks(git_config: &git2::Config) -> RemoteCallbacks<'_> {
 
 pub fn set_default_branch(mirror: &Repository) -> Result<(), git2::Error> {
     let remote = mirror.find_remote("origin")?;
-    let remote_branch = remote.name().unwrap();
-    let remote_branch_ref = mirror.resolve_reference_from_short_name(remote_branch)?;
-    let remote_branch_name = remote_branch_ref
-        .name()
-        .ok_or_else(|| git2::Error::from_str("No default branch"));
+    let remote_branch = remote.name()?.expect("Branch has no name");
+    let remote_branch_ref = mirror.resolve_reference_from_short_name(remote_branch);
+    let binding = remote_branch_ref?;
+    let name = binding.name()?;
 
-    let branch = remote_branch_name?.to_owned();
+    let branch = name.to_owned();
 
     mirror.set_head(&branch)?;
 
@@ -64,10 +63,8 @@ pub fn current_branch(destination: std::path::PathBuf) -> Result<String, git2::E
     let head = repo.head()?;
 
     if head.is_branch() {
-        match head.shorthand() {
-            Some(branch) => Ok(String::from(branch)),
-            _ => Ok(String::from("*INVALID")),
-        }
+        let branch = head.shorthand()?;
+        Ok(String::from(branch))
     } else {
         Ok(String::from("*DETACHED"))
     }
