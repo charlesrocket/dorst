@@ -692,12 +692,15 @@ impl Window {
                     let mut path = self.get_dest_clone();
                     path.push(repo_object.name());
 
-                    let branch = git::current_branch(path).unwrap();
-                    repo_object.set_branch(branch);
-                    repo_object.set_status("ok");
-
-                    if self.imp().updated_list.lock().unwrap().contains(&link) {
-                        repo_object.set_status("updated");
+                    match git::current_branch(path) {
+                        Ok(branch) => {
+                            repo_object.set_branch(branch);
+                            repo_object.set_status("ok");
+                            if self.imp().updated_list.lock().unwrap().contains(&link) {
+                                repo_object.set_status("updated");
+                            }
+                        }
+                        Err(_) => repo_object.set_status("err"),
                     }
                 } else if self
                     .imp()
@@ -872,8 +875,13 @@ impl Window {
                         let mut path = window.get_dest_clone();
                         path.push(repo_object.name());
 
-                        let branch = git::current_branch(path).unwrap();
-                        repo_object.set_branch(branch);
+                        match git::current_branch(path) {
+                            Ok(branch) => repo_object.set_branch(branch),
+                            Err(e) => {
+                                repo_object.set_error(e.to_string());
+                                repo_object.set_status("err");
+                            }
+                        };
 
                         if window
                             .imp()
