@@ -1,6 +1,6 @@
 # dørst
 [![Crates.io](https://img.shields.io/crates/v/dorst)](https://crates.io/crates/dorst)
-[![Tests](https://github.com/charlesrocket/dorst/actions/workflows/ci.yml/badge.svg?branch=trunk)](https://github.com/charlesrocket/dorst/actions/workflows/ci.yml)
+[![CI](https://codeberg.org/charlesrocket/dorst/badges/workflows/ci.yml/badge.svg?branch=trunk)](https://codeberg.org/charlesrocket/dorst/actions)
 [![codecov](https://codecov.io/gh/charlesrocket/dorst/branch/trunk/graph/badge.svg)](https://codecov.io/gh/charlesrocket/dorst)
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/dorst.svg)](https://repology.org/project/dorst/versions)
@@ -41,3 +41,7 @@ The `-c`/`--config` flag allows the usage of an alternative configuration file.
 ### Backups
 
 Dorst's backups are `git` mirrors: `git clone example.dorst`
+
+## Contributing
+
+Patches are accepted via [Codeberg](https://codeberg.org/charlesrocket/dorst) or e-mail.
