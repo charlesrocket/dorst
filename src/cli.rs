@@ -43,7 +43,7 @@ impl Config {
 
         for target in &config.targets {
             if target.ends_with('/') {
-                return Err(anyhow!("Invalid URL {} (trailing slash)", &target));
+                return Err(anyhow!("Invalid URL {} (trailing slash)", target));
             }
         }
 
@@ -236,7 +236,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
             get_name(target)
         );
 
-        let destination_backup = format!("{}/{}.dorst", &path.display(), get_name(target));
+        let destination_backup = format!("{}/{}.dorst", path.display(), get_name(target));
         let target_name = get_name(target);
 
         if !silent {
@@ -290,7 +290,7 @@ fn cli(matches: &ArgMatches) -> Result<()> {
                 *err_count.lock().unwrap() += 1;
                 if !silent {
                     if spinner.is_hidden() {
-                        eprintln!("{}", &err);
+                        eprintln!("{}", err);
                     }
 
                     spinner.finish_with_message(err);
