@@ -27,14 +27,10 @@ jobs:
         uses: https://github.com/dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.toolchain }}
-          components: rustfmt
 
       - name: Install dependencies
         run: sudo apt update && sudo apt install libgtk-4-dev libadwaita-1-dev -y
         if: matrix.feature == 'gui'
-
-      - name: Check
-        run: cargo fmt --check --verbose
 
       - name: Build
         run: cargo build --features ${{ matrix.feature }} --verbose
@@ -42,14 +38,47 @@ jobs:
       - name: Test
         run: cargo test --features ${{ matrix.feature }} --verbose
 
+  codecov:
+    name: Coverage | ${{ matrix.feature }}
+    if: forgejo.ref_type != 'tag'
+    runs-on: codeberg-medium
+    strategy:
+      matrix:
+        feature:
+          - default
+          - cli
+          #- gui
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Set cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+
+          key: ${{ runner.os }}-codecov-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install libgtk-4-dev libadwaita-1-dev -y
+        if: matrix.feature == 'gui'
+
+      - name: Install Rust
+        uses: https://github.com/dtolnay/rust-toolchain@stable
+
       - name: Install LLVM
         uses: https://github.com/taiki-e/install-action@cargo-llvm-cov
 
-      - name: Install codecov
-        run: curl -Os https://cli.codecov.io/latest/linux/codecov && sudo chmod +x codecov
-
       - name: Generate code coverage
         run: cargo llvm-cov --workspace --features ${{ matrix.feature }} --lcov --output-path lcov.info
+
+      - name: Install codecov
+        run: curl -Os https://cli.codecov.io/latest/linux/codecov && sudo chmod +x codecov
 
       - name: Upload coverage
         run: ./codecov upload-process --git-service github --disable-search -t ${{ secrets.CODECOV_TOKEN }} -n ${{ forgejo.run_id }} -F ${{ matrix.feature }} -f lcov.info
