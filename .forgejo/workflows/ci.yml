@@ -27,6 +27,7 @@ jobs:
         uses: https://github.com/dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.toolchain }}
+          components: rustfmt
 
       - name: Install dependencies
         run: sudo apt update && sudo apt install libgtk-4-dev libadwaita-1-dev -y
