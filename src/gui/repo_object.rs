@@ -136,7 +136,7 @@ impl RepoObject {
 
             let _ = tx.clone().unwrap().send_blocking(RowMessage::Finish);
 
-            if mirror {
+            if mirror && err_string.is_empty() {
                 let _ = tx.clone().unwrap().send_blocking(RowMessage::Reset);
                 let _ = tx_repo.send_blocking(RepoMessage::Reset);
 

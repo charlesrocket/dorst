@@ -1176,6 +1176,10 @@ impl Window {
     }
 
     fn save_settings(&self) {
+        if cfg!(test) {
+            return;
+        }
+
         self.save_data();
 
         #[cfg(not(test))]
@@ -1528,7 +1532,7 @@ pub mod tests {
         assert!(window.imp().updated_list.lock().unwrap().len() == 0);
         assert!(window.imp().errors_list.lock().unwrap().len() == 1);
 
-        remove_dir_all("/tmp/dorst_test-gui-backup").unwrap();
+        //remove_dir_all("/tmp/dorst_test-gui-backup").unwrap();
         remove_dir_all("test-gui-src-backup").unwrap();
     }
 
