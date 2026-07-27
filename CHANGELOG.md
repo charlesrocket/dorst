@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.1] - 2026-07-27
+
+### Bug Fixes
+
+- Update `CredentialType::DEFAULT`
+- Update `set_default_branch()`
+- Handle `current_branch()` errors
+- Drop redundant references
+- No backup after failure
+
+### Documentation
+
+- Drop cargo install commands
+- Add `Contributing`
+- Update example config
+
+### Operations
+
+- Bump codecov/codecov-action from 6 to 7
+- Bump actions/checkout from 6 to 7
+- Bump actions/cache from 5 to 6
+- Update actions
+- Fix `release` job
+- Add `rustfmt`
+- Add `codecov` job
+
+### Build
+
+- Bump `git2` to 0.21
+- Bump `git2` to 0.21
+
 ## [0.20.0] - 2026-04-13
 
 ### Bug Fixes
